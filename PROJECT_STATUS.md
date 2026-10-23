@@ -50,3 +50,36 @@ Interface → Service → Rules / Validator → Repository → Google Sheets
 
 ## Próximo passo
 Executar os testes integrados e corrigir eventuais diferenças antes de excluir ou migrar qualquer arquivo adicional.
+
+
+---
+
+## Registro adicional — Documentação do Agente Testador
+
+### Concluído
+- Criada a documentação do agente de IA para revisar e testar código do Agenda de Serviços.
+- Registrado o roteiro de testes de aceitação do agente.
+- Documentado como configurar as instruções em um GPT personalizado no ChatGPT.
+
+### Arquivos criados
+- `docs/agente-testador/INSTRUCOES.md`
+- `docs/agente-testador/ROTEIRO_DE_TESTES.md`
+- `docs/agente-testador/README.md`
+
+### Arquivos alterados
+- `PROJECT_STATUS.md` — registro desta entrega documental.
+
+### Arquivos mantidos
+- Todos os arquivos da aplicação e os documentos existentes foram mantidos sem alteração nesta etapa.
+
+### Arquivos que podem ser excluídos
+- Nenhum.
+
+### Validação
+- Confirmada a criação dos três documentos no repositório GitHub.
+- O roteiro descreve testes para erro aritmético conhecido, falta de contexto, respeito à arquitetura, preservação de funcionalidades e honestidade sobre testes.
+- O agente personalizado ainda precisa ser configurado na interface do ChatGPT e validado executando o roteiro.
+
+### Próximo passo
+- Criar/configurar o GPT personalizado usando `docs/agente-testador/INSTRUCOES.md`.
+- Executar os cenários de `docs/agente-testador/ROTEIRO_DE_TESTES.md` e registrar os resultados.
