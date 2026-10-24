@@ -52,7 +52,7 @@ A lógica da aplicação não foi alterada nesta etapa de automação de testes.
 ## Como testar
 1. Na cópia local do repositório, execute `git pull`.
 2. Execute uma vez `git config core.hooksPath .githooks`.
-3. Execute `npm test) e confirme que os cinco testes passam.
+3. Execute `npm test` e confirme que os cinco testes passam.
 4. Faça uma alteração segura, adicione-a com `git add` e tente criar um commit.
 5. Confirme que o hook executa os testes antes de permitir o commit.
 6. Envie a alteração ao GitHub e confira a execução em Actions.
