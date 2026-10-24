@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Agenda de Serviços — verificação automática antes do commit.
+# Executa os testes unitários locais e bloqueia o commit se houver falhas.
+#
+
+REPO_ROOT="$(git rev-parse --show-toplevel)" || exit 1
+cd "$REPO_ROOT" || exit 1
+
+echo ""
+echo "Agenda de Serviços: executando testes antes do commit..."
+echo ""
+
+npm test
+TEST_RESULT=$?
+
+if [ "$TEST_RESULT" -ne 0 ]; then
+  echo ""
+  echo "COMMIT CANCELADO: os testes falharam."
+  echo "Corrija os erros e execute novamente o commit."
+  exit "$TEST_RESULT"
+fi
+
+echo ""
+echo "Testes aprovados. O commit pode continuar."
+exit 0
