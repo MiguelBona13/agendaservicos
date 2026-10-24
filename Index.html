@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda de atendimento</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:#f3f4f6;color:#1f2937}
+    header{background:#1f2937;color:white;padding:20px 24px}
+    header h1{margin:0 0 6px;font-size:24px}
+    header p{margin:0;color:#d1d5db}
+    .layout{display:flex;min-height:calc(100vh - 85px)}
+    nav{width:230px;flex-shrink:0;background:white;padding:20px 12px;border-right:1px solid #e5e7eb}
+    .menu-titulo{padding:0 12px;margin:0 0 12px;color:#6b7280;font-size:12px;font-weight:bold;text-transform:uppercase}
+    .menu-item{display:block;width:100%;padding:12px;margin-bottom:6px;border:0;border-radius:7px;background:transparent;color:#374151;text-align:left;font-size:15px;cursor:pointer}
+    .menu-item:hover{background:#f3f4f6}
+    .menu-item.ativo{background:#dbeafe;color:#1d4ed8;font-weight:bold}
+    main{flex:1;min-width:0;padding:28px}
+    .cabecalho-conteudo{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+    h2{margin:0 0 8px;font-size:23px}
+    .descricao{margin:0;color:#6b7280}
+    .card{background:white;padding:22px;margin-bottom:20px;border-radius:12px;box-shadow:0 4px 12px #0000000d}
+    .card h3{margin-top:0}
+    label{display:block;margin:16px 0 6px;font-weight:bold}
+    input,select{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:6px;font-size:15px;background:white;color:#1f2937}
+    input[readonly]{background:#f3f4f6;color:#4b5563}
+    .grade-formulario{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+    .campo{min-width:0}
+    .campo.completo{grid-column:1/-1}
+    .botao{padding:11px 16px;border:0;border-radius:6px;background:#2563eb;color:white;font-size:14px;font-weight:bold;cursor:pointer}
+    .botao:hover{background:#1d4ed8}
+    .botao:disabled{background:#9ca3af;cursor:not-allowed}
+    .botao-secundario{background:#e5e7eb;color:#1f2937}
+    .acoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+    #mensagem{display:none;padding:12px;margin-top:16px;border-radius:6px;overflow-wrap:anywhere}
+    #mensagem.sucesso{display:block;background:#dcfce7;color:#166534}
+    #mensagem.erro{display:block;background:#fee2e2;color:#991b1b}
+    .tabela-container{width:100%;overflow-x:auto}
+    table{width:100%;border-collapse:collapse;white-space:nowrap}
+    th,td{padding:12px;text-align:left;border-bottom:1px solid #e5e7eb}
+    th{background:#f9fafb;color:#374151;font-size:13px}
+    td{font-size:14px}
+    .vazio{color:#6b7280;padding:20px 0}
+    .contador{color:#6b7280;font-size:13px;margin-top:14px}
+    option:disabled{color:#9ca3af}
+    .ajuda{color:#6b7280;font-size:13px;margin-top:6px}
+    @media(max-width:650px){
+      .layout{display:block}
+      nav{width:100%;display:flex;flex-wrap:wrap;gap:6px;border-right:0;border-bottom:1px solid #e5e7eb}
+      .menu-titulo{width:100%}
+      .menu-item{width:auto;margin:0}
+      main{padding:18px 12px}
+      .card{padding:16px}
+      .grade-formulario{grid-template-columns:1fr}
+      .campo.completo{grid-column:auto}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Agenda de atendimento</h1>
+    <p>Sistema de gerenciamento de serviços</p>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Menu principal">
+      <p class="menu-titulo">Menu principal</p>
+      <button class="menu-item ativo" data-aba="FUNCIONARIOS">Funcionários</button>
+      <button class="menu-item" data-aba="SERVICOS">Serviços</button>
+      <button class="menu-item" data-aba="CLIENTES">Clientes</button>
+      <button class="menu-item" data-aba="CIDADES">Cidades</button>
+      <button class="menu-item" data-aba="BAIRROS">Bairros</button>
+      <button class="menu-item" data-aba="AGENDA">Agenda</button>
+    </nav>
+
+    <main>
+      <div class="cabecalho-conteudo">
+        <div>
+          <h2 id="tituloLista">Funcionários</h2>
+          <p class="descricao" id="descricaoLista">Consulte os funcionários cadastrados.</p>
+        </div>
+        <button class="botao botao-secundario" id="botaoAtualizar">Atualizar lista</button>
+      </div>
+
+      <section class="card" id="areaCadastroFuncionario">
+        <h3>Cadastrar funcionário</h3>
+        <p class="descricao">O código é gerado automaticamente.</p>
+        <form id="formFuncionario">
+          <label for="codigoFuncionario">Código do funcionário</label>
+          <input id="codigoFuncionario" type="text" readonly required>
+
+          <label for="nomeFuncionario">Nome do funcionário</label>
+          <input id="nomeFuncionario" type="text" placeholder="Digite o nome completo" required>
+
+          <div class="acoes">
+            <button class="botao" id="botaoCadastrarFuncionario" type="submit" disabled>Carregando código...</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" id="areaCadastroCliente" style="display:none">
+        <h3>Cadastrar cliente</h3>
+        <p class="descricao">Preencha os dados do cliente. O código será gerado automaticamente.</p>
+
+        <form id="formCliente">
+          <div class="grade-formulario">
+            <div class="campo">
+              <label for="codigoCliente">Código do cliente</label>
+              <input id="codigoCliente" type="text" readonly required>
+            </div>
+
+            <div class="campo">
+              <label for="nomeCliente">Nome completo *</label>
+              <input id="nomeCliente" type="text" autocomplete="name" required>
+            </div>
+
+            <div class="campo">
+              <label for="cpfCliente">CPF *</label>
+              <input id="cpfCliente" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required>
+            </div>
+
+            <div class="campo">
+              <label for="aniversarioCliente">Data de aniversário</label>
+              <input id="aniversarioCliente" type="date">
+            </div>
+
+            <div class="campo">
+              <label for="numeroCliente">Número do endereço *</label>
+              <input id="numeroCliente" type="text" required>
+            </div>
+
+            <div class="campo">
+              <label for="cidadeCliente">Cidade *</label>
+              <select id="cidadeCliente" required>
+                <option value="">Carregando cidades...</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="bairroCliente">Bairro *</label>
+              <select id="bairroCliente" required disabled>
+                <option value="">Selecione uma cidade primeiro</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="cepCliente">CEP *</label>
+              <input id="cepCliente" type="text" inputmode="numeric" maxlength="9" placeholder="00000-000" required>
+            </div>
+
+            <div class="campo">
+              <label for="celularCliente">Celular com DDD *</label>
+              <input id="celularCliente" type="tel" inputmode="tel" placeholder="(67) 99999-9999" required>
+            </div>
+
+            <div class="campo">
+              <label for="emailCliente">E-mail</label>
+              <input id="emailCliente" type="email" autocomplete="email">
+            </div>
+
+            <div class="campo completo">
+              <label for="statusFinanceiroCliente">Status financeiro *</label>
+              <select id="statusFinanceiroCliente" required>
+                <option value="">Selecione o status</option>
+                <option value="Em dia">Em dia</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Inadimplente">Inadimplente</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="acoes">
+            <button class="botao" id="botaoCadastrarCliente" type="submit" disabled>Carregando...</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" id="areaCadastroAgendamento" style="display:none">
+        <h3>Novo agendamento</h3>
+        <p class="descricao">Escolha a data, o período e os dados do atendimento. O valor será obtido do serviço selecionado.</p>
+
+        <form id="formAgendamento">
+          <div class="grade-formulario">
+            <div class="campo">
+              <label for="codigoAgendamento">Código do agendamento</label>
+              <input id="codigoAgendamento" type="text" readonly required>
+            </div>
+
+            <div class="campo">
+              <label for="dataAgendamento">Data do atendimento *</label>
+              <input id="dataAgendamento" type="date" required>
+            </div>
+
+            <div class="campo">
+              <label for="periodoAgendamento">Período *</label>
+              <select id="periodoAgendamento" required>
+                <option value="">Carregando períodos...</option>
+              </select>
+              <p class="ajuda">Períodos inativos aparecem na lista, mas não podem ser selecionados.</p>
+            </div>
+
+            <div class="campo">
+              <label for="funcionarioAgendamento">Funcionário *</label>
+              <select id="funcionarioAgendamento" required>
+                <option value="">Carregando funcionários...</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="clienteAgendamento">Cliente *</label>
+              <select id="clienteAgendamento" required>
+                <option value="">Carregando clientes...</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="servicoAgendamento">Serviço *</label>
+              <select id="servicoAgendamento" required>
+                <option value="">Carregando serviços...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="acoes">
+            <button class="botao" id="botaoCadastrarAgendamento" type="submit" disabled>Carregando dados...</button>
+          </div>
+        </form>
+      </section>
+
+      <div id="mensagem" role="status" aria-live="polite"></div>
+
+      <section class="card">
+        <h3>Registros existentes</h3>
+        <div id="conteudoLista">
+          <p class="vazio">Carregando registros...</p>
+        </div>
+        <div class="contador" id="contadorRegistros"></div>
+      </section>
+    </main>
+  </div>
+
+<script>
+  const titulos = {
+    FUNCIONARIOS: "Funcionários",
+    SERVICOS: "Serviços",
+    CLIENTES: "Clientes",
+    CIDADES: "Cidades",
+    BAIRROS: "Bairros",
+    AGENDA: "Agenda de atendimentos"
+  };
+
+  const descricoes = {
+    FUNCIONARIOS: "Consulte os funcionários cadastrados.",
+    SERVICOS: "Consulte os serviços e seus valores.",
+    CLIENTES: "Cadastre clientes e consulte os registros existentes.",
+    CIDADES: "Consulte as cidades e seus estados.",
+    BAIRROS: "Consulte os bairros cadastrados.",
+    AGENDA: "Cadastre e consulte os agendamentos."
+  };
+
+  let abaAtual = "FUNCIONARIOS";
+  let carregandoLista = false;
+
+  const el = id => document.getElementById(id);
+
+  const botoesMenu = document.querySelectorAll(".menu-item");
+  const areaCadastroFuncionario = el("areaCadastroFuncionario");
+  const areaCadastroCliente = el("areaCadastroCliente");
+  const areaCadastroAgendamento = el("areaCadastroAgendamento");
+  const conteudoLista = el("conteudoLista");
+  const contadorRegistros = el("contadorRegistros");
+  const tituloLista = el("tituloLista");
+  const descricaoLista = el("descricaoLista");
+  const botaoAtualizar = el("botaoAtualizar");
+  const mensagem = el("mensagem");
+
+  const formFuncionario = el("formFuncionario");
+  const codigoFuncionario = el("codigoFuncionario");
+  const nomeFuncionario = el("nomeFuncionario");
+  const botaoCadastrarFuncionario = el("botaoCadastrarFuncionario");
+
+  const formCliente = el("formCliente");
+  const codigoCliente = el("codigoCliente");
+  const nomeCliente = el("nomeCliente");
+  const cpfCliente = el("cpfCliente");
+  const aniversarioCliente = el("aniversarioCliente");
+  const numeroCliente = el("numeroCliente");
+  const cidadeCliente = el("cidadeCliente");
+  const bairroCliente = el("bairroCliente");
+  const cepCliente = el("cepCliente");
+  const celularCliente = el("celularCliente");
+  const emailCliente = el("emailCliente");
+  const statusFinanceiroCliente = el("statusFinanceiroCliente");
+  const botaoCadastrarCliente = el("botaoCadastrarCliente");
+
+  const formAgendamento = el("formAgendamento");
+  const codigoAgendamento = el("codigoAgendamento");
+  const dataAgendamento = el("dataAgendamento");
+  const periodoAgendamento = el("periodoAgendamento");
+  const funcionarioAgendamento = el("funcionarioAgendamento");
+  const clienteAgendamento = el("clienteAgendamento");
+  const servicoAgendamento = el("servicoAgendamento");
+  const botaoCadastrarAgendamento = el("botaoCadastrarAgendamento");
+
+  function mostrarMensagem(texto, tipo) {
+    mensagem.textContent = texto;
+    mensagem.className = tipo;
+    mensagem.style.display = "block";
+  }
+
+  function limparMensagem() {
+    mensagem.textContent = "";
+    mensagem.className = "";
+    mensagem.style.display = "none";
+  }
+
+  function falha(erro, prefixo) {
+    mostrarMensagem(
+      prefixo + (erro && erro.message ? erro.message : String(erro)),
+      "erro"
+    );
+  }
+
+  function carregarCodigoFuncionario() {
+    botaoCadastrarFuncionario.disabled = true;
+    botaoCadastrarFuncionario.textContent = "Carregando código...";
+
+    google.script.run
+      .withSuccessHandler(codigo => {
+        codigoFuncionario.value = codigo;
+        botaoCadastrarFuncionario.disabled = false;
+        botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Erro ao gerar código do funcionário: ");
+        botaoCadastrarFuncionario.textContent = "Código indisponível";
+      })
+      .gerarCodigoFuncionario();
+  }
+
+  function carregarCodigoCliente() {
+    botaoCadastrarCliente.disabled = true;
+    botaoCadastrarCliente.textContent = "Carregando código...";
+
+    google.script.run
+      .withSuccessHandler(codigo => {
+        codigoCliente.value = codigo;
+        botaoCadastrarCliente.disabled = false;
+        botaoCadastrarCliente.textContent = "Cadastrar cliente";
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Erro ao gerar código do cliente: ");
+        botaoCadastrarCliente.textContent = "Código indisponível";
+      })
+      .gerarCodigoCliente();
+  }
+
+  function carregarCodigoAgendamento() {
+    botaoCadastrarAgendamento.disabled = true;
+    botaoCadastrarAgendamento.textContent = "Carregando dados...";
+
+    google.script.run
+      .withSuccessHandler(codigo => {
+        codigoAgendamento.value = codigo;
+        botaoCadastrarAgendamento.disabled = false;
+        botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Erro ao gerar código do agendamento: ");
+        botaoCadastrarAgendamento.textContent = "Código indisponível";
+      })
+      .gerarCodigoAgendamento();
+  }
+
+  function preencherSelect(select, registros, textoVazio, formatar) {
+    select.innerHTML = "";
+
+    const inicial = document.createElement("option");
+    inicial.value = "";
+    inicial.textContent = textoVazio;
+    select.appendChild(inicial);
+
+    (registros || []).forEach(item => {
+      const opcao = document.createElement("option");
+      opcao.value = item.codigo;
+      opcao.textContent = formatar(item);
+      select.appendChild(opcao);
+    });
+
+    select.disabled = !registros || registros.length === 0;
+  }
+
+  function carregarCidades() {
+    cidadeCliente.innerHTML = '<option value="">Carregando cidades...</option>';
+    cidadeCliente.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(cidades => {
+        preencherSelect(
+          cidadeCliente,
+          cidades,
+          "Selecione uma cidade",
+          cidade => cidade.nome + (cidade.estado ? " - " + cidade.estado : "")
+        );
+
+        if (!cidades || !cidades.length) {
+          cidadeCliente.innerHTML = '<option value="">Cadastre uma cidade primeiro</option>';
+          cidadeCliente.disabled = true;
+        }
+      })
+      .withFailureHandler(erro => {
+        cidadeCliente.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+        falha(erro, "Não foi possível carregar as cidades: ");
+      })
+      .consultarCidades();
+  }
+
+  function carregarBairros(codigoCidade) {
+    bairroCliente.innerHTML = '<option value="">Selecione uma cidade primeiro</option>';
+    bairroCliente.disabled = true;
+
+    if (!codigoCidade) return;
+
+    bairroCliente.innerHTML = '<option value="">Carregando bairros...</option>';
+
+    google.script.run
+      .withSuccessHandler(bairros => {
+        preencherSelect(
+          bairroCliente,
+          bairros,
+          "Selecione um bairro",
+          bairro => bairro.nome
+        );
+
+        if (!bairros || !bairros.length) {
+          bairroCliente.innerHTML = '<option value="">Nenhum bairro cadastrado para esta cidade</option>';
+          bairroCliente.disabled = true;
+        }
+      })
+      .withFailureHandler(erro => {
+        bairroCliente.innerHTML = '<option value="">Erro ao carregar bairros</option>';
+        falha(erro, "Não foi possível carregar os bairros: ");
+      })
+      .consultarBairros(codigoCidade);
+  }
+
+  function carregarDadosAgendamento() {
+    botaoCadastrarAgendamento.disabled = true;
+    botaoCadastrarAgendamento.textContent = "Carregando dados...";
+
+    google.script.run
+      .withSuccessHandler(periodos => {
+        periodoAgendamento.innerHTML = "";
+
+        const primeiro = document.createElement("option");
+        primeiro.value = "";
+        primeiro.textContent = "Selecione um período";
+        periodoAgendamento.appendChild(primeiro);
+
+        (periodos || []).forEach(periodo => {
+          const opcao = document.createElement("option");
+          opcao.value = periodo.codigo;
+
+          opcao.textContent =
+            periodo.descricao +
+            (periodo.horaInicial && periodo.horaFinal
+              ? " (" + periodo.horaInicial + "–" + periodo.horaFinal + ")"
+              : "") +
+            (periodo.ativo ? "" : " — Inativo");
+
+          opcao.disabled = !periodo.ativo;
+          periodoAgendamento.appendChild(opcao);
+        });
+
+        periodoAgendamento.disabled =
+          !periodos || !periodos.some(periodo => periodo.ativo);
+
+        if (!periodos || !periodos.length) {
+          periodoAgendamento.innerHTML = '<option value="">Nenhum período cadastrado</option>';
+        }
+      })
+      .withFailureHandler(erro => {
+        periodoAgendamento.innerHTML = '<option value="">Erro ao carregar períodos</option>';
+        falha(erro, "Não foi possível carregar os períodos: ");
+      })
+      .consultarPeriodos();
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        const itens = (resultado && resultado.registros || [])
+          .map(linha => ({
+            codigo: String(linha[0] || "").trim(),
+            nome: String(linha[1] || "").trim()
+          }))
+          .filter(item => item.codigo && item.nome);
+
+        preencherSelect(
+          funcionarioAgendamento,
+          itens,
+          "Selecione um funcionário",
+          item => item.nome + " (" + item.codigo + ")"
+        );
+      })
+      .withFailureHandler(erro => {
+        funcionarioAgendamento.innerHTML = '<option value="">Erro ao carregar funcionários</option>';
+        falha(erro, "Não foi possível carregar funcionários: ");
+      })
+      .consultarLista("FUNCIONARIOS");
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        const itens = (resultado && resultado.registros || [])
+          .map(linha => ({
+            codigo: String(linha[0] || "").trim(),
+            nome: String(linha[1] || "").trim()
+          }))
+          .filter(item => item.codigo && item.nome);
+
+        preencherSelect(
+          clienteAgendamento,
+          itens,
+          "Selecione um cliente",
+          item => item.nome + " (" + item.codigo + ")"
+        );
+      })
+      .withFailureHandler(erro => {
+        clienteAgendamento.innerHTML = '<option value="">Erro ao carregar clientes</option>';
+        falha(erro, "Não foi possível carregar clientes: ");
+      })
+      .consultarLista("CLIENTES");
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        const itens = (resultado && resultado.registros || [])
+          .map(linha => ({
+            codigo: String(linha[0] || "").trim(),
+            nome: String(linha[1] || "").trim(),
+            valor: String(linha[2] || "").trim()
+          }))
+          .filter(item => item.codigo && item.nome);
+
+        preencherSelect(
+          servicoAgendamento,
+          itens,
+          "Selecione um serviço",
+          item => item.nome + " — R$ " + item.valor + " (" + item.codigo + ")"
+        );
+      })
+      .withFailureHandler(erro => {
+        servicoAgendamento.innerHTML = '<option value="">Erro ao carregar serviços</option>';
+        falha(erro, "Não foi possível carregar serviços: ");
+      })
+      .consultarLista("SERVICOS");
+
+    carregarCodigoAgendamento();
+  }
+
+  function carregarLista() {
+    if (carregandoLista) return;
+
+    carregandoLista = true;
+    botaoAtualizar.disabled = true;
+    conteudoLista.innerHTML = '<p class="vazio">Carregando registros...</p>';
+    contadorRegistros.textContent = "";
+
+    if (abaAtual === "AGENDA") {
+      google.script.run
+        .withSuccessHandler(agendamentos => {
+          carregandoLista = false;
+          botaoAtualizar.disabled = false;
+
+          const registros = (agendamentos || []).map(item => [
+            item.codigo,
+            item.data,
+            item.codigoPeriodo,
+            item.codigoFuncionario,
+            item.codigoCliente,
+            item.codigoServico,
+            Number(item.valor || 0).toLocaleString("pt-BR", {
+              style: "currency",
+              currency: "BRL"
+            }),
+            item.status
+          ]);
+
+          exibirLista({
+            colunas: [
+              "Código",
+              "Data",
+              "Código do período",
+              "Código do funcionário",
+              "Código do cliente",
+              "Código do serviço",
+              "Valor",
+              "Status"
+            ],
+            registros: registros
+          });
+        })
+        .withFailureHandler(erro => {
+          carregandoLista = false;
+          botaoAtualizar.disabled = false;
+          conteudoLista.textContent =
+            "Erro ao consultar os agendamentos: " + erro.message;
+        })
+        .consultarAgendamentos();
+
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        carregandoLista = false;
+        botaoAtualizar.disabled = false;
+        exibirLista(resultado);
+      })
+      .withFailureHandler(erro => {
+        carregandoLista = false;
+        botaoAtualizar.disabled = false;
+        conteudoLista.textContent =
+          "Erro ao consultar a lista: " + erro.message;
+      })
+      .consultarLista(abaAtual);
+  }
+
+  function exibirLista(resultado) {
+    conteudoLista.innerHTML = "";
+
+    if (!resultado || !resultado.colunas || !resultado.colunas.length) {
+      conteudoLista.innerHTML =
+        '<p class="vazio">Esta planilha ainda não possui colunas.</p>';
+      contadorRegistros.textContent = "";
+      return;
+    }
+
+    if (!resultado.registros || !resultado.registros.length) {
+      conteudoLista.innerHTML =
+        '<p class="vazio">Nenhum registro cadastrado nesta lista.</p>';
+      contadorRegistros.textContent = "0 registros";
+      return;
+    }
+
+    const container = document.createElement("div");
+    container.className = "tabela-container";
+
+    const tabela = document.createElement("table");
+    const thead = document.createElement("thead");
+    const trCabecalho = document.createElement("tr");
+
+    resultado.colunas.forEach(coluna => {
+      const th = document.createElement("th");
+      th.textContent = coluna;
+      trCabecalho.appendChild(th);
+    });
+
+    if (abaAtual === "AGENDA") {
+      const thAcoes = document.createElement("th");
+      thAcoes.textContent = "Ações";
+      trCabecalho.appendChild(thAcoes);
+    }
+
+    thead.appendChild(trCabecalho);
+    tabela.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    resultado.registros.forEach(registro => {
+      const tr = document.createElement("tr");
+
+      registro.forEach(valor => {
+        const td = document.createElement("td");
+        td.textContent = valor;
+        tr.appendChild(td);
+      });
+
+      if (abaAtual === "AGENDA") {
+        const tdAcoes = document.createElement("td");
+        const status = String(registro[7] || "").trim().toLowerCase();
+
+        if (status !== "cancelado") {
+          const botaoCancelar = document.createElement("button");
+          botaoCancelar.type = "button";
+          botaoCancelar.className = "botao botao-secundario";
+          botaoCancelar.textContent = "Cancelar";
+          botaoCancelar.addEventListener("click", () => {
+            const codigo = String(registro[0] || "").trim();
+            if (!confirm(`Deseja cancelar o agendamento ${codigo}?`)) return;
+
+            botaoCancelar.disabled = true;
+            botaoCancelar.textContent = "Cancelando...";
+
+            google.script.run
+              .withSuccessHandler(resultado => {
+                mostrarMensagem(
+                  resultado && resultado.mensagem
+                    ? resultado.mensagem
+                    : "Agendamento cancelado com sucesso.",
+                  "sucesso"
+                );
+                carregarLista();
+              })
+              .withFailureHandler(erro => {
+                botaoCancelar.disabled = false;
+                botaoCancelar.textContent = "Cancelar";
+                falha(erro, "Não foi possível cancelar o agendamento: ");
+              })
+              .cancelarAgendamento(codigo);
+          });
+          tdAcoes.appendChild(botaoCancelar);
+        } else {
+          tdAcoes.textContent = "Cancelado";
+        }
+
+        tr.appendChild(tdAcoes);
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    tabela.appendChild(tbody);
+    container.appendChild(tabela);
+    conteudoLista.appendChild(container);
+
+    contadorRegistros.textContent =
+      resultado.registros.length +
+      (resultado.registros.length === 1 ? " registro" : " registros");
+  }
+
+  function selecionarAba(nomeAba) {
+    abaAtual = nomeAba;
+
+    botoesMenu.forEach(botao => {
+      botao.classList.toggle("ativo", botao.dataset.aba === nomeAba);
+    });
+
+    tituloLista.textContent = titulos[nomeAba];
+    descricaoLista.textContent = descricoes[nomeAba];
+
+    areaCadastroFuncionario.style.display =
+      nomeAba === "FUNCIONARIOS" ? "block" : "none";
+
+    areaCadastroCliente.style.display =
+      nomeAba === "CLIENTES" ? "block" : "none";
+
+    areaCadastroAgendamento.style.display =
+      nomeAba === "AGENDA" ? "block" : "none";
+
+    limparMensagem();
+    carregarLista();
+
+    if (nomeAba === "CLIENTES") {
+      carregarCodigoCliente();
+      carregarCidades();
+    }
+
+    if (nomeAba === "AGENDA") {
+      formAgendamento.reset();
+      carregarDadosAgendamento();
+    }
+  }
+
+  botoesMenu.forEach(botao => {
+    botao.addEventListener("click", () => {
+      selecionarAba(botao.dataset.aba);
+    });
+  });
+
+  cidadeCliente.addEventListener("change", () => {
+    carregarBairros(cidadeCliente.value);
+  });
+
+  botaoAtualizar.addEventListener("click", () => {
+    carregarLista();
+
+    if (abaAtual === "FUNCIONARIOS") {
+      carregarCodigoFuncionario();
+    }
+
+    if (abaAtual === "CLIENTES") {
+      carregarCodigoCliente();
+      carregarCidades();
+      carregarBairros("");
+    }
+
+    if (abaAtual === "AGENDA") {
+      carregarDadosAgendamento();
+    }
+  });
+
+  formFuncionario.addEventListener("submit", evento => {
+    evento.preventDefault();
+
+    const codigo = codigoFuncionario.value;
+    const nome = nomeFuncionario.value.trim();
+
+    if (!codigo || !nome) {
+      mostrarMensagem("Preencha o nome do funcionário.", "erro");
+      return;
+    }
+
+    botaoCadastrarFuncionario.disabled = true;
+    botaoCadastrarFuncionario.textContent = "Cadastrando...";
+    limparMensagem();
+
+    google.script.run
+      .withSuccessHandler(() => {
+        mostrarMensagem("Funcionário cadastrado com sucesso!", "sucesso");
+        nomeFuncionario.value = "";
+        carregarCodigoFuncionario();
+        carregarLista();
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Não foi possível cadastrar: ");
+        botaoCadastrarFuncionario.disabled = false;
+        botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+      })
+      .cadastrarFuncionario(codigo, nome);
+  });
+
+  formCliente.addEventListener("submit", evento => {
+    evento.preventDefault();
+
+    if (!formCliente.reportValidity()) return;
+
+    const dados = {
+      codigo: codigoCliente.value,
+      nome: nomeCliente.value.trim(),
+      cpf: cpfCliente.value,
+      dataAniversario: aniversarioCliente.value,
+      numero: numeroCliente.value.trim(),
+      codigoCidade: cidadeCliente.value,
+      codigoBairro: bairroCliente.value,
+      cep: cepCliente.value,
+      celular: celularCliente.value,
+      email: emailCliente.value.trim(),
+      statusFinanceiro: statusFinanceiroCliente.value
+    };
+
+    botaoCadastrarCliente.disabled = true;
+    botaoCadastrarCliente.textContent = "Cadastrando...";
+    limparMensagem();
+
+    google.script.run
+      .withSuccessHandler(() => {
+        mostrarMensagem("Cliente cadastrado com sucesso!", "sucesso");
+        formCliente.reset();
+        bairroCliente.innerHTML =
+          '<option value="">Selecione uma cidade primeiro</option>';
+        bairroCliente.disabled = true;
+        carregarCodigoCliente();
+        carregarLista();
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Não foi possível cadastrar o cliente: ");
+        botaoCadastrarCliente.disabled = false;
+        botaoCadastrarCliente.textContent = "Cadastrar cliente";
+      })
+      .cadastrarCliente(
+        dados.codigo,
+        dados.nome,
+        dados.cpf,
+        dados.dataAniversario,
+        dados.numero,
+        dados.codigoCidade,
+        dados.codigoBairro,
+        dados.cep,
+        dados.celular,
+        dados.email,
+        dados.statusFinanceiro
+      );
+  });
+
+  formAgendamento.addEventListener("submit", evento => {
+    evento.preventDefault();
+
+    if (!formAgendamento.reportValidity()) return;
+
+    const dados = {
+      codigo: codigoAgendamento.value,
+      data: dataAgendamento.value,
+      codigoPeriodo: periodoAgendamento.value,
+      codigoFuncionario: funcionarioAgendamento.value,
+      codigoCliente: clienteAgendamento.value,
+      codigoServico: servicoAgendamento.value
+    };
+
+    botaoCadastrarAgendamento.disabled = true;
+    botaoCadastrarAgendamento.textContent = "Cadastrando...";
+    limparMensagem();
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        mostrarMensagem(
+          resultado && resultado.mensagem
+            ? resultado.mensagem
+            : "Agendamento cadastrado com sucesso!",
+          "sucesso"
+        );
+
+        formAgendamento.reset();
+        carregarDadosAgendamento();
+        carregarLista();
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Não foi possível cadastrar o agendamento: ");
+        botaoCadastrarAgendamento.disabled = false;
+        botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
+      })
+      .cadastrarAgendamento(
+        dados.codigo,
+        dados.data,
+        dados.codigoPeriodo,
+        dados.codigoFuncionario,
+        dados.codigoCliente,
+        dados.codigoServico
+      );
+  });
+
+  carregarCodigoFuncionario();
+  carregarLista();
+</script>
+</body>
+</html>
