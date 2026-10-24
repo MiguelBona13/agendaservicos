@@ -6,116 +6,65 @@ Refatoração estrutural da entidade Agendamento preparada para instalação; te
 ## Etapa atual
 Consolidação das responsabilidades de Agendamento nas camadas Service, Rules, Validator e Repository.
 
-## Concluído nesta entrega
-- `AgendamentoService.gs` coordena criação e cancelamento.
-- `AgendamentoRules.gs` contém a regra de conflito e normalização de data.
-- `AgendamentoValidator.gs` valida os dados básicos do cadastro e o cancelamento.
-- `AgendamentoRepository.gs` concentra as operações específicas de leitura e gravação da agenda e a busca do valor do serviço.
-- `Agenda.js` mantém os pontos de entrada usados pela interface e delega o cadastro ao Service.
-- `Consultas.js` foi ajustado para usar a função de normalização em `AgendamentoRules.gs`, evitando dependência de uma função removida da interface antiga.
+## Concluído até o momento
+- Definição do estudo de caso Agenda de Serviços.
+- Primeira versão funcional da aplicação.
+- Cadastro de clientes, profissionais e serviços.
+- Criação de agendamentos.
+- Uso do Google Sheets como armazenamento e Google Apps Script na aplicação.
+- Definição da arquitetura em camadas.
+- Documentação do Agente Testador.
+- Workflow do GitHub Actions para executar testes unitários.
+- Cinco testes unitários para regras de conflito de agendamento; última execução registrada com 5 aprovados e 0 falhas.
+- Hook local versionado para executar `npm test` antes de cada commit e documentação para ativá-lo.
 
-## Arquitetura pretendida
-Interface → Service → Rules / Validator → Repository → Google Sheets
+## Arquitetura definida
+**Interface → Service → Rules / Validator → Repository → Google Sheets**
 
-## Arquivos criados
-- `AgendamentoRules.gs` (introduzido na etapa anterior).
-
-## Arquivos alterados nesta entrega
-- `AgendamentoService.gs`
-- `Agenda.js`
-- `Consultas.js`
-
-## Arquivos mantidos
-- `AgendamentoValidator.gs`
-- `AgendamentoRepository.gs`
-- os demais arquivos existentes do projeto.
-
-## Arquivos que podem ser excluídos
-- Nenhum recomendado nesta fase. `Utils.js` ainda é usado por outros fluxos e o código de períodos permanece em `Consultas.js`.
-
-## Pendências e ressalvas
-- A entrega foi preparada com base no pacote `Fontes_etapa2_rules.zip`, não em uma exportação posterior do projeto já instalado.
-- Testes no Google Apps Script ainda precisam ser executados; portanto, a refatoração não deve ser considerada validada em produção.
-- O acesso a períodos e a verificação da existência de funcionários/clientes ainda usam funções compartilhadas existentes (`consultarPeriodos()` e `codigoExiste()`). Uma migração adicional para repositórios específicos pode ser feita depois de validar esta versão.
-
-## Como testar
-1. Fazer uma cópia de segurança dos arquivos atuais.
-2. Substituir os arquivos indicados no pacote.
-3. Criar um agendamento válido.
-4. Tentar reservar o mesmo período para o mesmo funcionário.
-5. Tentar reservar o mesmo período para o mesmo cliente.
-6. Cancelar um agendamento e confirmar que o horário fica disponível.
-7. Tentar cancelar novamente o mesmo código.
-8. Consultar a agenda e confirmar que datas e status continuam aparecendo corretamente.
-
-## Próximo passo
-Executar os testes integrados e corrigir eventuais diferenças antes de excluir ou migrar qualquer arquivo adicional.
-
-
----
-
-## Registro adicional — Documentação do Agente Testador
-
-### Concluído
-- Criada a documentação do agente de IA para revisar e testar código do Agenda de Serviços.
-- Registrado o roteiro de testes de aceitação do agente.
-- Documentado como configurar as instruções em um GPT personalizado no ChatGPT.
-
-### Arquivos criados
+## Arquivos relevantes para testes
+- `.github/workflows/testes.yml` — executa os testes no GitHub em push e pull requests compatíveis com os caminhos configurados.
+- `package.json` — define o comando `npm test`.
+- `tests/AgendamentoRules.test.cjs` — cinco testes unitários isolados das regras de agendamento.
+- `.githooks/pre-commit` — executa os testes antes de um commit, depois de ativado localmente.
+- `docs/testes/CONFIGURACAO_LOCAL.md` — instruções para ativar e validar o hook.
 - `docs/agente-testador/INSTRUCOES.md`
 - `docs/agente-testador/ROTEIRO_DE_TESTES.md`
 - `docs/agente-testador/README.md`
 
-### Arquivos alterados
-- `PROJECT_STATUS.md` — registro desta entrega documental.
+## Arquivos da aplicação mantidos
+- `AgendamentoService.gs`
+- `AgendamentoRules.gs`
+- `AgendamentoValidator.gs`
+- `AgendamentoRepository.gs`
+- `Agenda.js`
+- `Consultas.js`
+- Demais arquivos da aplicação.
 
-### Arquivos mantidos
-- Todos os arquivos da aplicação e os documentos existentes foram mantidos sem alteração nesta etapa.
+A lógica da aplicação não foi alterada nesta etapa de automação de testes.
 
-### Arquivos que podem ser excluídos
-- Nenhum.
+## Arquivos alterados nesta etapa
+- `PROJECT_STATUS.md` — registro do progresso.
+- Foram adicionados os arquivos de hook local e documentação de configuração.
 
-### Validação
-- Confirmada a criação dos três documentos no repositório GitHub.
-- O roteiro descreve testes para erro aritmético conhecido, falta de contexto, respeito à arquitetura, preservação de funcionalidades e honestidade sobre testes.
-- O agente personalizado ainda precisa ser configurado na interface do ChatGPT e validado executando o roteiro.
+## Arquivos que podem ser excluídos
+- Nenhum recomendado nesta fase.
 
-### Próximo passo
-- Criar/configurar o GPT personalizado usando `docs/agente-testador/INSTRUCOES.md`.
-- Executar os cenários de `docs/agente-testador/ROTEIRO_DE_TESTES.md` e registrar os resultados.
+## Como testar
+1. Na cópia local do repositório, execute `git pull`.
+2. Execute uma vez `git config core.hooksPath .githooks`.
+3. Execute `npm test) e confirme que os cinco testes passam.
+4. Faça uma alteração segura, adicione-a com `git add` e tente criar um commit.
+5. Confirme que o hook executa os testes antes de permitir o commit.
+6. Envie a alteração ao GitHub e confira a execução em Actions.
 
+## Pendências e ressalvas
+- A ativação do hook é local por clone e ainda precisa ser validada na máquina de desenvolvimento.
+- Os testes atuais são unitários e isolados; não substituem testes integrados no Google Apps Script e Google Sheets.
+- A refatoração de Agendamento ainda precisa de validação integrada antes de ser considerada validada em produção.
+- A cópia de `PROJECT_GUIDE.md` fornecida na conversa foi usada como orientação; o arquivo não foi encontrado na raiz do repositório GitHub.
 
----
-
-## Registro adicional — Primeira etapa de testes automatizados
-
-### Objetivo
-Configurar execução automática de testes isolados quando fontes ou arquivos de teste forem alterados no GitHub.
-
-### Arquivos criados
-- `.github/workflows/testes.yml` — executa `npm test` em eventos de push e pull request que alterem fontes, configuração ou testes.
-- `package.json` — define o comando de testes usando o executor nativo `node:test`, sem dependências adicionais.
-- `tests/AgendamentoRules.test.cjs` — testa o fonte real `AgendamentoRules.gs` em contexto Node.js com simulações limitadas dos serviços do Apps Script.
-
-### Arquivos alterados
-- `PROJECT_STATUS.md` — registro desta etapa.
-
-### Arquivos mantidos
-- Todos os fontes existentes da aplicação, sem alteração de sua lógica.
-- `PROJECT_GUIDE.md` não foi alterado. Esse arquivo não foi encontrado na raiz do repositório GitHub durante a inspeção; a cópia fornecida nesta conversa foi usada como orientação.
-
-### Arquivos que podem ser excluídos
-- Nenhum.
-
-### Validação
-- GitHub Actions executou o workflow `Testes automatizados`.
-- Resultado confirmado no run: 5 testes aprovados, 0 falhas.
-- Cenários cobertos: ausência de registros, conflito por funcionário, conflito por cliente, horário liberado após cancelamento e ausência de conflito quando data/período diferem.
-- Execução disponível em: https://github.com/MiguelBona13/agendaservicos/actions/runs/40046104131
-- Estes são testes unitários isolados; não substituem a validação integrada no Google Apps Script e Google Sheets.
-- A função `somarValores` do roteiro do Agente Testador não existe nos fontes atuais e, por isso, não foi adicionada artificialmente à aplicação.
-
-### Próximo passo
-- Ampliar os testes unitários para outras regras e validadores, uma camada por vez.
-- Planejar separadamente os testes integrados no ambiente Google Apps Script.
-- Considerar regras de proteção da branch principal para exigir sucesso do workflow antes de integrar pull requests.
+## Próximo passo
+- Ativar e testar o hook local no Windows.
+- Ampliar testes para Validator e Service, uma camada por vez.
+- Planejar testes integrados no Google Apps Script.
+- Considerar proteção da branch principal para exigir verificações bem-sucedidas antes de integrar pull requests.
