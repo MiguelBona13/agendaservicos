@@ -83,3 +83,39 @@ Executar os testes integrados e corrigir eventuais diferenças antes de excluir 
 ### Próximo passo
 - Criar/configurar o GPT personalizado usando `docs/agente-testador/INSTRUCOES.md`.
 - Executar os cenários de `docs/agente-testador/ROTEIRO_DE_TESTES.md` e registrar os resultados.
+
+
+---
+
+## Registro adicional — Primeira etapa de testes automatizados
+
+### Objetivo
+Configurar execução automática de testes isolados quando fontes ou arquivos de teste forem alterados no GitHub.
+
+### Arquivos criados
+- `.github/workflows/testes.yml` — executa `npm test` em eventos de push e pull request que alterem fontes, configuração ou testes.
+- `package.json` — define o comando de testes usando o executor nativo `node:test`, sem dependências adicionais.
+- `tests/AgendamentoRules.test.cjs` — testa o fonte real `AgendamentoRules.gs` em contexto Node.js com simulações limitadas dos serviços do Apps Script.
+
+### Arquivos alterados
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- Todos os fontes existentes da aplicação, sem alteração de sua lógica.
+- `PROJECT_GUIDE.md` não foi alterado. Esse arquivo não foi encontrado na raiz do repositório GitHub durante a inspeção; a cópia fornecida nesta conversa foi usada como orientação.
+
+### Arquivos que podem ser excluídos
+- Nenhum.
+
+### Validação
+- GitHub Actions executou o workflow `Testes automatizados`.
+- Resultado confirmado no run: 5 testes aprovados, 0 falhas.
+- Cenários cobertos: ausência de registros, conflito por funcionário, conflito por cliente, horário liberado após cancelamento e ausência de conflito quando data/período diferem.
+- Execução disponível em: https://github.com/MiguelBona13/agendaservicos/actions/runs/40046104131
+- Estes são testes unitários isolados; não substituem a validação integrada no Google Apps Script e Google Sheets.
+- A função `somarValores` do roteiro do Agente Testador não existe nos fontes atuais e, por isso, não foi adicionada artificialmente à aplicação.
+
+### Próximo passo
+- Ampliar os testes unitários para outras regras e validadores, uma camada por vez.
+- Planejar separadamente os testes integrados no ambiente Google Apps Script.
+- Considerar regras de proteção da branch principal para exigir sucesso do workflow antes de integrar pull requests.
