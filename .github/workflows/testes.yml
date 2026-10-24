@@ -1,0 +1,38 @@
+name: Testes automatizados
+
+on:
+  push:
+    paths:
+      - "**.js"
+      - "**.gs"
+      - "**.html"
+      - "appsscript.json"
+      - "package.json"
+      - "tests/**"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "**.js"
+      - "**.gs"
+      - "**.html"
+      - "appsscript.json"
+      - "package.json"
+      - "tests/**"
+      - ".github/workflows/**"
+
+jobs:
+  testes:
+    name: Testes unitários (Node.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Executar testes automatizados
+        run: npm test
