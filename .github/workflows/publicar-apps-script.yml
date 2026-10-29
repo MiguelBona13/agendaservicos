@@ -1,0 +1,69 @@
+name: Publicar Apps Script
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.js"
+      - "**.gs"
+      - "**.html"
+      - "appsscript.json"
+      - ".clasp.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-script-production
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Enviar e publicar no Apps Script
+    runs-on: ubuntu-latest
+    env:
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validar segredos e configurar autenticação
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLASPRC_JSON" ]]; then
+            echo "::error::Configure o segredo CLASPRC_JSON nas configurações do repositório."
+            exit 1
+          fi
+          if [[ -z "$CLASP_DEPLOYMENT_ID" ]]; then
+            echo "::error::Configure o segredo CLASP_DEPLOYMENT_ID com o ID da implantação web existente."
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$HOME/.clasprc.json"
+
+      - name: Enviar arquivos para o Apps Script
+        run: npx --yes @google/clasp@latest push --force
+
+      - name: Criar versão e atualizar a implantação existente
+        shell: bash
+        run: |
+          set -euo pipefail
+          DESCRIPTION="GitHub ${GITHUB_SHA::7}"
+          VERSION_OUTPUT="$(npx --yes @google/clasp@latest version "$DESCRIPTION")"
+          printf '%s\n' "$VERSION_OUTPUT"
+          VERSION="$(printf '%s\n' "$VERSION_OUTPUT" | sed -nE 's/.*[Cc]reated version ([0-9]+).*/\1/p' | tail -n 1)"
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Não foi possível identificar o número da versão criado pelo clasp."
+            exit 1
+          fi
+          npx --yes @google/clasp@latest redeploy "$CLASP_DEPLOYMENT_ID" "$VERSION" "$DESCRIPTION"
