@@ -59,11 +59,11 @@ jobs:
         run: |
           set -euo pipefail
           DESCRIPTION="GitHub ${GITHUB_SHA::7}"
-          VERSION_OUTPUT="$(npx --yes @google/clasp@latest version "$DESCRIPTION")"
+          VERSION_OUTPUT="$(npx --yes @google/clasp@latest create-version "$DESCRIPTION")"
           printf '%s\n' "$VERSION_OUTPUT"
           VERSION="$(printf '%s\n' "$VERSION_OUTPUT" | sed -nE 's/.*[Cc]reated version ([0-9]+).*/\1/p' | tail -n 1)"
           if [[ -z "$VERSION" ]]; then
             echo "::error::Não foi possível identificar o número da versão criado pelo clasp."
             exit 1
           fi
-          npx --yes @google/clasp@latest redeploy "$CLASP_DEPLOYMENT_ID" "$VERSION" "$DESCRIPTION"
+          npx --yes @google/clasp@latest create-deployment --deploymentId "$CLASP_DEPLOYMENT_ID" --versionNumber "$VERSION" --description "$DESCRIPTION"
