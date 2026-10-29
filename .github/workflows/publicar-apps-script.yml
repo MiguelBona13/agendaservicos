@@ -9,7 +9,6 @@ on:
       - "**.gs"
       - "**.html"
       - "appsscript.json"
-      - ".clasp.json"
   workflow_dispatch:
 
 permissions:
