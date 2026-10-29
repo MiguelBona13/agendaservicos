@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      CLASP_JSON: ${{ secrets.CLASP_JSON }}
       CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
 
     steps:
@@ -40,16 +41,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$CLASPRC_JSON" ]]; then
-            echo "::error::Configure o segredo CLASPRC_JSON nas configurações do repositório."
-            exit 1
-          fi
-          if [[ -z "$CLASP_DEPLOYMENT_ID" ]]; then
-            echo "::error::Configure o segredo CLASP_DEPLOYMENT_ID com o ID da implantação web existente."
-            exit 1
-          fi
+          for secret_name in CLASPRC_JSON CLASP_JSON CLASP_DEPLOYMENT_ID; do
+            if [[ -z "${!secret_name}" ]]; then
+              echo "::error::Configure o segredo ${secret_name} nas configurações do repositório."
+              exit 1
+            fi
+          done
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
-          node -e "JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8'))" "$HOME/.clasprc.json"
+          printf '%s' "$CLASP_JSON" > .clasp.json
+          node -e "for (const p of process.argv.slice(1)) JSON.parse(require('node:fs').readFileSync(p, 'utf8'))" "$HOME/.clasprc.json" .clasp.json
 
       - name: Enviar arquivos para o Apps Script
         run: npx --yes @google/clasp@latest push --force
