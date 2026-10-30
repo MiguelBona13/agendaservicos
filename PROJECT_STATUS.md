@@ -345,3 +345,44 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - Permanece pendente somente a validação integrada no Google Apps Script com Gmail e Google Sheets reais.
 - Antes do uso, implantar esta branch no projeto Apps Script, configurar a implantação como **Executar como: Eu**, executar uma vez `agendamentoEmailServiceInicializarMonitoramento()` e autorizar o acesso ao Gmail.
 
+
+
+## Correção — botão Verificar Email integrado à branch principal
+
+### Problema identificado
+- A implementação do botão e da importação de agendamentos por e-mail estava somente na branch `feature/verificar-email-cliente`.
+- A branch `main` não continha o botão nem a chamada do Service; por isso ele não aparecia no código principal.
+
+### Alteração realizada
+- Pull request #1 integrado à branch `main` por squash merge.
+- Título do pull request corrigido para refletir a funcionalidade efetivamente entregue.
+- Confirmado no arquivo `Index.html` da branch `main` que o botão **Verificar Email** e a chamada `agendamentoEmailServiceProcessarNovosEmails()` estão presentes.
+- A implementação mantém a arquitetura em camadas e reutiliza `criarAgendamento()`.
+
+### Arquivos integrados
+- `Index.html` — botão e acionamento da rotina na tela Agenda.
+- `AgendamentoEmailService.gs`, `AgendamentoEmailRepository.gs` e `AgendamentoEmailRules.gs` — processamento, acesso ao Gmail e regras da importação.
+- `AgendamentoRepository.gs`, `AgendamentoRules.gs` e `AgendamentoValidator.gs` — consultas e validações reutilizadas.
+- Testes automatizados da importação por e-mail.
+- Este `PROJECT_STATUS.md`.
+
+### Validação
+- GitHub Actions: 49 testes aprovados e 0 falhas na execução vinculada ao último commit da implementação.
+- Pull request #1 integrado com sucesso à `main`.
+- Conferência do arquivo `Index.html` na `main`: botão e chamada do Service encontrados.
+- Testes integrados reais com Gmail, Google Sheets e Apps Script ainda pendentes.
+
+### Implantação necessária para o botão aparecer no aplicativo publicado
+1. Atualizar/sincronizar o projeto Apps Script com o conteúdo da branch `main`.
+2. Criar uma nova versão da implantação do aplicativo da web.
+3. Configurar **Executar como: Eu** e autorizar o acesso ao Gmail.
+4. Executar uma única vez `agendamentoEmailServiceInicializarMonitoramento()`.
+5. Abrir a tela Agenda e confirmar que o botão **Verificar Email** aparece e processa uma mensagem de teste.
+
+### Arquivos criados, alterados ou excluídos nesta correção
+- Nenhum arquivo de aplicação foi criado, alterado ou excluído durante a integração; os arquivos já existentes na branch de funcionalidade foram incorporados à `main`.
+- `PROJECT_STATUS.md` foi atualizado para registrar a integração.
+- Nenhum arquivo foi identificado para exclusão.
+
+### Próximo passo
+- Publicar a nova versão no Google Apps Script e executar os testes integrados reais. A integração no GitHub, por si só, não atualiza automaticamente a implantação publicada.
