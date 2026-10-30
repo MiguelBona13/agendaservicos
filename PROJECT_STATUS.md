@@ -227,3 +227,48 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - Estratégia para controlar o crescimento dos registros de mensagens processadas.
 - Retorno visual para indicar mensagens pendentes além do limite por execução.
 - Teste integrado real com Gmail, Google Sheets e Google Apps Script.
+
+
+## Correção incremental — recuperação de reservas interrompidas
+
+### Alteração realizada
+- As reservas novas passam a armazenar data e hora de início.
+- Antes de chamar `criarAgendamento()`, o código gerado é associado à reserva da mensagem.
+- Reservas com mais de 35 minutos podem ser recuperadas. O prazo supera o limite máximo usual de execução do Apps Script, inclusive o limite ampliado de 30 minutos.
+- Na recuperação, o sistema consulta a aba AGENDA pelo código reservado:
+  - se o código já existir, registra a mensagem como processada e não cria outro agendamento;
+  - se o código não existir, libera a mensagem para nova tentativa.
+- O filtro de mensagens permite que reservas expiradas retornem ao Service para recuperação.
+- Foi removida uma declaração duplicada de `agendamentoEmailRepositoryObterEmailContaExecutora()` identificada durante a revisão.
+
+### Compatibilidade com reservas antigas
+- Reservas gravadas pela versão anterior apenas como `PROCESSANDO`, sem data e sem código associado, não são recuperadas automaticamente.
+- Essas reservas permanecem bloqueadas para evitar duplicidade, pois não há informação suficiente para confirmar se a criação chegou a ocorrer.
+- A conferência e eventual liberação dessas reservas antigas exigem verificação manual da aba AGENDA.
+
+### Arquivos alterados
+- `AgendamentoEmailRepository.gs` — reserva com data, expiração, recuperação pelo código e filtro de mensagens expiradas.
+- `AgendamentoEmailService.gs` — grava o código na reserva antes de iniciar a criação e preserva a reserva quando o código já foi gravado.
+- `tests/AgendamentoEmailRepository.test.cjs` — testes de reserva ativa, expirada, recuperação e compatibilidade antiga.
+- `tests/AgendamentoEmailService.test.cjs` — teste do vínculo do código antes da criação.
+- `PROJECT_STATUS.md` — registro da correção.
+
+### Arquivos mantidos
+- `AgendamentoService.gs` e `AgendamentoRepository.gs` — fluxo de criação e consulta do código existentes foram reutilizados.
+- Nenhum arquivo foi criado ou excluído nesta etapa.
+
+### Como testar
+1. Executar `npm test`.
+2. Confirmar que reservas recentes não são retomadas.
+3. Confirmar que reserva expirada sem registro correspondente na AGENDA pode ser retomada.
+4. Confirmar que reserva expirada cujo código já existe na AGENDA é concluída sem nova criação.
+5. Confirmar que reservas antigas sem data permanecem bloqueadas para revisão manual.
+
+### Ressalvas
+- O prazo de 35 minutos é uma proteção operacional, não um teste integrado de interrupção real do Apps Script.
+- A recuperação pressupõe que os códigos de agendamento sejam únicos, conforme o fluxo atual de geração e validação.
+
+### Pendências
+- Estratégia para controlar o crescimento dos registros de mensagens processadas.
+- Retorno visual para indicar mensagens pendentes além do limite por execução.
+- Teste integrado real com Gmail, Google Sheets e Google Apps Script.
