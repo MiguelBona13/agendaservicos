@@ -9,13 +9,25 @@
  * Dependências principais:
  * - GmailApp, para pesquisar e ler mensagens;
  * - PropertiesService, para persistir a data inicial e os IDs processados;
- * - Utilities e Session, para formatar a data usada na pesquisa do Gmail.
+ * - Utilities e Session, para formatar a data e identificar a conta executora.
  */
 
 const AGENDAMENTO_EMAIL_PROPRIEDADES = {
   DATA_INICIAL: "AGENDAMENTO_EMAIL_DATA_INICIAL",
   PROCESSADO_PREFIXO: "AGENDAMENTO_EMAIL_PROCESSADO_"
 };
+
+
+/**
+ * Obtém o endereço da conta que efetivamente executa o projeto Apps Script.
+ * Em uma implantação configurada para executar como o proprietário, retorna
+ * o endereço dessa conta. Um resultado vazio deve bloquear a importação.
+ *
+ * @return {string} Endereço de e-mail da conta executora, ou texto vazio.
+ */
+function agendamentoEmailRepositoryObterEmailContaExecutora() {
+  return String(Session.getEffectiveUser().getEmail() || "").trim().toLowerCase();
+}
 
 /**
  * Registra uma única vez o início do monitoramento de novos e-mails.
