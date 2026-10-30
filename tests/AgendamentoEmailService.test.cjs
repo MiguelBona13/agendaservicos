@@ -28,8 +28,8 @@ function criarAmbiente(mensagens) {
     },
     agendamentoEmailRepositoryReservarProcessamento: () => true,
     agendamentoEmailRepositoryRegistrarProcessamento: (id, codigo) => registrados.push({ id, codigo }),
-    agendamentoEmailRepositoryAtualizarReservaProcessamento: (id, codigo) => reservasAtualizadas.push({ id, codigo }),
-    agendamentoRepositoryCodigoExiste: () => false,
+    agendamentoEmailRepositoryAtualizarReservaProcessamento: (id, dados) => reservasAtualizadas.push({ id, dados }),
+    agendamentoRepositoryBuscarPorCodigo: () => null,
     agendamentoEmailRepositoryLiberarProcessamento: id => liberados.push(id),
     agendamentoValidatorInterpretarEmail: corpo => {
       if (corpo === 'INVALIDO') throw new Error('Formato de e-mail inválido.');
@@ -63,7 +63,17 @@ test('processa e registra uma mensagem válida', () => {
   assert.equal(ambiente.registrados.length, 1);
   assert.equal(ambiente.registrados[0].id, 'email-1');
   assert.equal(ambiente.registrados[0].codigo, '001');
-  assert.deepEqual(ambiente.reservasAtualizadas, [{ id: 'email-1', codigo: '001' }]);
+  assert.deepEqual(ambiente.reservasAtualizadas, [{
+    id: 'email-1',
+    dados: {
+      codigo: '001',
+      data: '2026-11-05',
+      codigoPeriodo: 'P1',
+      codigoFuncionario: '020',
+      codigoCliente: '001',
+      codigoServico: '010'
+    }
+  }]);
 });
 
 test('uma mensagem inválida não impede o processamento das demais', () => {
