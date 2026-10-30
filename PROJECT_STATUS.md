@@ -1,10 +1,10 @@
 # PROJECT_STATUS.md — Status do Projeto Agenda de Serviços
 
 ## Versão atual
-Refatoração estrutural da entidade Agendamento preparada para instalação; testes integrados pendentes.
+Importação de agendamentos por e-mail com validação do remetente pela conta executora; testes integrados reais ainda pendentes.
 
 ## Etapa atual
-Consolidação das responsabilidades de Agendamento nas camadas Service, Rules, Validator e Repository.
+Correções incrementais de segurança e confiabilidade da importação de agendamentos por e-mail.
 
 ## Concluído até o momento
 - Definição do estudo de caso Agenda de Serviços.
@@ -180,3 +180,50 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - Inicializar o monitoramento uma única vez.
 - Autorizar o acesso ao Gmail e executar testes integrados com mensagens reais de teste.
 - Validar o comportamento com e-mails válidos, inválidos, nomes duplicados e conflitos de horário.
+
+
+## Correção incremental — autorização do remetente
+
+### Alteração realizada
+- A importação consulta o endereço da conta efetivamente executora por meio de `Session.getEffectiveUser().getEmail()`.
+- Cada mensagem é validada antes da reserva de processamento.
+- Somente mensagens cujo campo de remetente corresponda à conta executora podem seguir para interpretação e criação do agendamento.
+- Se o Apps Script não conseguir identificar o endereço da conta executora, a operação é interrompida por segurança.
+- A regra aceita o formato simples de e-mail e o formato de nome de exibição seguido do endereço entre sinais de menor e maior.
+
+### Configuração de implantação
+- Para usar a conta proprietária do aplicativo como identidade executora, a implantação do aplicativo da web deve estar configurada como **Executar como: Eu**.
+- A conta que executa o aplicativo precisa autorizar o acesso ao Gmail.
+
+### Arquivos criados
+- `AgendamentoEmailRules.gs` — regra de autorização do remetente.
+- `tests/AgendamentoEmailRulesRemetente.test.cjs` — testes unitários da regra de autorização.
+
+### Arquivos alterados
+- `AgendamentoEmailRepository.gs` — leitura do endereço da conta executora.
+- `AgendamentoEmailService.gs` — validação do remetente antes de reservar/processar a mensagem.
+- `tests/AgendamentoEmailRepository.test.cjs` — teste da identificação da conta executora.
+- `tests/AgendamentoEmailService.test.cjs` — testes de remetente autorizado, não autorizado e identidade indisponível.
+- `PROJECT_STATUS.md` — atualização do estado e registro desta etapa.
+
+### Arquivos mantidos
+- `AgendamentoService.gs`, `AgendamentoRepository.gs`, `AgendamentoValidator.gs`, `AgendamentoRules.gs`, `Agenda.js` e `Index.html` — fluxo existente preservado.
+- `tests/AgendamentoEmailRules.test.cjs` — mantido, pois já cobre as regras de resolução de cadastros e períodos.
+- Nenhum arquivo foi excluído.
+
+### Como testar
+1. Executar `npm test`.
+2. Confirmar que mensagem enviada pela conta executora pode seguir para validação do conteúdo.
+3. Confirmar que mensagem enviada por outro endereço é rejeitada e não reserva o ID para processamento.
+4. Confirmar que a ausência do endereço da conta executora bloqueia a operação.
+5. Na implantação real, selecionar **Executar como: Eu**, autorizar Gmail e testar com mensagem enviada pela própria conta.
+
+### Ressalvas
+- A validação compara o campo From retornado pelo Gmail. Ela reduz o processamento acidental de mensagens de outros remetentes, mas não substitui mecanismos de autenticação de e-mail contra falsificação do cabeçalho do remetente.
+- O teste automatizado usa simulações e não comprova o comportamento real da conta executora no ambiente implantado.
+
+### Pendências
+- Recuperação segura de reservas de processamento interrompidas.
+- Estratégia para controlar o crescimento dos registros de mensagens processadas.
+- Retorno visual para indicar mensagens pendentes além do limite por execução.
+- Teste integrado real com Gmail, Google Sheets e Google Apps Script.
