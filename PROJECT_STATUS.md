@@ -235,9 +235,9 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - As reservas novas passam a armazenar data e hora de início.
 - Antes de chamar `criarAgendamento()`, o código gerado é associado à reserva da mensagem.
 - Reservas com mais de 35 minutos podem ser recuperadas. O prazo supera o limite máximo usual de execução do Apps Script, inclusive o limite ampliado de 30 minutos.
-- Na recuperação, o sistema consulta a aba AGENDA pelo código reservado:
-  - se o código já existir, registra a mensagem como processada e não cria outro agendamento;
-  - se o código não existir, libera a mensagem para nova tentativa.
+- Na recuperação, o sistema consulta a aba AGENDA pelo código reservado e compara também data, período, profissional, cliente e serviço:
+  - se todos os dados corresponderem, registra a mensagem como processada e não cria outro agendamento;
+  - se não houver registro correspondente, libera a mensagem para nova tentativa.
 - O filtro de mensagens permite que reservas expiradas retornem ao Service para recuperação.
 - Foi removida uma declaração duplicada de `agendamentoEmailRepositoryObterEmailContaExecutora()` identificada durante a revisão.
 
@@ -266,7 +266,7 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Ressalvas
 - O prazo de 35 minutos é uma proteção operacional, não um teste integrado de interrupção real do Apps Script.
-- A recuperação pressupõe que os códigos de agendamento sejam únicos, conforme o fluxo atual de geração e validação.
+- A recuperação compara o código e os dados completos do agendamento para reduzir o risco de confundir uma colisão de código com a gravação originada pelo e-mail.
 
 ### Pendências
 - Estratégia para controlar o crescimento dos registros de mensagens processadas.
