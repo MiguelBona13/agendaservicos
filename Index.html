@@ -213,6 +213,10 @@
               <select id="clienteAgendamento" required>
                 <option value="">Carregando clientes...</option>
               </select>
+              <div class="acoes">
+                <button class="botao botao-secundario" id="botaoVerificarEmail" type="button" disabled>Verificar Email</button>
+              </div>
+              <p class="ajuda">Envia uma mensagem de teste para o e-mail cadastrado do cliente selecionado.</p>
             </div>
 
             <div class="campo">
@@ -303,6 +307,7 @@
   const clienteAgendamento = el("clienteAgendamento");
   const servicoAgendamento = el("servicoAgendamento");
   const botaoCadastrarAgendamento = el("botaoCadastrarAgendamento");
+  const botaoVerificarEmail = el("botaoVerificarEmail");
 
   function mostrarMensagem(texto, tipo) {
     mensagem.textContent = texto;
@@ -524,6 +529,8 @@
           "Selecione um cliente",
           item => item.nome + " (" + item.codigo + ")"
         );
+
+        botaoVerificarEmail.disabled = true;
       })
       .withFailureHandler(erro => {
         clienteAgendamento.innerHTML = '<option value="">Erro ao carregar clientes</option>';
@@ -757,6 +764,8 @@
 
     if (nomeAba === "AGENDA") {
       formAgendamento.reset();
+      botaoVerificarEmail.disabled = true;
+      botaoVerificarEmail.textContent = "Verificar Email";
       carregarDadosAgendamento();
     }
   }
@@ -769,6 +778,49 @@
 
   cidadeCliente.addEventListener("change", () => {
     carregarBairros(cidadeCliente.value);
+  });
+
+  // Habilita o teste somente quando houver um cliente selecionado.
+  clienteAgendamento.addEventListener("change", () => {
+    botaoVerificarEmail.disabled = !clienteAgendamento.value;
+    limparMensagem();
+  });
+
+  // Solicita ao servidor o envio de uma mensagem de teste ao cliente.
+  botaoVerificarEmail.addEventListener("click", () => {
+    const codigoCliente = clienteAgendamento.value;
+
+    if (!codigoCliente) {
+      mostrarMensagem("Selecione um cliente antes de verificar o e-mail.", "erro");
+      return;
+    }
+
+    botaoVerificarEmail.disabled = true;
+    botaoVerificarEmail.textContent = "Enviando...";
+    limparMensagem();
+
+    google.script.run
+      .withSuccessHandler(resultado => {
+        const destinatario = resultado && resultado.destinatario
+          ? " Destinatário: " + resultado.destinatario + "."
+          : "";
+
+        mostrarMensagem(
+          (resultado && resultado.mensagem
+            ? resultado.mensagem
+            : "Solicitação de envio aceita.") + destinatario,
+          "sucesso"
+        );
+
+        botaoVerificarEmail.disabled = !clienteAgendamento.value;
+        botaoVerificarEmail.textContent = "Verificar Email";
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Não foi possível enviar o e-mail de teste: ");
+        botaoVerificarEmail.disabled = !clienteAgendamento.value;
+        botaoVerificarEmail.textContent = "Verificar Email";
+      })
+      .clienteServiceEnviarEmailTeste(codigoCliente);
   });
 
   botaoAtualizar.addEventListener("click", () => {
