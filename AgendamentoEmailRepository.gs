@@ -302,7 +302,7 @@ function agendamentoEmailRepositoryReservarProcessamento(idMensagem) {
  * Esse vínculo permite recuperar a execução com segurança após uma interrupção.
  *
  * @param {string} idMensagem Identificador único da mensagem.
- * @param {string} codigoAgendamento Código que será usado na aba AGENDA.
+ * @param {{codigo:string,data:string,codigoPeriodo:string,codigoFuncionario:string,codigoCliente:string,codigoServico:string}} dadosAgendamento Dados que serão gravados na aba AGENDA.
  * @return {void}
  * @throws {Error} Quando a reserva não existir ou não estiver no estado esperado.
  */
