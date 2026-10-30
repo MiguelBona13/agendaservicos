@@ -112,9 +112,11 @@ function agendamentoEmailRepositoryListarMensagensNovas(limiteMaximo) {
         const assunto = String(mensagem.getSubject() || "").trim();
         const dataRecebimento = mensagem.getDate();
         const id = String(mensagem.getId() || "").trim();
+        const estaNaCaixaEntrada = mensagem.isInInbox();
 
         if (
           !id ||
+          !estaNaCaixaEntrada ||
           !assunto.toUpperCase().includes("AGENDAMENTO") ||
           !(dataRecebimento instanceof Date) ||
           dataRecebimento.getTime() <= dataInicial
