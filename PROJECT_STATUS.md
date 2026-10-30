@@ -120,7 +120,7 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Comportamento implementado
 - O botão **Verificar Email**, na tela Agenda, foi reaproveitado para consultar mensagens recebidas na caixa de entrada com assunto contendo `AGENDAMENTO`.
-- Somente mensagens recebidas depois da data e hora de inicialização do monitoramento são consideradas.
+- Somente mensagens recebidas depois da data e hora de inicialização do monitoramento e que ainda estejam individualmente na caixa de entrada são consideradas; respostas enviadas na mesma conversa são ignoradas.
 - O sistema interpreta os campos CLIENTE, SERVIÇO, PROFISSIONAL, DATA e HORÁRIO.
 - Os códigos internos são localizados pelos nomes existentes nas abas CLIENTES, SERVICOS e FUNCIONARIOS.
 - O horário informado deve corresponder exatamente a um período ativo da aba PERIODOS.
@@ -156,8 +156,8 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Testes automatizados
 - GitHub Actions: execução concluída com sucesso.
-- Resultado registrado: 30 testes aprovados e 0 falhas.
-- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/40983256723
+- Resultado registrado na execução mais recente: 31 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/40983374620
 
 ### Como ativar e testar no Google Apps Script
 1. Atualizar o projeto com os arquivos desta branch e implantar uma nova versão do aplicativo.
