@@ -57,6 +57,7 @@ function criarMensagem({ id, assunto, data, corpo = 'dados', remetente = 'client
     getId: () => id,
     getSubject: () => assunto,
     getDate: () => new Date(data),
+    isInInbox: () => true,
     getFrom: () => remetente,
     getPlainBody: () => corpo
   };
@@ -126,4 +127,33 @@ test('registra o ID da mensagem associado ao código criado', () => {
     ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-456'),
     'AG-002'
   );
+});
+
+
+test('ignora respostas enviadas ou mensagens fora da caixa de entrada na mesma conversa', () => {
+  const marco = new Date('2026-10-29T12:00:00Z').getTime();
+  const recebida = {
+    getId: () => 'recebida',
+    getSubject: () => 'AGENDAMENTO',
+    getDate: () => new Date(marco + 1000),
+    isInInbox: () => true,
+    getFrom: () => 'cliente@exemplo.com',
+    getPlainBody: () => 'dados'
+  };
+  const enviada = {
+    getId: () => 'enviada',
+    getSubject: () => 'Re: AGENDAMENTO',
+    getDate: () => new Date(marco + 2000),
+    isInInbox: () => false,
+    getFrom: () => 'agenda@exemplo.com',
+    getPlainBody: () => 'resposta'
+  };
+  const ambiente = criarAmbiente({
+    dataInicial: marco,
+    threads: [{ getMessages: () => [recebida, enviada] }]
+  });
+
+  const resultado = ambiente.contexto.agendamentoEmailRepositoryListarMensagensNovas();
+  assert.equal(resultado.length, 1);
+  assert.equal(resultado[0].id, 'recebida');
 });
