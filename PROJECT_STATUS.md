@@ -310,3 +310,30 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 ### Ressalvas
 - A detecção é feita por amostragem de uma mensagem além do limite. Se houver 101 ou mais mensagens, o sistema informa que há pendências; não informa o total exato.
 - A execução completa da suíte e o teste integrado real com Gmail, Google Sheets e Google Apps Script ainda precisam ser confirmados.
+
+## Ajuste de validação — teste da reserva de e-mail
+
+### Alteração realizada
+- Corrigida a comparação do teste de integração isolado do Service para validar os campos da reserva sem comparar diretamente objetos criados em contextos JavaScript diferentes (VM do Node.js).
+- A falha identificada era do mecanismo de comparação do teste; os valores efetivamente produzidos estavam corretos.
+- Nenhuma regra de negócio ou comportamento da importação foi alterado.
+
+### Arquivos alterados
+- `tests/AgendamentoEmailService.test.cjs` — comparação explícita dos campos da reserva.
+- `PROJECT_STATUS.md` — registro da correção.
+
+### Arquivos mantidos
+- `Index.html` — botão **Verificar Email** e chamada do Service mantidos.
+- `AgendamentoEmailService.gs`, `AgendamentoEmailRepository.gs`, `AgendamentoEmailRules.gs`, `AgendamentoValidator.gs`, `AgendamentoRules.gs` e `AgendamentoRepository.gs` — rotina e camadas de negócio mantidas.
+- Nenhum arquivo criado ou excluído.
+
+### Como testar
+1. Executar `npm test`.
+2. Confirmar que os testes do Service validam os dados gravados na reserva.
+3. Conferir a execução do GitHub Actions vinculada ao commit desta correção.
+4. Realizar o teste integrado no Apps Script com Gmail e Google Sheets.
+
+### Situação
+- A correção do teste foi enviada à branch `feature/verificar-email-cliente`.
+- A execução automatizada correspondente ainda precisa concluir para confirmar a suíte completa.
+
