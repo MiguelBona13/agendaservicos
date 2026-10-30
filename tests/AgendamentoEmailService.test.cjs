@@ -121,3 +121,23 @@ test('interrompe o processamento quando não identifica a conta executora', () =
     /Não foi possível identificar a conta/
   );
 });
+
+
+test('processa no máximo 100 mensagens e informa quando existem outras pendentes', () => {
+  const mensagens = Array.from({ length: 101 }, (_, indice) => ({
+    id: 'email-' + indice,
+    assunto: 'AGENDAMENTO',
+    remetente: 'app@exemplo.com',
+    corpo: 'VALIDO'
+  }));
+  const ambiente = criarAmbiente(mensagens);
+  const resultado = ambiente.contexto.agendamentoEmailServiceProcessarNovosEmails();
+
+  assert.equal(resultado.totalEncontrados, 100);
+  assert.equal(resultado.totalCriados, 100);
+  assert.equal(resultado.totalFalhas, 0);
+  assert.equal(resultado.maisMensagensPendentes, true);
+  assert.match(resultado.mensagem, /Há mais mensagens pendentes/);
+  assert.equal(ambiente.registrados.length, 100);
+  assert.equal(ambiente.reservasAtualizadas.length, 100);
+});
