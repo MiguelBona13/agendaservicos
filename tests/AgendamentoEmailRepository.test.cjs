@@ -11,7 +11,7 @@ const codigo = fs.readFileSync(
 
 function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
   const propriedades = new Map();
-  const codigosExistentes = new Set();
+  const registrosAgenda = new Map();
   if (dataInicial !== null) {
     propriedades.set('AGENDAMENTO_EMAIL_DATA_INICIAL', String(dataInicial));
   }
@@ -49,7 +49,7 @@ function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
         releaseLock: () => {}
       })
     },
-    agendamentoRepositoryCodigoExiste: codigo => codigosExistentes.has(codigo),
+    agendamentoRepositoryBuscarPorCodigo: codigo => registrosAgenda.get(codigo) || null,
     GmailApp: {
       search: (...args) => {
         chamadasBusca.push(args);
@@ -60,7 +60,7 @@ function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
 
   vm.createContext(contexto);
   vm.runInContext(codigo, contexto);
-  return { contexto, propriedades, chamadasBusca };
+  return { contexto, propriedades, chamadasBusca, registrosAgenda };
 }
 
 function criarMensagem({ id, assunto, data, corpo = 'dados', remetente = 'cliente@exemplo.com' }) {
@@ -205,7 +205,7 @@ test('retoma reserva expirada quando o código ainda não existe na AGENDA', () 
   const ambiente = criarAmbiente();
   ambiente.propriedades.set(
     'AGENDAMENTO_EMAIL_PROCESSADO_msg-expirada',
-    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':AG-900'
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':{"codigo":"AG-900","data":"2026-11-05","codigoPeriodo":"P1","codigoFuncionario":"020","codigoCliente":"001","codigoServico":"010"}'
   );
 
   assert.equal(
@@ -220,10 +220,17 @@ test('retoma reserva expirada quando o código ainda não existe na AGENDA', () 
 
 test('conclui reserva expirada quando o código já está na AGENDA', () => {
   const ambiente = criarAmbiente();
-  ambiente.contexto.agendamentoRepositoryCodigoExiste = codigo => codigo === 'AG-901';
+  ambiente.registrosAgenda.set('AG-901', {
+    codigo: 'AG-901',
+    data: '2026-11-05',
+    codigoPeriodo: 'P1',
+    codigoFuncionario: '020',
+    codigoCliente: '001',
+    codigoServico: '010'
+  });
   ambiente.propriedades.set(
     'AGENDAMENTO_EMAIL_PROCESSADO_msg-criada',
-    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':AG-901'
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':{"codigo":"AG-901","data":"2026-11-05","codigoPeriodo":"P1","codigoFuncionario":"020","codigoCliente":"001","codigoServico":"010"}'
   );
 
   assert.equal(
@@ -303,4 +310,34 @@ test('não lista reserva que ainda está dentro do prazo de segurança', () => {
 
   const resultado = ambiente.contexto.agendamentoEmailRepositoryListarMensagensNovas();
   assert.equal(resultado.length, 0);
+});
+
+
+test('não confunde código igual com agendamento de dados diferentes', () => {
+  const ambiente = criarAmbiente();
+  ambiente.registrosAgenda.set('AG-904', {
+    codigo: 'AG-904',
+    data: '2026-11-06',
+    codigoPeriodo: 'P1',
+    codigoFuncionario: '020',
+    codigoCliente: '001',
+    codigoServico: '010'
+  });
+  const dadosReserva = {
+    codigo: 'AG-904',
+    data: '2026-11-05',
+    codigoPeriodo: 'P1',
+    codigoFuncionario: '020',
+    codigoCliente: '001',
+    codigoServico: '010'
+  };
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_msg-colisao',
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':' + JSON.stringify(dadosReserva)
+  );
+
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-colisao'),
+    true
+  );
 });
