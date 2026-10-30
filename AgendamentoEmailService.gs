@@ -96,6 +96,7 @@ function agendamentoEmailServiceProcessarNovosEmails() {
 
     let agendamentoCriado = false;
     let codigoAgendamento = "";
+    let dadosAgendamentoReserva = null;
 
     try {
       const dadosEmail = agendamentoValidatorInterpretarEmail(mensagem.corpo);
@@ -120,9 +121,17 @@ function agendamentoEmailServiceProcessarNovosEmails() {
         cadastros.periodos
       );
       codigoAgendamento = gerarCodigoAgendamento();
+      dadosAgendamentoReserva = {
+        codigo: codigoAgendamento,
+        data: dadosEmail.data,
+        codigoPeriodo: periodo.codigo,
+        codigoFuncionario: funcionario.codigo,
+        codigoCliente: cliente.codigo,
+        codigoServico: servico.codigo
+      };
       agendamentoEmailRepositoryAtualizarReservaProcessamento(
         mensagem.id,
-        codigoAgendamento
+        dadosAgendamentoReserva
       );
 
       const resultado = criarAgendamento(
@@ -152,8 +161,18 @@ function agendamentoEmailServiceProcessarNovosEmails() {
 
       // Se o agendamento já foi criado, manter a reserva evita duplicidade
       // caso ocorra falha ao registrar o ID da mensagem como processado.
-      const codigoJaGravado = codigoAgendamento &&
-        agendamentoRepositoryCodigoExiste(codigoAgendamento);
+      const agendamentoExistente = codigoAgendamento
+        ? agendamentoRepositoryBuscarPorCodigo(codigoAgendamento)
+        : null;
+      const codigoJaGravado = Boolean(
+        agendamentoExistente &&
+        dadosAgendamentoReserva &&
+        String(agendamentoExistente.data) === String(dadosAgendamentoReserva.data) &&
+        String(agendamentoExistente.codigoPeriodo) === String(dadosAgendamentoReserva.codigoPeriodo) &&
+        String(agendamentoExistente.codigoFuncionario) === String(dadosAgendamentoReserva.codigoFuncionario) &&
+        String(agendamentoExistente.codigoCliente) === String(dadosAgendamentoReserva.codigoCliente) &&
+        String(agendamentoExistente.codigoServico) === String(dadosAgendamentoReserva.codigoServico)
+      );
 
       if (!agendamentoCriado && !codigoJaGravado) {
         agendamentoEmailRepositoryLiberarProcessamento(mensagem.id);
