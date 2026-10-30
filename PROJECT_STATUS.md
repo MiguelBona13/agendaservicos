@@ -68,3 +68,49 @@ A lógica da aplicação não foi alterada nesta etapa de automação de testes.
 - Ampliar testes para Validator e Service, uma camada por vez.
 - Planejar testes integrados no Google Apps Script.
 - Considerar proteção da branch principal para exigir verificações bem-sucedidas antes de integrar pull requests.
+
+
+## Etapa em andamento — Envio de e-mail de teste ao cliente
+
+### Implementação realizada
+- Adicionado o botão **Verificar Email** ao formulário de agendamento.
+- O botão é habilitado somente quando um cliente está selecionado.
+- Criado o fluxo de consulta do endereço de e-mail cadastrado do cliente.
+- Criadas as camadas ClienteService, ClienteValidator e ClienteRepository para coordenar, validar e consultar os dados.
+- O envio utiliza MailApp do Google Apps Script.
+- A interface informa quando o serviço de e-mail aceita a solicitação ou apresenta o erro retornado.
+- Adicionados cinco testes unitários para o ClienteValidator.
+
+### Arquivos criados
+- `ClienteService.gs` — coordena o envio da mensagem de teste.
+- `ClienteValidator.gs` — valida o código do cliente e o formato do e-mail.
+- `ClienteRepository.gs` — consulta nome e e-mail na aba CLIENTES.
+- `tests/ClienteValidator.test.cjs` — testes automatizados do validador.
+
+### Arquivos alterados
+- `Index.html` — botão, habilitação conforme seleção e mensagens do resultado.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- `Clientes.js` — cadastro atual de clientes preservado.
+- `Consultas.js` — consultas existentes preservadas.
+- `AgendamentoService.gs`, `AgendamentoRules.gs`, `AgendamentoValidator.gs`, `AgendamentoRepository.gs` e `Agenda.js` — fluxo de agendamento preservado.
+
+### Arquivos que podem ser excluídos
+- Nenhum. Os novos arquivos adicionam responsabilidades que ainda não existiam em camadas próprias.
+
+### Como testar
+1. Executar `npm test) e confirmar os testes existentes e os cinco novos testes do ClienteValidator.
+2. Implantar a versão atualizada do projeto no Google Apps Script.
+3. Autorizar o envio de e-mails quando o Google solicitar a permissão correspondente.
+4. Abrir a tela Agenda, selecionar um cliente com endereço de e-mail válido e clicar em **Verificar Email**.
+5. Confirmar que a interface informa a aceitação da solicitação e conferir a caixa de entrada e a pasta de spam do destinatário.
+6. Testar também um cliente sem e-mail cadastrado e um endereço inválido.
+
+### Ressalva importante
+A confirmação apresentada pelo sistema significa que o MailApp aceitou a solicitação de envio. Ela não comprova entrega, leitura ou chegada à caixa de entrada. A entrega depende também do provedor e das condições do destinatário.
+
+### Pendências
+- Executar e validar a suíte de testes automatizados no GitHub Actions.
+- Realizar teste integrado no Google Apps Script com autorização de envio.
+- Confirmar o recebimento da mensagem em uma conta de teste.
