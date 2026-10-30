@@ -9,6 +9,7 @@ const codigo = fs.readFileSync(path.join(__dirname, '../AgendamentoEmailService.
 function criarAmbiente(mensagens) {
   const registrados = [];
   const liberados = [];
+  const reservasAtualizadas = [];
   let proximoCodigo = 1;
   const contexto = {
     String, Number, Array, Object,
@@ -27,6 +28,8 @@ function criarAmbiente(mensagens) {
     },
     agendamentoEmailRepositoryReservarProcessamento: () => true,
     agendamentoEmailRepositoryRegistrarProcessamento: (id, codigo) => registrados.push({ id, codigo }),
+    agendamentoEmailRepositoryAtualizarReservaProcessamento: (id, codigo) => reservasAtualizadas.push({ id, codigo }),
+    agendamentoRepositoryCodigoExiste: () => false,
     agendamentoEmailRepositoryLiberarProcessamento: id => liberados.push(id),
     agendamentoValidatorInterpretarEmail: corpo => {
       if (corpo === 'INVALIDO') throw new Error('Formato de e-mail inválido.');
@@ -46,7 +49,7 @@ function criarAmbiente(mensagens) {
   };
   vm.createContext(contexto);
   vm.runInContext(codigo, contexto);
-  return { contexto, registrados, liberados };
+  return { contexto, registrados, liberados, reservasAtualizadas };
 }
 
 test('processa e registra uma mensagem válida', () => {
@@ -60,6 +63,7 @@ test('processa e registra uma mensagem válida', () => {
   assert.equal(ambiente.registrados.length, 1);
   assert.equal(ambiente.registrados[0].id, 'email-1');
   assert.equal(ambiente.registrados[0].codigo, '001');
+  assert.deepEqual(ambiente.reservasAtualizadas, [{ id: 'email-1', codigo: '001' }]);
 });
 
 test('uma mensagem inválida não impede o processamento das demais', () => {
