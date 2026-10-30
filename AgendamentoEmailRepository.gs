@@ -258,16 +258,33 @@ function agendamentoEmailRepositoryReservarProcessamento(idMensagem) {
       return false;
     }
 
-    const codigoAgendamento = partes.slice(2).join(":").trim();
+    let dadosAgendamentoReserva = null;
 
-    // Se o código reservado já está na AGENDA, a criação ocorreu antes da
-    // interrupção. Marca a mensagem como concluída em vez de tentar criá-la
-    // novamente.
-    if (
-      codigoAgendamento &&
-      agendamentoRepositoryCodigoExiste(codigoAgendamento)
-    ) {
-      propriedades.setProperty(chave, codigoAgendamento);
+    try {
+      const jsonReserva = partes.slice(2).join(":").trim();
+      dadosAgendamentoReserva = jsonReserva ? JSON.parse(jsonReserva) : null;
+    } catch (erroLeituraReserva) {
+      dadosAgendamentoReserva = null;
+    }
+
+    // O código sozinho não é suficiente: a conferência também compara os
+    // dados do agendamento para evitar confundir uma colisão com outra criação.
+    const agendamentoExistente = dadosAgendamentoReserva &&
+      dadosAgendamentoReserva.codigo
+      ? agendamentoRepositoryBuscarPorCodigo(dadosAgendamentoReserva.codigo)
+      : null;
+
+    const reservaCorrespondeAoAgendamento = Boolean(
+      agendamentoExistente &&
+      String(agendamentoExistente.data) === String(dadosAgendamentoReserva.data) &&
+      String(agendamentoExistente.codigoPeriodo) === String(dadosAgendamentoReserva.codigoPeriodo) &&
+      String(agendamentoExistente.codigoFuncionario) === String(dadosAgendamentoReserva.codigoFuncionario) &&
+      String(agendamentoExistente.codigoCliente) === String(dadosAgendamentoReserva.codigoCliente) &&
+      String(agendamentoExistente.codigoServico) === String(dadosAgendamentoReserva.codigoServico)
+    );
+
+    if (reservaCorrespondeAoAgendamento) {
+      propriedades.setProperty(chave, String(dadosAgendamentoReserva.codigo));
       return false;
     }
 
@@ -291,13 +308,22 @@ function agendamentoEmailRepositoryReservarProcessamento(idMensagem) {
  */
 function agendamentoEmailRepositoryAtualizarReservaProcessamento(
   idMensagem,
-  codigoAgendamento
+  dadosAgendamento
 ) {
   const id = String(idMensagem || "").trim();
-  const codigo = String(codigoAgendamento || "").trim();
+  const dados = dadosAgendamento || {};
+  const codigo = String(dados.codigo || "").trim();
 
-  if (!id || !codigo) {
-    throw new Error("O ID da mensagem e o código do agendamento são obrigatórios.");
+  if (
+    !id ||
+    !codigo ||
+    !String(dados.data || "").trim() ||
+    !String(dados.codigoPeriodo || "").trim() ||
+    !String(dados.codigoFuncionario || "").trim() ||
+    !String(dados.codigoCliente || "").trim() ||
+    !String(dados.codigoServico || "").trim()
+  ) {
+    throw new Error("O ID da mensagem e todos os dados do agendamento são obrigatórios.");
   }
 
   const bloqueio = LockService.getScriptLock();
@@ -321,7 +347,14 @@ function agendamentoEmailRepositoryAtualizarReservaProcessamento(
 
     propriedades.setProperty(
       chave,
-      "PROCESSANDO:" + dataReserva + ":" + codigo
+      "PROCESSANDO:" + dataReserva + ":" + JSON.stringify({
+        codigo: codigo,
+        data: String(dados.data),
+        codigoPeriodo: String(dados.codigoPeriodo),
+        codigoFuncionario: String(dados.codigoFuncionario),
+        codigoCliente: String(dados.codigoCliente),
+        codigoServico: String(dados.codigoServico)
+      })
     );
   } finally {
     bloqueio.releaseLock();
