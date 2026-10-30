@@ -38,7 +38,10 @@ function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
         return `${ano}/${mes}/${dia}`;
       }
     },
-    Session: { getScriptTimeZone: () => 'America/Campo_Grande' },
+    Session: {
+      getScriptTimeZone: () => 'America/Campo_Grande',
+      getEffectiveUser: () => ({ getEmail: () => 'app@exemplo.com' })
+    },
     GmailApp: {
       search: (...args) => {
         chamadasBusca.push(args);
@@ -156,4 +159,13 @@ test('ignora respostas enviadas ou mensagens fora da caixa de entrada na mesma c
   const resultado = ambiente.contexto.agendamentoEmailRepositoryListarMensagensNovas();
   assert.equal(resultado.length, 1);
   assert.equal(resultado[0].id, 'recebida');
+});
+
+
+test('obtém o endereço da conta que executa o Apps Script', () => {
+  const ambiente = criarAmbiente();
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryObterEmailContaExecutora(),
+    'app@exemplo.com'
+  );
 });
