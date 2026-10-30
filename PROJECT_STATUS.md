@@ -1,7 +1,7 @@
 # PROJECT_STATUS.md — Status do Projeto Agenda de Serviços
 
 ## Versão atual
-Importação de agendamentos por e-mail com validação do remetente pela conta executora; testes integrados reais ainda pendentes.
+Importação de agendamentos por e-mail com validação do remetente pela conta executora e recuperação segura de reservas; testes integrados reais ainda pendentes.
 
 ## Etapa atual
 Correções incrementais de segurança e confiabilidade da importação de agendamentos por e-mail.
@@ -263,6 +263,10 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 3. Confirmar que reserva expirada sem registro correspondente na AGENDA pode ser retomada.
 4. Confirmar que reserva expirada cujo código já existe na AGENDA é concluída sem nova criação.
 5. Confirmar que reservas antigas sem data permanecem bloqueadas para revisão manual.
+
+### Validação desta etapa
+- Foram executados 10 cenários direcionados em ambiente Node.js simulado, cobrindo reservas novas, ativas, expiradas, recuperadas, colisão de código e fluxo do Service; 10 aprovados e 0 falhas.
+- A execução completa de `npm test` no GitHub Actions após estas últimas alterações ainda está pendente.
 
 ### Ressalvas
 - O prazo de 35 minutos é uma proteção operacional, não um teste integrado de interrupção real do Apps Script.
