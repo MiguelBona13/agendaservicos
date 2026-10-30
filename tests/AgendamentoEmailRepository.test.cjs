@@ -264,3 +264,43 @@ test('mantém reserva antiga sem data para revisão manual segura', () => {
     'PROCESSANDO'
   );
 });
+
+
+test('lista novamente uma reserva expirada para permitir sua recuperação', () => {
+  const marco = new Date('2026-10-29T12:00:00Z').getTime();
+  const ambiente = criarAmbiente({
+    dataInicial: marco,
+    threads: [{
+      getMessages: () => [
+        criarMensagem({ id: 'reserva-antiga', assunto: 'AGENDAMENTO', data: marco + 1000 })
+      ]
+    }]
+  });
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_reserva-antiga',
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':AG-903'
+  );
+
+  const resultado = ambiente.contexto.agendamentoEmailRepositoryListarMensagensNovas();
+  assert.equal(resultado.length, 1);
+  assert.equal(resultado[0].id, 'reserva-antiga');
+});
+
+test('não lista reserva que ainda está dentro do prazo de segurança', () => {
+  const marco = new Date('2026-10-29T12:00:00Z').getTime();
+  const ambiente = criarAmbiente({
+    dataInicial: marco,
+    threads: [{
+      getMessages: () => [
+        criarMensagem({ id: 'reserva-recente', assunto: 'AGENDAMENTO', data: marco + 1000 })
+      ]
+    }]
+  });
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_reserva-recente',
+    'PROCESSANDO:' + Date.now()
+  );
+
+  const resultado = ambiente.contexto.agendamentoEmailRepositoryListarMensagensNovas();
+  assert.equal(resultado.length, 0);
+});
