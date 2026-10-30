@@ -11,6 +11,7 @@ const codigo = fs.readFileSync(
 
 function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
   const propriedades = new Map();
+  const codigosExistentes = new Set();
   if (dataInicial !== null) {
     propriedades.set('AGENDAMENTO_EMAIL_DATA_INICIAL', String(dataInicial));
   }
@@ -42,6 +43,13 @@ function criarAmbiente({ dataInicial = null, threads = [] } = {}) {
       getScriptTimeZone: () => 'America/Campo_Grande',
       getEffectiveUser: () => ({ getEmail: () => 'app@exemplo.com' })
     },
+    LockService: {
+      getScriptLock: () => ({
+        waitLock: () => {},
+        releaseLock: () => {}
+      })
+    },
+    agendamentoRepositoryCodigoExiste: codigo => codigosExistentes.has(codigo),
     GmailApp: {
       search: (...args) => {
         chamadasBusca.push(args);
@@ -167,5 +175,92 @@ test('obtém o endereço da conta que executa o Apps Script', () => {
   assert.equal(
     ambiente.contexto.agendamentoEmailRepositoryObterEmailContaExecutora(),
     'app@exemplo.com'
+  );
+});
+
+
+test('cria uma reserva com data e hora para permitir recuperação', () => {
+  const ambiente = criarAmbiente();
+  const reservou = ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-reserva');
+  const valor = ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-reserva');
+
+  assert.equal(reservou, true);
+  assert.match(valor, /^PROCESSANDO:\\d+$/);
+});
+
+test('não recupera uma reserva que ainda está dentro do prazo', () => {
+  const ambiente = criarAmbiente();
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_msg-ativa',
+    'PROCESSANDO:' + Date.now()
+  );
+
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-ativa'),
+    false
+  );
+});
+
+test('retoma reserva expirada quando o código ainda não existe na AGENDA', () => {
+  const ambiente = criarAmbiente();
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_msg-expirada',
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':AG-900'
+  );
+
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-expirada'),
+    true
+  );
+  assert.match(
+    ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-expirada'),
+    /^PROCESSANDO:\\d+$/
+  );
+});
+
+test('conclui reserva expirada quando o código já está na AGENDA', () => {
+  const ambiente = criarAmbiente();
+  ambiente.contexto.agendamentoRepositoryCodigoExiste = codigo => codigo === 'AG-901';
+  ambiente.propriedades.set(
+    'AGENDAMENTO_EMAIL_PROCESSADO_msg-criada',
+    'PROCESSANDO:' + (Date.now() - 36 * 60 * 1000) + ':AG-901'
+  );
+
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-criada'),
+    false
+  );
+  assert.equal(
+    ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-criada'),
+    'AG-901'
+  );
+});
+
+test('associa o código à reserva antes da criação do agendamento', () => {
+  const ambiente = criarAmbiente();
+  ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-codigo');
+
+  ambiente.contexto.agendamentoEmailRepositoryAtualizarReservaProcessamento(
+    'msg-codigo',
+    'AG-902'
+  );
+
+  assert.match(
+    ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-codigo'),
+    /^PROCESSANDO:\\d+:AG-902$/
+  );
+});
+
+test('mantém reserva antiga sem data para revisão manual segura', () => {
+  const ambiente = criarAmbiente();
+  ambiente.propriedades.set('AGENDAMENTO_EMAIL_PROCESSADO_msg-legada', 'PROCESSANDO');
+
+  assert.equal(
+    ambiente.contexto.agendamentoEmailRepositoryReservarProcessamento('msg-legada'),
+    false
+  );
+  assert.equal(
+    ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-legada'),
+    'PROCESSANDO'
   );
 });
