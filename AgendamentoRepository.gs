@@ -181,3 +181,81 @@ function agendamentoRepositoryAtualizarStatus(linha, status) {
   aba.getRange(linha, 8).setNumberFormat("@");
   aba.getRange(linha, 8).setValue(String(status));
 }
+
+
+/**
+ * Lê cadastros de clientes, serviços e funcionários e períodos disponíveis
+ * para resolver os nomes recebidos em mensagens de agendamento.
+ *
+ * @return {{clientes:Array<Object>,servicos:Array<Object>,funcionarios:Array<Object>,periodos:Array<Object>}} Cadastros necessários à importação.
+ */
+function agendamentoRepositoryListarCadastrosEmail() {
+  const clientes = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.CLIENTES);
+  const servicos = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.SERVICOS);
+  const funcionarios = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.FUNCIONARIOS);
+  const abaPeriodos = getSheet(CONFIG.ABAS.PERIODOS);
+  const ultimaLinhaPeriodos = abaPeriodos.getLastRow();
+
+  const periodos = ultimaLinhaPeriodos < 2
+    ? []
+    : abaPeriodos
+      .getRange(2, 1, ultimaLinhaPeriodos - 1, 5)
+      .getDisplayValues()
+      .filter(linha =>
+        String(linha[0] || "").trim() &&
+        String(linha[1] || "").trim()
+      )
+      .map(linha => ({
+        codigo: String(linha[0]).trim(),
+        descricao: String(linha[1]).trim(),
+        horaInicial: String(linha[2]).trim(),
+        horaFinal: String(linha[3]).trim(),
+        ativo: ["sim", "true", "verdadeiro", "ativo", "1"].includes(
+          String(linha[4] || "").trim().toLowerCase()
+        )
+      }));
+
+  return {
+    clientes: clientes,
+    servicos: servicos,
+    funcionarios: funcionarios,
+    periodos: periodos
+  };
+}
+
+/**
+ * Lê código e nome de uma aba de cadastro permitida.
+ *
+ * @param {string} nomeAba Nome da aba de clientes, serviços ou funcionários.
+ * @return {Array<{codigo:string,nome:string}>} Cadastros com código e nome.
+ */
+function agendamentoRepositoryLerCodigoNome(nomeAba) {
+  const abasPermitidas = [
+    CONFIG.ABAS.CLIENTES,
+    CONFIG.ABAS.SERVICOS,
+    CONFIG.ABAS.FUNCIONARIOS
+  ];
+
+  if (!abasPermitidas.includes(nomeAba)) {
+    throw new Error("Aba não permitida para consulta de cadastros.");
+  }
+
+  const aba = getSheet(nomeAba);
+  const ultimaLinha = aba.getLastRow();
+
+  if (ultimaLinha < 2) {
+    return [];
+  }
+
+  return aba
+    .getRange(2, 1, ultimaLinha - 1, 2)
+    .getDisplayValues()
+    .filter(linha =>
+      String(linha[0] || "").trim() &&
+      String(linha[1] || "").trim()
+    )
+    .map(linha => ({
+      codigo: String(linha[0]).trim(),
+      nome: String(linha[1]).trim()
+    }));
+}

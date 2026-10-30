@@ -68,3 +68,81 @@ function agendamentoRulesNormalizarData(valor) {
   const texto = String(valor || "").trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(texto) ? texto : "";
 }
+
+
+/**
+ * Normaliza nomes para comparação sem diferenciar maiúsculas, espaços extras
+ * ou acentos. Não altera o nome original armazenado na planilha.
+ *
+ * @param {string} valor Nome informado no e-mail ou cadastro.
+ * @return {string} Texto normalizado para comparação.
+ */
+function agendamentoRulesNormalizarNome(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Localiza um cadastro pelo nome e exige correspondência única.
+ *
+ * @param {string} nomeInformado Nome recebido no e-mail.
+ * @param {Array<{codigo:string,nome:string}>} cadastros Cadastros consultados pelo Repository.
+ * @param {string} tipoNome Descrição do tipo de cadastro para mensagens de erro.
+ * @return {{codigo:string,nome:string}} Cadastro correspondente.
+ * @throws {Error} Quando não houver correspondência ou houver nomes duplicados.
+ */
+function agendamentoRulesResolverCadastroPorNome(nomeInformado, cadastros, tipoNome) {
+  const nomeNormalizado = agendamentoRulesNormalizarNome(nomeInformado);
+  const correspondencias = (cadastros || []).filter(item =>
+    agendamentoRulesNormalizarNome(item.nome) === nomeNormalizado
+  );
+
+  if (!correspondencias.length) {
+    throw new Error(tipoNome + " não encontrado: " + nomeInformado + ".");
+  }
+
+  if (correspondencias.length > 1) {
+    throw new Error(
+      "Existe mais de um " + tipoNome.toLowerCase() +
+      " com o nome " + nomeInformado + ". Informe um nome exclusivo no e-mail."
+    );
+  }
+
+  return correspondencias[0];
+}
+
+/**
+ * Localiza um período ativo pela combinação exata de hora inicial e final.
+ *
+ * @param {string} horaInicial Horário inicial no formato HH:mm.
+ * @param {string} horaFinal Horário final no formato HH:mm.
+ * @param {Array<Object>} periodos Períodos consultados pelo Repository.
+ * @return {Object} Período ativo correspondente.
+ * @throws {Error} Quando o período não existir ou for ambíguo.
+ */
+function agendamentoRulesResolverPeriodoPorHorario(horaInicial, horaFinal, periodos) {
+  const correspondencias = (periodos || []).filter(periodo =>
+    periodo.ativo &&
+    String(periodo.horaInicial || "").trim() === horaInicial &&
+    String(periodo.horaFinal || "").trim() === horaFinal
+  );
+
+  if (!correspondencias.length) {
+    throw new Error(
+      "Não existe período ativo cadastrado para " +
+      horaInicial + " às " + horaFinal + "."
+    );
+  }
+
+  if (correspondencias.length > 1) {
+    throw new Error(
+      "Há mais de um período ativo com esse horário. Revise a aba PERIODOS."
+    );
+  }
+
+  return correspondencias[0];
+}
