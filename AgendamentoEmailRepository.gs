@@ -14,20 +14,10 @@
 
 const AGENDAMENTO_EMAIL_PROPRIEDADES = {
   DATA_INICIAL: "AGENDAMENTO_EMAIL_DATA_INICIAL",
-  PROCESSADO_PREFIXO: "AGENDAMENTO_EMAIL_PROCESSADO_"
+  PROCESSADO_PREFIXO: "AGENDAMENTO_EMAIL_PROCESSADO_",
+  RESERVA_EXPIRACAO_MS: 35 * 60 * 1000
 };
 
-
-/**
- * Obtém o endereço da conta que efetivamente executa o projeto Apps Script.
- * Em uma implantação configurada para executar como o proprietário, retorna
- * o endereço dessa conta. Um resultado vazio deve bloquear a importação.
- *
- * @return {string} Endereço de e-mail da conta executora, ou texto vazio.
- */
-function agendamentoEmailRepositoryObterEmailContaExecutora() {
-  return String(Session.getEffectiveUser().getEmail() || "").trim().toLowerCase();
-}
 
 /**
  * Obtém o endereço da conta que efetivamente executa o projeto Apps Script.
@@ -222,13 +212,99 @@ function agendamentoEmailRepositoryReservarProcessamento(idMensagem) {
   try {
     const propriedades = PropertiesService.getScriptProperties();
     const chave = AGENDAMENTO_EMAIL_PROPRIEDADES.PROCESSADO_PREFIXO + id;
+    const valorAtual = propriedades.getProperty(chave);
 
-    if (propriedades.getProperty(chave)) {
+    if (!valorAtual) {
+      propriedades.setProperty(chave, "PROCESSANDO:" + Date.now());
+      return true;
+    }
+
+    // Valores sem o formato novo são estados antigos ou registros concluídos.
+    // Eles não são recuperados automaticamente, pois não guardam o código
+    // previamente reservado e a recuperação poderia duplicar um agendamento.
+    if (!String(valorAtual).startsWith("PROCESSANDO:")) {
       return false;
     }
 
-    propriedades.setProperty(chave, "PROCESSANDO");
+    const partes = String(valorAtual).split(":");
+    const dataReserva = Number(partes[1]);
+
+    if (!Number.isFinite(dataReserva) || dataReserva <= 0) {
+      return false;
+    }
+
+    const reservaExpirada =
+      Date.now() - dataReserva > AGENDAMENTO_EMAIL_PROPRIEDADES.RESERVA_EXPIRACAO_MS;
+
+    if (!reservaExpirada) {
+      return false;
+    }
+
+    const codigoAgendamento = partes.slice(2).join(":").trim();
+
+    // Se o código reservado já está na AGENDA, a criação ocorreu antes da
+    // interrupção. Marca a mensagem como concluída em vez de tentar criá-la
+    // novamente.
+    if (
+      codigoAgendamento &&
+      agendamentoRepositoryCodigoExiste(codigoAgendamento)
+    ) {
+      propriedades.setProperty(chave, codigoAgendamento);
+      return false;
+    }
+
+    // Sem código reservado ou sem registro correspondente na AGENDA,
+    // a criação ainda não foi concluída e a mensagem pode ser retomada.
+    propriedades.setProperty(chave, "PROCESSANDO:" + Date.now());
     return true;
+  } finally {
+    bloqueio.releaseLock();
+  }
+}
+
+/**
+ * Associa o código gerado à reserva antes de iniciar a gravação do agendamento.
+ * Esse vínculo permite recuperar a execução com segurança após uma interrupção.
+ *
+ * @param {string} idMensagem Identificador único da mensagem.
+ * @param {string} codigoAgendamento Código que será usado na aba AGENDA.
+ * @return {void}
+ * @throws {Error} Quando a reserva não existir ou não estiver no estado esperado.
+ */
+function agendamentoEmailRepositoryAtualizarReservaProcessamento(
+  idMensagem,
+  codigoAgendamento
+) {
+  const id = String(idMensagem || "").trim();
+  const codigo = String(codigoAgendamento || "").trim();
+
+  if (!id || !codigo) {
+    throw new Error("O ID da mensagem e o código do agendamento são obrigatórios.");
+  }
+
+  const bloqueio = LockService.getScriptLock();
+  bloqueio.waitLock(10000);
+
+  try {
+    const propriedades = PropertiesService.getScriptProperties();
+    const chave = AGENDAMENTO_EMAIL_PROPRIEDADES.PROCESSADO_PREFIXO + id;
+    const valorAtual = String(propriedades.getProperty(chave) || "");
+
+    if (!valorAtual.startsWith("PROCESSANDO:")) {
+      throw new Error("A reserva da mensagem não está ativa.");
+    }
+
+    const partes = valorAtual.split(":");
+    const dataReserva = Number(partes[1]);
+
+    if (!Number.isFinite(dataReserva) || dataReserva <= 0) {
+      throw new Error("A data da reserva da mensagem é inválida.");
+    }
+
+    propriedades.setProperty(
+      chave,
+      "PROCESSANDO:" + dataReserva + ":" + codigo
+    );
   } finally {
     bloqueio.releaseLock();
   }
