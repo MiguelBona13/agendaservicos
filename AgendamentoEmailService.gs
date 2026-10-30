@@ -42,6 +42,16 @@ function agendamentoEmailServiceInicializarMonitoramento() {
  * @throws {Error} Quando o monitoramento ainda não foi inicializado.
  */
 function agendamentoEmailServiceProcessarNovosEmails() {
+  const emailContaExecutora =
+    agendamentoEmailRepositoryObterEmailContaExecutora();
+
+  if (!emailContaExecutora) {
+    throw new Error(
+      "Não foi possível identificar a conta que executa o Google Apps Script. " +
+      "Verifique a configuração de implantação e as permissões da conta."
+    );
+  }
+
   const mensagens = agendamentoEmailRepositoryListarMensagensNovas(100);
 
   if (!mensagens.length) {
@@ -61,6 +71,23 @@ function agendamentoEmailServiceProcessarNovosEmails() {
   let totalFalhas = 0;
 
   mensagens.forEach(mensagem => {
+    try {
+      agendamentoEmailRulesValidarRemetente(
+        mensagem.remetente,
+        emailContaExecutora
+      );
+    } catch (erroRemetente) {
+      totalFalhas += 1;
+      resultados.push({
+        status: "erro",
+        assunto: mensagem.assunto,
+        mensagem: erroRemetente && erroRemetente.message
+          ? erroRemetente.message
+          : String(erroRemetente)
+      });
+      return;
+    }
+
     const reservado = agendamentoEmailRepositoryReservarProcessamento(mensagem.id);
 
     if (!reservado) {
