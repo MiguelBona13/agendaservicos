@@ -249,12 +249,19 @@ test('associa o código à reserva antes da criação do agendamento', () => {
 
   ambiente.contexto.agendamentoEmailRepositoryAtualizarReservaProcessamento(
     'msg-codigo',
-    'AG-902'
+    {
+      codigo: 'AG-902',
+      data: '2026-11-05',
+      codigoPeriodo: 'P1',
+      codigoFuncionario: '020',
+      codigoCliente: '001',
+      codigoServico: '010'
+    }
   );
 
   assert.match(
     ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-codigo'),
-    /^PROCESSANDO:\d+:AG-902$/
+    /^PROCESSANDO:\d+:\{"codigo":"AG-902"/
   );
 });
 
