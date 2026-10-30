@@ -176,3 +176,54 @@ function agendamentoEmailRepositoryRegistrarProcessamento(
     codigo
   );
 }
+
+
+/**
+ * Reserva uma mensagem para impedir que duas execuções a processem ao mesmo tempo.
+ *
+ * @param {string} idMensagem Identificador único da mensagem.
+ * @return {boolean} Verdadeiro quando a reserva foi obtida.
+ */
+function agendamentoEmailRepositoryReservarProcessamento(idMensagem) {
+  const id = String(idMensagem || "").trim();
+
+  if (!id) {
+    throw new Error("O ID da mensagem é obrigatório.");
+  }
+
+  const bloqueio = LockService.getScriptLock();
+  bloqueio.waitLock(10000);
+
+  try {
+    const propriedades = PropertiesService.getScriptProperties();
+    const chave = AGENDAMENTO_EMAIL_PROPRIEDADES.PROCESSADO_PREFIXO + id;
+
+    if (propriedades.getProperty(chave)) {
+      return false;
+    }
+
+    propriedades.setProperty(chave, "PROCESSANDO");
+    return true;
+  } finally {
+    bloqueio.releaseLock();
+  }
+}
+
+/**
+ * Libera a reserva de uma mensagem que não gerou agendamento.
+ * Isso permite corrigir o e-mail e tentar processá-lo novamente.
+ *
+ * @param {string} idMensagem Identificador único da mensagem.
+ * @return {void}
+ */
+function agendamentoEmailRepositoryLiberarProcessamento(idMensagem) {
+  const id = String(idMensagem || "").trim();
+
+  if (!id) {
+    return;
+  }
+
+  PropertiesService.getScriptProperties().deleteProperty(
+    AGENDAMENTO_EMAIL_PROPRIEDADES.PROCESSADO_PREFIXO + id
+  );
+}
