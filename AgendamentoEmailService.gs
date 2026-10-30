@@ -10,7 +10,7 @@
  * - AgendamentoEmailRepository.gs;
  * - AgendamentoRepository.gs;
  * - AgendamentoValidator.gs;
- * - AgendamentoRules.gs;
+ * - AgendamentoRules.gs e AgendamentoEmailRules.gs;
  * - Agenda.js, para gerar o próximo código;
  * - criarAgendamento(), de AgendamentoService.gs.
  */
@@ -95,6 +95,7 @@ function agendamentoEmailServiceProcessarNovosEmails() {
     }
 
     let agendamentoCriado = false;
+    let codigoAgendamento = "";
 
     try {
       const dadosEmail = agendamentoValidatorInterpretarEmail(mensagem.corpo);
@@ -118,7 +119,11 @@ function agendamentoEmailServiceProcessarNovosEmails() {
         dadosEmail.horaFinal,
         cadastros.periodos
       );
-      const codigoAgendamento = gerarCodigoAgendamento();
+      codigoAgendamento = gerarCodigoAgendamento();
+      agendamentoEmailRepositoryAtualizarReservaProcessamento(
+        mensagem.id,
+        codigoAgendamento
+      );
 
       const resultado = criarAgendamento(
         codigoAgendamento,
@@ -147,7 +152,10 @@ function agendamentoEmailServiceProcessarNovosEmails() {
 
       // Se o agendamento já foi criado, manter a reserva evita duplicidade
       // caso ocorra falha ao registrar o ID da mensagem como processado.
-      if (!agendamentoCriado) {
+      const codigoJaGravado = codigoAgendamento &&
+        agendamentoRepositoryCodigoExiste(codigoAgendamento);
+
+      if (!agendamentoCriado && !codigoJaGravado) {
         agendamentoEmailRepositoryLiberarProcessamento(mensagem.id);
       }
 
