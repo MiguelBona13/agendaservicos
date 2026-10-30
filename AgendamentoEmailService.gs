@@ -52,7 +52,12 @@ function agendamentoEmailServiceProcessarNovosEmails() {
     );
   }
 
-  const mensagens = agendamentoEmailRepositoryListarMensagensNovas(100);
+  // Consulta uma mensagem adicional para identificar se o limite da execução
+  // será atingido sem deixar mensagens pendentes sem aviso ao usuário.
+  const mensagensEncontradas =
+    agendamentoEmailRepositoryListarMensagensNovas(101);
+  const maisMensagensPendentes = mensagensEncontradas.length > 100;
+  const mensagens = mensagensEncontradas.slice(0, 100);
 
   if (!mensagens.length) {
     return {
@@ -61,6 +66,7 @@ function agendamentoEmailServiceProcessarNovosEmails() {
       totalCriados: 0,
       totalFalhas: 0,
       resultados: [],
+      maisMensagensPendentes: false,
       mensagem: "Nenhum novo e-mail de agendamento foi encontrado."
     };
   }
@@ -191,9 +197,13 @@ function agendamentoEmailServiceProcessarNovosEmails() {
     totalEncontrados: mensagens.length,
     totalCriados: totalCriados,
     totalFalhas: totalFalhas,
+    maisMensagensPendentes: maisMensagensPendentes,
     resultados: resultados,
     mensagem:
       totalCriados + " agendamento(s) criado(s); " +
-      totalFalhas + " mensagem(ns) com erro."
+      totalFalhas + " mensagem(ns) com erro." +
+      (maisMensagensPendentes
+        ? " Há mais mensagens pendentes; clique novamente em Verificar Email para continuar."
+        : "")
   };
 }
