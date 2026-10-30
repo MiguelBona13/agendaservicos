@@ -185,7 +185,7 @@ test('cria uma reserva com data e hora para permitir recuperação', () => {
   const valor = ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-reserva');
 
   assert.equal(reservou, true);
-  assert.match(valor, /^PROCESSANDO:\\d+$/);
+  assert.match(valor, /^PROCESSANDO:\d+$/);
 });
 
 test('não recupera uma reserva que ainda está dentro do prazo', () => {
@@ -214,7 +214,7 @@ test('retoma reserva expirada quando o código ainda não existe na AGENDA', () 
   );
   assert.match(
     ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-expirada'),
-    /^PROCESSANDO:\\d+$/
+    /^PROCESSANDO:\d+$/
   );
 });
 
@@ -247,7 +247,7 @@ test('associa o código à reserva antes da criação do agendamento', () => {
 
   assert.match(
     ambiente.propriedades.get('AGENDAMENTO_EMAIL_PROCESSADO_msg-codigo'),
-    /^PROCESSANDO:\\d+:AG-902$/
+    /^PROCESSANDO:\d+:AG-902$/
   );
 });
 
