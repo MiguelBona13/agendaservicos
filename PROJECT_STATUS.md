@@ -337,3 +337,11 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - A correção do teste foi enviada à branch `feature/verificar-email-cliente`.
 - A execução automatizada correspondente ainda precisa concluir para confirmar a suíte completa.
 
+## Validação automatizada concluída — importação por e-mail
+
+- GitHub Actions executou a suíte completa após a correção do teste: **49 testes aprovados e 0 falhas**.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/40985443094
+- A rotina e o botão **Verificar Email** estão integrados na branch `feature/verificar-email-cliente`.
+- Permanece pendente somente a validação integrada no Google Apps Script com Gmail e Google Sheets reais.
+- Antes do uso, implantar esta branch no projeto Apps Script, configurar a implantação como **Executar como: Eu**, executar uma vez `agendamentoEmailServiceInicializarMonitoramento()` e autorizar o acesso ao Gmail.
+
