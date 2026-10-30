@@ -70,7 +70,7 @@ A lógica da aplicação não foi alterada nesta etapa de automação de testes.
 - Considerar proteção da branch principal para exigir verificações bem-sucedidas antes de integrar pull requests.
 
 
-## Etapa em andamento — Envio de e-mail de teste ao cliente
+## Etapa anterior — Envio de e-mail de teste ao cliente (botão reaproveitado)
 
 ### Implementação realizada
 - Adicionado o botão **Verificar Email** ao formulário de agendamento.
@@ -114,3 +114,69 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - Executar e validar a suíte de testes automatizados no GitHub Actions.
 - Realizar teste integrado no Google Apps Script com autorização de envio.
 - Confirmar o recebimento da mensagem em uma conta de teste.
+
+
+## Etapa concluída — Importação de agendamentos por e-mail (validação automatizada)
+
+### Comportamento implementado
+- O botão **Verificar Email**, na tela Agenda, foi reaproveitado para consultar mensagens recebidas na caixa de entrada com assunto contendo `AGENDAMENTO`.
+- Somente mensagens recebidas depois da data e hora de inicialização do monitoramento são consideradas.
+- O sistema interpreta os campos CLIENTE, SERVIÇO, PROFISSIONAL, DATA e HORÁRIO.
+- Os códigos internos são localizados pelos nomes existentes nas abas CLIENTES, SERVICOS e FUNCIONARIOS.
+- O horário informado deve corresponder exatamente a um período ativo da aba PERIODOS.
+- A criação reutiliza `criarAgendamento()`, preservando validações, regras de conflito, bloqueio e gravação existentes.
+- Mensagens válidas são registradas pelo ID do Gmail para evitar duplicidade.
+- Mensagens inválidas são informadas individualmente e não impedem o processamento das demais.
+- Mensagens originais não são marcadas como lidas nem movidas.
+
+### Arquivos criados
+- `AgendamentoEmailRepository.gs` — pesquisa mensagens, registra o marco inicial, controla reservas e evita reprocessamento.
+- `AgendamentoEmailService.gs` — coordena a interpretação, resolução dos cadastros e criação dos agendamentos.
+- `tests/AgendamentoEmailRepository.test.cjs`
+- `tests/AgendamentoEmailRules.test.cjs`
+- `tests/AgendamentoEmailValidator.test.cjs`
+- `tests/AgendamentoEmailService.test.cjs`
+- `tests/AgendamentoRepositoryEmail.test.cjs`
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — consulta clientes, serviços, funcionários e períodos para a importação.
+- `AgendamentoRules.gs` — normaliza nomes e resolve correspondências únicas e períodos ativos.
+- `AgendamentoValidator.gs` — interpreta e valida os campos do e-mail.
+- `Index.html` — reaproveita o botão Verificar Email para iniciar a importação, sem depender da seleção de cliente.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- `AgendamentoService.gs` — fluxo oficial de criação preservado e reutilizado.
+- `Agenda.js` — geração de código e compatibilidade com a interface preservadas.
+- `ClienteService.gs`, `ClienteRepository.gs` e `ClienteValidator.gs` — mantidos; não foram excluídos nesta etapa.
+- `AgendamentoEmailRepository.gs` usa GmailApp e PropertiesService; a autorização do Gmail será solicitada pelo Google Apps Script no primeiro uso que exigir acesso à caixa postal.
+
+### Arquivos que podem ser excluídos
+- Nenhum recomendado. Os arquivos da funcionalidade anterior de envio de e-mail de teste foram mantidos para evitar remoção prematura de código ainda disponível no projeto.
+
+### Testes automatizados
+- GitHub Actions: execução concluída com sucesso.
+- Resultado registrado: 30 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/40983256723
+
+### Como ativar e testar no Google Apps Script
+1. Atualizar o projeto com os arquivos desta branch e implantar uma nova versão do aplicativo.
+2. No editor do Google Apps Script, executar manualmente uma única vez a função `agendamentoEmailServiceInicializarMonitoramento()`. Essa execução grava o marco inicial e impede que mensagens antigas sejam importadas.
+3. Abrir a tela Agenda e clicar em **Verificar Email**. No primeiro acesso ao Gmail, autorizar as permissões solicitadas pelo Google.
+4. Enviar uma nova mensagem para a caixa de entrada com assunto contendo `AGENDAMENTO` e os campos no formato documentado.
+5. Clicar em **Verificar Email** e confirmar a criação na aba AGENDA.
+6. Repetir o teste com nome inexistente, nome duplicado, período inativo e horário não cadastrado. Nenhum desses casos deve criar agendamento.
+7. Clicar novamente e confirmar que mensagens já processadas não geram duplicidade.
+
+### Pendências e ressalvas
+- A validação automatizada não substitui o teste integrado com Gmail, Google Sheets e Google Apps Script.
+- A função de inicialização deve ser executada depois da implantação e antes de começar a enviar mensagens que devam ser importadas.
+- A busca considera mensagens que estejam na caixa de entrada no momento da verificação.
+- Mensagens com erro permanecem elegíveis para nova tentativa; após corrigir o conteúdo, o usuário pode clicar novamente em Verificar Email.
+- Se houver falha técnica depois da criação do agendamento e antes do registro do ID do Gmail, a mensagem ficará reservada para evitar duplicidade e exigirá conferência manual.
+
+### Próximo passo
+- Implantar a versão no Google Apps Script.
+- Inicializar o monitoramento uma única vez.
+- Autorizar o acesso ao Gmail e executar testes integrados com mensagens reais de teste.
+- Validar o comportamento com e-mails válidos, inválidos, nomes duplicados e conflitos de horário.
