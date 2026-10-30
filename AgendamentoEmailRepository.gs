@@ -140,8 +140,26 @@ function agendamentoEmailRepositoryListarMensagensNovas(limiteMaximo) {
         const chaveProcessamento =
           AGENDAMENTO_EMAIL_PROPRIEDADES.PROCESSADO_PREFIXO + id;
 
-        if (propriedades.getProperty(chaveProcessamento)) {
-          return;
+        const registroProcessamento = propriedades.getProperty(chaveProcessamento);
+
+        if (registroProcessamento) {
+          // Registros concluídos e reservas ainda válidas não precisam voltar
+          // ao Service. Somente reservas novas já expiradas podem ser retomadas.
+          if (!String(registroProcessamento).startsWith("PROCESSANDO:")) {
+            return;
+          }
+
+          const partesReserva = String(registroProcessamento).split(":");
+          const dataReserva = Number(partesReserva[1]);
+          const reservaExpirada =
+            Number.isFinite(dataReserva) &&
+            dataReserva > 0 &&
+            Date.now() - dataReserva >
+              AGENDAMENTO_EMAIL_PROPRIEDADES.RESERVA_EXPIRACAO_MS;
+
+          if (!reservaExpirada) {
+            return;
+          }
         }
 
         mensagensEncontradas.push({
