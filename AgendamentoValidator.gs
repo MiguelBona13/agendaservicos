@@ -134,7 +134,16 @@ function agendamentoValidatorInterpretarEmail(corpo) {
       "^[ \\t]*" + definicao.rotulo + "[ \\t]*:[ \\t]*(.*?)[ \\t]*$",
       "gim"
     );
-    const ocorrencias = Array.from(texto.matchAll(expressao));
+    const ocorrencias = [];
+    let ocorrencia;
+
+    while ((ocorrencia = expressao.exec(texto)) !== null) {
+      ocorrencias.push(ocorrencia);
+
+      if (expressao.lastIndex === ocorrencia.index) {
+        expressao.lastIndex += 1;
+      }
+    }
 
     if (ocorrencias.length !== 1 || !String(ocorrencias[0][1] || "").trim()) {
       throw new Error(
