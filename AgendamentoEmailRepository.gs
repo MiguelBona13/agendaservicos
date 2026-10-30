@@ -30,6 +30,17 @@ function agendamentoEmailRepositoryObterEmailContaExecutora() {
 }
 
 /**
+ * Obtém o endereço da conta que efetivamente executa o projeto Apps Script.
+ * Em uma implantação configurada para executar como o proprietário, retorna
+ * o endereço dessa conta. Um resultado vazio deve bloquear a importação.
+ *
+ * @return {string} Endereço de e-mail da conta executora, ou texto vazio.
+ */
+function agendamentoEmailRepositoryObterEmailContaExecutora() {
+  return String(Session.getEffectiveUser().getEmail() || "").trim().toLowerCase();
+}
+
+/**
  * Registra uma única vez o início do monitoramento de novos e-mails.
  * A função não altera o marco inicial quando já existe uma configuração.
  *
