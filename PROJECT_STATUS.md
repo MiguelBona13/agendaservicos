@@ -276,3 +276,37 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - Estratégia para controlar o crescimento dos registros de mensagens processadas.
 - Retorno visual para indicar mensagens pendentes além do limite por execução.
 - Teste integrado real com Gmail, Google Sheets e Google Apps Script.
+
+
+## Correção incremental — aviso de mensagens pendentes após o limite
+
+### Alteração realizada
+- O Service consulta até 101 mensagens para identificar se existe conteúdo além do limite operacional de 100 por execução.
+- No máximo 100 mensagens são efetivamente processadas em cada clique.
+- Quando a consulta identifica uma 101ª mensagem, o resultado inclui `maisMensagensPendentes: true` e orienta o usuário a clicar novamente em **Verificar Email**.
+- A interface já exibe a mensagem retornada pelo Service, portanto não foi necessário alterar o HTML.
+- A consulta adicional não reserva nem processa a 101ª mensagem; ela permanece disponível para a próxima execução.
+
+### Arquivos alterados
+- `AgendamentoEmailService.gs` — detecção de mensagens além do limite e aviso no resultado.
+- `tests/AgendamentoEmailService.test.cjs` — teste para garantir o limite de 100 e a sinalização de pendência.
+- `PROJECT_STATUS.md` — registro da correção.
+
+### Arquivos mantidos
+- `AgendamentoEmailRepository.gs` — consulta e controle de mensagens existentes preservados.
+- `Index.html` — mantido, pois já apresenta a mensagem devolvida pelo Service.
+- Demais arquivos e camadas não foram alterados.
+
+### Arquivos criados ou excluídos
+- Nenhum arquivo criado.
+- Nenhum arquivo excluído.
+
+### Como testar
+1. Executar `npm test`.
+2. Confirmar que o novo teste simula 101 mensagens e que apenas 100 são processadas.
+3. Confirmar que o retorno informa `maisMensagensPendentes: true` e orienta novo clique.
+4. No Apps Script, testar com mais de 100 mensagens elegíveis e confirmar que execuções sucessivas continuam o processamento sem duplicar os agendamentos.
+
+### Ressalvas
+- A detecção é feita por amostragem de uma mensagem além do limite. Se houver 101 ou mais mensagens, o sistema informa que há pendências; não informa o total exato.
+- A execução completa da suíte e o teste integrado real com Gmail, Google Sheets e Google Apps Script ainda precisam ser confirmados.
