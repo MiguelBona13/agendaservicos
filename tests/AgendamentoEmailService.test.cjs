@@ -63,17 +63,19 @@ test('processa e registra uma mensagem válida', () => {
   assert.equal(ambiente.registrados.length, 1);
   assert.equal(ambiente.registrados[0].id, 'email-1');
   assert.equal(ambiente.registrados[0].codigo, '001');
-  assert.deepEqual(ambiente.reservasAtualizadas, [{
-    id: 'email-1',
-    dados: {
+  assert.equal(ambiente.reservasAtualizadas.length, 1);
+  assert.equal(ambiente.reservasAtualizadas[0].id, 'email-1');
+  assert.equal(
+    JSON.stringify(ambiente.reservasAtualizadas[0].dados),
+    JSON.stringify({
       codigo: '001',
       data: '2026-11-05',
       codigoPeriodo: 'P1',
       codigoFuncionario: '020',
       codigoCliente: '001',
       codigoServico: '010'
-    }
-  }]);
+    })
+  );
 });
 
 test('uma mensagem inválida não impede o processamento das demais', () => {
