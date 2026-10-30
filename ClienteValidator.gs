@@ -43,7 +43,7 @@ function clienteValidatorValidarEmail(email) {
     throw new Error("O cliente selecionado não possui e-mail cadastrado.");
   }
 
-  const formatoValido = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(endereco);
+  const formatoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(endereco);
 
   if (!formatoValido) {
     throw new Error("O e-mail cadastrado para este cliente possui formato inválido.");
