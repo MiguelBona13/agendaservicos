@@ -100,7 +100,7 @@ A lógica da aplicação não foi alterada nesta etapa de automação de testes.
 - Nenhum. Os novos arquivos adicionam responsabilidades que ainda não existiam em camadas próprias.
 
 ### Como testar
-1. Executar `npm test) e confirmar os testes existentes e os cinco novos testes do ClienteValidator.
+1. Executar `npm test` e confirmar os testes existentes e os cinco novos testes do ClienteValidator.
 2. Implantar a versão atualizada do projeto no Google Apps Script.
 3. Autorizar o envio de e-mails quando o Google solicitar a permissão correspondente.
 4. Abrir a tela Agenda, selecionar um cliente com endereço de e-mail válido e clicar em **Verificar Email**.
