@@ -116,31 +116,37 @@ function agendamentoRulesResolverCadastroPorNome(nomeInformado, cadastros, tipoN
 }
 
 /**
- * Localiza um período ativo pela combinação exata de hora inicial e final.
+ * Localiza um período ativo pela hora inicial e, quando informada, também pela
+ * hora final. Sem hora final, exige uma única correspondência na aba PERIODOS.
  *
  * @param {string} horaInicial Horário inicial no formato HH:mm.
- * @param {string} horaFinal Horário final no formato HH:mm.
+ * @param {?string} horaFinal Horário final no formato HH:mm ou vazio.
  * @param {Array<Object>} periodos Períodos consultados pelo Repository.
  * @return {Object} Período ativo correspondente.
  * @throws {Error} Quando o período não existir ou for ambíguo.
  */
 function agendamentoRulesResolverPeriodoPorHorario(horaInicial, horaFinal, periodos) {
+  const horaFinalInformada = String(horaFinal || "").trim();
   const correspondencias = (periodos || []).filter(periodo =>
     periodo.ativo &&
     String(periodo.horaInicial || "").trim() === horaInicial &&
-    String(periodo.horaFinal || "").trim() === horaFinal
+    (!horaFinalInformada ||
+      String(periodo.horaFinal || "").trim() === horaFinalInformada)
   );
 
   if (!correspondencias.length) {
     throw new Error(
-      "Não existe período ativo cadastrado para " +
-      horaInicial + " às " + horaFinal + "."
+      horaFinalInformada
+        ? "Não existe período ativo cadastrado para " +
+          horaInicial + " às " + horaFinalInformada + "."
+        : "Não existe período ativo iniciado às " + horaInicial + "."
     );
   }
 
   if (correspondencias.length > 1) {
     throw new Error(
-      "Há mais de um período ativo com esse horário. Revise a aba PERIODOS."
+      "Há mais de um período ativo compatível com esse horário. " +
+      "Informe também o horário final ou revise a aba PERIODOS."
     );
   }
 

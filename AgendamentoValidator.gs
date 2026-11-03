@@ -180,31 +180,41 @@ function agendamentoValidatorInterpretarEmail(corpo) {
     throw new Error("A data informada no e-mail não existe.");
   }
 
-  const horario = valores.horario.match(
+  const horarioCompleto = valores.horario.match(
     /^(\d{1,2})(?::([0-5]\d)|h([0-5]\d)?)?\s*(?:às|as|a|até|ate|[-–—])\s*(\d{1,2})(?::([0-5]\d)|h([0-5]\d)?)?$/i
   );
+  const horarioSomenteInicio = valores.horario.match(
+    /^(\d{1,2})(?::([0-5]\d)|h([0-5]\d)?)?$/i
+  );
 
-  if (!horario) {
+  if (!horarioCompleto && !horarioSomenteInicio) {
     throw new Error(
-      "Informe o horário como 09:00 às 10:00, 09:00 - 10:00 ou 9h às 10h."
+      "Informe o horário inicial, por exemplo 14:00. Se necessário, o período ativo da agenda fornecerá o horário final."
     );
   }
 
-  const horaInicialNumero = Number(horario[1]);
-  const minutoInicial = horario[2] || horario[3] || "00";
-  const horaFinalNumero = Number(horario[4]);
-  const minutoFinal = horario[5] || horario[6] || "00";
+  const partesHoraInicial = horarioCompleto || horarioSomenteInicio;
+  const horaInicialNumero = Number(partesHoraInicial[1]);
+  const minutoInicial = partesHoraInicial[2] || partesHoraInicial[3] || "00";
+  const horaFinalNumero = horarioCompleto ? Number(horarioCompleto[4]) : null;
+  const minutoFinal = horarioCompleto
+    ? (horarioCompleto[5] || horarioCompleto[6] || "00")
+    : "";
 
-  if (horaInicialNumero > 23 || horaFinalNumero > 23) {
+  if (
+    horaInicialNumero > 23 ||
+    (horaFinalNumero !== null && horaFinalNumero > 23)
+  ) {
     throw new Error("As horas devem estar entre 00 e 23.");
   }
 
   const horaInicial =
     String(horaInicialNumero).padStart(2, "0") + ":" + minutoInicial;
-  const horaFinal =
-    String(horaFinalNumero).padStart(2, "0") + ":" + minutoFinal;
+  const horaFinal = horaFinalNumero === null
+    ? ""
+    : String(horaFinalNumero).padStart(2, "0") + ":" + minutoFinal;
 
-  if (horaInicial >= horaFinal) {
+  if (horaFinal && horaInicial >= horaFinal) {
     throw new Error("O horário final deve ser posterior ao horário inicial.");
   }
 

@@ -36,6 +36,12 @@ test('interpreta todos os campos do e-mail estruturado', () => {
   );
   assert.equal(horarioAlternativo.horaInicial, '09:00');
   assert.equal(horarioAlternativo.horaFinal, '10:00');
+
+  const somenteInicio = contexto.agendamentoValidatorInterpretarEmail(
+    emailValido.replace('09:00 às 10:00', '14:00')
+  );
+  assert.equal(somenteInicio.horaInicial, '14:00');
+  assert.equal(somenteInicio.horaFinal, '');
 });
 
 test('rejeita campo obrigatório ausente ou repetido', () => {
