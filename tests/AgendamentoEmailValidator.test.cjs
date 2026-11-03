@@ -23,6 +23,11 @@ test('interpreta todos os campos do e-mail estruturado', () => {
   assert.equal(resultado.servico, 'Corte');
   assert.equal(resultado.profissional, 'Carlos');
   assert.equal(resultado.data, '2026-11-05');
+
+  const resultadoBrasileiro = contexto.agendamentoValidatorInterpretarEmail(
+    emailValido.replace('2026-11-05', '05/11/2026')
+  );
+  assert.equal(resultadoBrasileiro.data, '2026-11-05');
   assert.equal(resultado.horaInicial, '09:00');
   assert.equal(resultado.horaFinal, '10:00');
 });

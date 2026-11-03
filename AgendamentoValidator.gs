@@ -154,21 +154,28 @@ function agendamentoValidatorInterpretarEmail(corpo) {
     valores[definicao.chave] = String(ocorrencias[0][1]).trim();
   });
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(valores.data)) {
-    throw new Error("A data do e-mail deve estar no formato AAAA-MM-DD.");
+  const dataISO = valores.data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const dataBrasileira = valores.data.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (!dataISO && !dataBrasileira) {
+    throw new Error(
+      "A data do e-mail deve estar no formato AAAA-MM-DD ou DD/MM/AAAA."
+    );
   }
 
-  const partesData = valores.data.split("-").map(Number);
-  const dataObjeto = new Date(
-    partesData[0],
-    partesData[1] - 1,
-    partesData[2]
-  );
+  const ano = Number(dataISO ? dataISO[1] : dataBrasileira[3]);
+  const mes = Number(dataISO ? dataISO[2] : dataBrasileira[2]);
+  const dia = Number(dataISO ? dataISO[3] : dataBrasileira[1]);
+  const dataNormalizada =
+    String(ano).padStart(4, "0") + "-" +
+    String(mes).padStart(2, "0") + "-" +
+    String(dia).padStart(2, "0");
+  const dataObjeto = new Date(ano, mes - 1, dia);
 
   if (
-    dataObjeto.getFullYear() !== partesData[0] ||
-    dataObjeto.getMonth() !== partesData[1] - 1 ||
-    dataObjeto.getDate() !== partesData[2]
+    dataObjeto.getFullYear() !== ano ||
+    dataObjeto.getMonth() !== mes - 1 ||
+    dataObjeto.getDate() !== dia
   ) {
     throw new Error("A data informada no e-mail não existe.");
   }
@@ -192,7 +199,7 @@ function agendamentoValidatorInterpretarEmail(corpo) {
     cliente: valores.cliente,
     servico: valores.servico,
     profissional: valores.profissional,
-    data: valores.data,
+    data: dataNormalizada,
     horaInicial: horaInicial,
     horaFinal: horaFinal
   };
