@@ -181,15 +181,28 @@ function agendamentoValidatorInterpretarEmail(corpo) {
   }
 
   const horario = valores.horario.match(
-    /^(?:([01]\d|2[0-3]):([0-5]\d))[ \t]+às[ \t]+(?:([01]\d|2[0-3]):([0-5]\d))$/i
+    /^(\d{1,2})(?::([0-5]\d)|h([0-5]\d)?)?\s*(?:às|as|a|até|ate|[-–—])\s*(\d{1,2})(?::([0-5]\d)|h([0-5]\d)?)?$/i
   );
 
   if (!horario) {
-    throw new Error("O horário deve seguir o formato HH:mm às HH:mm.");
+    throw new Error(
+      "Informe o horário como 09:00 às 10:00, 09:00 - 10:00 ou 9h às 10h."
+    );
   }
 
-  const horaInicial = horario[1] + ":" + horario[2];
-  const horaFinal = horario[3] + ":" + horario[4];
+  const horaInicialNumero = Number(horario[1]);
+  const minutoInicial = horario[2] || horario[3] || "00";
+  const horaFinalNumero = Number(horario[4]);
+  const minutoFinal = horario[5] || horario[6] || "00";
+
+  if (horaInicialNumero > 23 || horaFinalNumero > 23) {
+    throw new Error("As horas devem estar entre 00 e 23.");
+  }
+
+  const horaInicial =
+    String(horaInicialNumero).padStart(2, "0") + ":" + minutoInicial;
+  const horaFinal =
+    String(horaFinalNumero).padStart(2, "0") + ":" + minutoFinal;
 
   if (horaInicial >= horaFinal) {
     throw new Error("O horário final deve ser posterior ao horário inicial.");
