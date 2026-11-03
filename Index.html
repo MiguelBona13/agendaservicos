@@ -46,6 +46,11 @@
     .contador{color:#6b7280;font-size:13px;margin-top:14px}
     option:disabled{color:#9ca3af}
     .ajuda{color:#6b7280;font-size:13px;margin-top:6px}
+    .painel-progresso-email{margin-top:14px;padding:14px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff}
+    .painel-progresso-email[hidden]{display:none}
+    .painel-progresso-email strong{display:block;margin-bottom:8px}
+    .barra-progresso-email{width:100%;height:12px;accent-color:#2563eb}
+    .resumo-progresso-email{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px;color:#4b5563;font-size:13px}
     @media(max-width:650px){
       .layout{display:block}
       nav{width:100%;display:flex;flex-wrap:wrap;gap:6px;border-right:0;border-bottom:1px solid #e5e7eb}
@@ -217,6 +222,16 @@
                 <button class="botao botao-secundario" id="botaoVerificarEmail" type="button">Verificar Email</button>
               </div>
               <p class="ajuda">Importa novos e-mails recebidos com assunto AGENDAMENTO e cria os agendamentos correspondentes.</p>
+              <div class="painel-progresso-email" id="painelProgressoEmail" role="status" aria-live="polite" hidden>
+                <strong id="etapaProgressoEmail">Aguardando início</strong>
+                <progress class="barra-progresso-email" id="barraProgressoEmail" max="100" value="0">0%</progress>
+                <div class="resumo-progresso-email">
+                  <span id="contadorProgressoEmail">0 de 0 mensagens</span>
+                  <span id="criadosProgressoEmail">Criados: 0</span>
+                  <span id="falhasProgressoEmail">Falhas: 0</span>
+                </div>
+                <p class="ajuda" id="detalheProgressoEmail"></p>
+              </div>
             </div>
 
             <div class="campo">
@@ -308,6 +323,80 @@
   const servicoAgendamento = el("servicoAgendamento");
   const botaoCadastrarAgendamento = el("botaoCadastrarAgendamento");
   const botaoVerificarEmail = el("botaoVerificarEmail");
+  const painelProgressoEmail = el("painelProgressoEmail");
+  const etapaProgressoEmail = el("etapaProgressoEmail");
+  const barraProgressoEmail = el("barraProgressoEmail");
+  const contadorProgressoEmail = el("contadorProgressoEmail");
+  const criadosProgressoEmail = el("criadosProgressoEmail");
+  const falhasProgressoEmail = el("falhasProgressoEmail");
+  const detalheProgressoEmail = el("detalheProgressoEmail");
+  let idExecucaoEmail = "";
+  let timerProgressoEmail = null;
+  let acompanhamentoEmailAtivo = false;
+  let consultaProgressoEmAndamento = false;
+
+  function atualizarPainelProgressoEmail(progresso) {
+    if (!progresso) return;
+
+    const total = Number(progresso.totalEncontrados) || 0;
+    const processados = Number(progresso.totalProcessados) || 0;
+    const criados = Number(progresso.totalCriados) || 0;
+    const falhas = Number(progresso.totalFalhas) || 0;
+    const concluido = progresso.status !== "executando";
+
+    etapaProgressoEmail.textContent = progresso.etapa || "Processando...";
+    barraProgressoEmail.value = total
+      ? Math.min(100, Math.round(processados / total * 100))
+      : (concluido ? 100 : 0);
+    contadorProgressoEmail.textContent =
+      processados + " de " + total + " mensagens";
+    criadosProgressoEmail.textContent = "Criados: " + criados;
+    falhasProgressoEmail.textContent = "Falhas: " + falhas;
+    detalheProgressoEmail.textContent = progresso.mensagem || "";
+
+    if (concluido) {
+      acompanhamentoEmailAtivo = false;
+      if (timerProgressoEmail) {
+        window.clearInterval(timerProgressoEmail);
+        timerProgressoEmail = null;
+      }
+    }
+  }
+
+  function consultarProgressoEmail() {
+    if (
+      !acompanhamentoEmailAtivo ||
+      !idExecucaoEmail ||
+      consultaProgressoEmAndamento
+    ) return;
+
+    consultaProgressoEmAndamento = true;
+    google.script.run
+      .withSuccessHandler(progresso => {
+        consultaProgressoEmAndamento = false;
+        if (acompanhamentoEmailAtivo && progresso) {
+          atualizarPainelProgressoEmail(progresso);
+        }
+      })
+      .withFailureHandler(() => {
+        consultaProgressoEmAndamento = false;
+      })
+      .agendamentoEmailServiceObterProgresso(idExecucaoEmail);
+  }
+
+  function iniciarAcompanhamentoEmail() {
+    acompanhamentoEmailAtivo = true;
+    consultarProgressoEmail();
+    timerProgressoEmail = window.setInterval(consultarProgressoEmail, 1000);
+  }
+
+  function pararAcompanhamentoEmail() {
+    acompanhamentoEmailAtivo = false;
+    if (timerProgressoEmail) {
+      window.clearInterval(timerProgressoEmail);
+      timerProgressoEmail = null;
+    }
+  }
 
   function mostrarMensagem(texto, tipo) {
     mensagem.textContent = texto;
@@ -791,8 +880,36 @@
     botaoVerificarEmail.textContent = "Verificando...";
     limparMensagem();
 
+    idExecucaoEmail =
+      Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+    painelProgressoEmail.hidden = false;
+    atualizarPainelProgressoEmail({
+      status: "executando",
+      etapa: "Conectando ao Gmail",
+      totalEncontrados: 0,
+      totalProcessados: 0,
+      totalCriados: 0,
+      totalFalhas: 0
+    });
+    detalheProgressoEmail.textContent = "Aguarde enquanto os e-mails são conferidos.";
+    iniciarAcompanhamentoEmail();
+
     google.script.run
       .withSuccessHandler(resultado => {
+        pararAcompanhamentoEmail();
+        atualizarPainelProgressoEmail({
+          status: resultado && resultado.totalFalhas > 0
+            ? "concluido_com_erros"
+            : "concluido",
+          etapa: resultado && resultado.totalFalhas > 0
+            ? "Concluído com falhas"
+            : "Processamento concluído",
+          totalEncontrados: resultado && resultado.totalEncontrados || 0,
+          totalProcessados: resultado && resultado.totalEncontrados || 0,
+          totalCriados: resultado && resultado.totalCriados || 0,
+          totalFalhas: resultado && resultado.totalFalhas || 0,
+          mensagem: resultado && resultado.mensagem || ""
+        });
         const detalhes = (resultado && resultado.resultados || [])
           .map(item => item.status === "erro"
             ? item.assunto + ": " + item.mensagem
@@ -815,11 +932,21 @@
         }
       })
       .withFailureHandler(erro => {
+        pararAcompanhamentoEmail();
+        atualizarPainelProgressoEmail({
+          status: "erro",
+          etapa: "Não foi possível concluir a verificação",
+          totalEncontrados: 0,
+          totalProcessados: 0,
+          totalCriados: 0,
+          totalFalhas: 1,
+          mensagem: erro && erro.message ? erro.message : String(erro)
+        });
         falha(erro, "Não foi possível verificar os e-mails: ");
         botaoVerificarEmail.disabled = false;
         botaoVerificarEmail.textContent = "Verificar Email";
       })
-      .agendamentoEmailServiceProcessarNovosEmails();
+      .agendamentoEmailServiceProcessarNovosEmails(idExecucaoEmail);
   });
 
   botaoAtualizar.addEventListener("click", () => {
