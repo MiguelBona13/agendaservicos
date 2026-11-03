@@ -24,7 +24,7 @@ function criarAmbiente(mensagens) {
     agendamentoEmailRulesValidarRemetente: remetente => {
       const email = String(remetente || '').match(/<([^<>]+)>/);
       const endereco = (email ? email[1] : String(remetente || '')).trim();
-      if (!/^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(endereco)) {
+      if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(endereco)) {
         throw new Error('O endereço do remetente não é válido.');
       }
     },
