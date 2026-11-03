@@ -21,10 +21,12 @@ function criarAmbiente(mensagens) {
       funcionarios: [{ codigo: '020', nome: 'Carlos' }],
       periodos: [{ codigo: 'P1', horaInicial: '09:00', horaFinal: '10:00', ativo: true }]
     }),
-    agendamentoEmailRulesValidarRemetente: (remetente, conta) => {
+    agendamentoEmailRulesValidarRemetente: remetente => {
       const email = String(remetente || '').match(/<([^<>]+)>/);
-      const endereco = (email ? email[1] : String(remetente || '')).trim().toLowerCase();
-      if (endereco !== conta) throw new Error('Remetente não autorizado.');
+      const endereco = (email ? email[1] : String(remetente || '')).trim();
+      if (!/^[^\\s<>@]+@[^\\s<>@]+\\.[^\\s<>@]+$/.test(endereco)) {
+        throw new Error('O endereço do remetente não é válido.');
+      }
     },
     agendamentoEmailRepositoryReservarProcessamento: () => true,
     agendamentoEmailRepositoryRegistrarProcessamento: (id, codigo) => registrados.push({ id, codigo }),
@@ -101,27 +103,16 @@ test('retorna resumo vazio quando não há novas mensagens', () => {
 });
 
 
-test('rejeita mensagem de remetente diferente da conta executora', () => {
+test('processa mensagens de qualquer remetente com endereço válido', () => {
   const ambiente = criarAmbiente([
-    { id: 'email-nao-autorizado', assunto: 'AGENDAMENTO', remetente: 'terceiro@exemplo.com', corpo: 'VALIDO' }
+    { id: 'email-externo', assunto: 'AGENDAMENTO', remetente: 'terceiro@exemplo.com', corpo: 'VALIDO' }
   ]);
   const resultado = ambiente.contexto.agendamentoEmailServiceProcessarNovosEmails();
 
-  assert.equal(resultado.totalCriados, 0);
-  assert.equal(resultado.totalFalhas, 1);
-  assert.match(resultado.resultados[0].mensagem, /Remetente não autorizado/);
-  assert.equal(ambiente.registrados.length, 0);
-  assert.deepEqual(ambiente.liberados, []);
-});
-
-test('interrompe o processamento quando não identifica a conta executora', () => {
-  const ambiente = criarAmbiente([]);
-  ambiente.contexto.agendamentoEmailRepositoryObterEmailContaExecutora = () => '';
-
-  assert.throws(
-    () => ambiente.contexto.agendamentoEmailServiceProcessarNovosEmails(),
-    /Não foi possível identificar a conta/
-  );
+  assert.equal(resultado.totalCriados, 1);
+  assert.equal(resultado.totalFalhas, 0);
+  assert.equal(ambiente.registrados.length, 1);
+  assert.equal(ambiente.registrados[0].id, 'email-externo');
 });
 
 

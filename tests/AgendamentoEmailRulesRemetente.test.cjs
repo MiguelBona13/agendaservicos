@@ -30,23 +30,11 @@ test('aceita endereço em campo From com nome de exibição', () => {
   );
 });
 
-test('rejeita remetente diferente da conta executora', () => {
-  assert.throws(
-    () => contexto.agendamentoEmailRulesValidarRemetente(
-      'terceiro@exemplo.com',
-      'app@exemplo.com'
-    ),
-    /Remetente não autorizado/
-  );
-});
-
-test('rejeita conta executora não identificada', () => {
-  assert.throws(
-    () => contexto.agendamentoEmailRulesValidarRemetente(
-      'app@exemplo.com',
-      ''
-    ),
-    /Não foi possível identificar/
+test('aceita qualquer endereço de remetente válido', () => {
+  assert.doesNotThrow(() =>
+    contexto.agendamentoEmailRulesValidarRemetente(
+      'terceiro@exemplo.com'
+    )
   );
 });
 

@@ -73,20 +73,6 @@ function agendamentoEmailServiceProcessarNovosEmails(idProgresso) {
   }
 
   atualizarProgresso({});
-  const emailContaExecutora =
-    agendamentoEmailRepositoryObterEmailContaExecutora();
-
-  if (!emailContaExecutora) {
-    atualizarProgresso({
-      status: "erro",
-      etapa: "Não foi possível validar a conta do Gmail",
-      mensagem: "Verifique a conta que executa o Apps Script."
-    });
-    throw new Error(
-      "Não foi possível identificar a conta que executa o Google Apps Script. " +
-      "Verifique a configuração de implantação e as permissões da conta."
-    );
-  }
 
   // Consulta uma mensagem adicional para identificar se o limite da execução
   // será atingido sem deixar mensagens pendentes sem aviso ao usuário.
@@ -153,10 +139,7 @@ function agendamentoEmailServiceProcessarNovosEmails(idProgresso) {
 
   mensagens.forEach(mensagem => {
     try {
-      agendamentoEmailRulesValidarRemetente(
-        mensagem.remetente,
-        emailContaExecutora
-      );
+      agendamentoEmailRulesValidarRemetente(mensagem.remetente);
     } catch (erroRemetente) {
       totalFalhas += 1;
       resultados.push({
@@ -166,7 +149,7 @@ function agendamentoEmailServiceProcessarNovosEmails(idProgresso) {
           ? erroRemetente.message
           : String(erroRemetente)
       });
-      registrarProgressoMensagem("remetente não autorizado");
+      registrarProgressoMensagem("remetente inválido");
       return;
     }
 
