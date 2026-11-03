@@ -55,8 +55,8 @@ test('rejeita data inexistente e horário fora do formato', () => {
     /data informada no e-mail não existe/
   );
   assert.throws(
-    () => contexto.agendamentoValidatorInterpretarEmail(emailValido.replace('09:00 às 10:00', '9h às 10h')),
-    /formato HH:mm às HH:mm/
+    () => contexto.agendamentoValidatorInterpretarEmail(emailValido.replace('09:00 às 10:00', '9h e 10h')),
+    /Informe o horário/
   );
 });
 
