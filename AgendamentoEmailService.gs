@@ -41,11 +41,47 @@ function agendamentoEmailServiceInicializarMonitoramento() {
  * @return {{sucesso:boolean,totalEncontrados:number,totalCriados:number,totalFalhas:number,resultados:Array<Object>,mensagem:string}} Resumo do processamento.
  * @throws {Error} Quando o monitoramento ainda não foi inicializado.
  */
-function agendamentoEmailServiceProcessarNovosEmails() {
+function agendamentoEmailServiceProcessarNovosEmails(idProgresso) {
+  const progressoId = /^[A-Za-z0-9_-]{1,80}$/.test(String(idProgresso || ""))
+    ? String(idProgresso)
+    : "";
+  let progresso = {
+    status: "executando",
+    etapa: "Validando acesso ao Gmail",
+    totalEncontrados: 0,
+    totalProcessados: 0,
+    totalCriados: 0,
+    totalFalhas: 0
+  };
+
+  function atualizarProgresso(dados) {
+    if (!progressoId) return;
+
+    progresso = Object.assign({}, progresso, dados, {
+      atualizadoEm: Date.now()
+    });
+
+    try {
+      CacheService.getScriptCache().put(
+        "AGENDAMENTO_EMAIL_PROGRESSO_" + progressoId,
+        JSON.stringify(progresso),
+        21600
+      );
+    } catch (erroCache) {
+      // A interface continua funcionando mesmo se o cache de progresso falhar.
+    }
+  }
+
+  atualizarProgresso({});
   const emailContaExecutora =
     agendamentoEmailRepositoryObterEmailContaExecutora();
 
   if (!emailContaExecutora) {
+    atualizarProgresso({
+      status: "erro",
+      etapa: "Não foi possível validar a conta do Gmail",
+      mensagem: "Verifique a conta que executa o Apps Script."
+    });
     throw new Error(
       "Não foi possível identificar a conta que executa o Google Apps Script. " +
       "Verifique a configuração de implantação e as permissões da conta."
@@ -54,12 +90,34 @@ function agendamentoEmailServiceProcessarNovosEmails() {
 
   // Consulta uma mensagem adicional para identificar se o limite da execução
   // será atingido sem deixar mensagens pendentes sem aviso ao usuário.
-  const mensagensEncontradas =
-    agendamentoEmailRepositoryListarMensagensNovas(101);
+  atualizarProgresso({ etapa: "Procurando e-mails novos" });
+  let mensagensEncontradas;
+  try {
+    mensagensEncontradas =
+      agendamentoEmailRepositoryListarMensagensNovas(101);
+  } catch (erroPesquisa) {
+    atualizarProgresso({
+      status: "erro",
+      etapa: "Falha ao procurar e-mails",
+      mensagem: erroPesquisa && erroPesquisa.message
+        ? erroPesquisa.message
+        : String(erroPesquisa)
+    });
+    throw erroPesquisa;
+  }
   const maisMensagensPendentes = mensagensEncontradas.length > 100;
   const mensagens = mensagensEncontradas.slice(0, 100);
 
   if (!mensagens.length) {
+    atualizarProgresso({
+      status: "concluido",
+      etapa: "Busca concluída",
+      mensagem: "Nenhum novo e-mail de agendamento foi encontrado.",
+      totalEncontrados: 0,
+      totalProcessados: 0,
+      totalCriados: 0,
+      totalFalhas: 0
+    });
     return {
       sucesso: true,
       totalEncontrados: 0,
@@ -75,6 +133,23 @@ function agendamentoEmailServiceProcessarNovosEmails() {
   const resultados = [];
   let totalCriados = 0;
   let totalFalhas = 0;
+  let totalProcessados = 0;
+
+  atualizarProgresso({
+    etapa: "Processando mensagens",
+    totalEncontrados: mensagens.length
+  });
+
+  function registrarProgressoMensagem(etapa) {
+    totalProcessados += 1;
+    atualizarProgresso({
+      etapa: "Mensagem " + totalProcessados + " de " + mensagens.length + ": " + etapa,
+      totalEncontrados: mensagens.length,
+      totalProcessados: totalProcessados,
+      totalCriados: totalCriados,
+      totalFalhas: totalFalhas
+    });
+  }
 
   mensagens.forEach(mensagem => {
     try {
@@ -91,12 +166,14 @@ function agendamentoEmailServiceProcessarNovosEmails() {
           ? erroRemetente.message
           : String(erroRemetente)
       });
+      registrarProgressoMensagem("remetente não autorizado");
       return;
     }
 
     const reservado = agendamentoEmailRepositoryReservarProcessamento(mensagem.id);
 
     if (!reservado) {
+      registrarProgressoMensagem("mensagem já processada ou em andamento");
       return;
     }
 
@@ -162,6 +239,7 @@ function agendamentoEmailServiceProcessarNovosEmails() {
         codigoAgendamento: codigoAgendamento,
         mensagem: resultado.mensagem
       });
+      registrarProgressoMensagem("agendamento criado");
     } catch (erro) {
       totalFalhas += 1;
 
@@ -189,7 +267,25 @@ function agendamentoEmailServiceProcessarNovosEmails() {
         assunto: mensagem.assunto,
         mensagem: erro && erro.message ? erro.message : String(erro)
       });
+      registrarProgressoMensagem("falha ao criar o agendamento");
     }
+  });
+
+  const mensagemFinal =
+    totalCriados + " agendamento(s) criado(s); " +
+    totalFalhas + " mensagem(ns) com erro." +
+    (maisMensagensPendentes
+      ? " Há mais mensagens pendentes; clique novamente em Verificar Email para continuar."
+      : "");
+
+  atualizarProgresso({
+    status: totalFalhas === 0 ? "concluido" : "concluido_com_erros",
+    etapa: totalFalhas === 0 ? "Processamento concluído" : "Concluído com falhas",
+    mensagem: mensagemFinal,
+    totalEncontrados: mensagens.length,
+    totalProcessados: totalProcessados,
+    totalCriados: totalCriados,
+    totalFalhas: totalFalhas
   });
 
   return {
@@ -199,11 +295,30 @@ function agendamentoEmailServiceProcessarNovosEmails() {
     totalFalhas: totalFalhas,
     maisMensagensPendentes: maisMensagensPendentes,
     resultados: resultados,
-    mensagem:
-      totalCriados + " agendamento(s) criado(s); " +
-      totalFalhas + " mensagem(ns) com erro." +
-      (maisMensagensPendentes
-        ? " Há mais mensagens pendentes; clique novamente em Verificar Email para continuar."
-        : "")
+    mensagem: mensagemFinal
   };
+}
+
+function agendamentoEmailServiceObterProgresso(idProgresso) {
+  const progressoId = /^[A-Za-z0-9_-]{1,80}$/.test(String(idProgresso || ""))
+    ? String(idProgresso)
+    : "";
+
+  if (!progressoId) {
+    return null;
+  }
+
+  const valor = CacheService.getScriptCache().get(
+    "AGENDAMENTO_EMAIL_PROGRESSO_" + progressoId
+  );
+
+  if (!valor) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(valor);
+  } catch (erroLeitura) {
+    return null;
+  }
 }
