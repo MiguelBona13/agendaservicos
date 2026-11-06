@@ -397,3 +397,31 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - A publicação é feita pelo workflow `.github/workflows/publicar-apps-script.yml` após a alteração chegar à branch `main`.
 - Como validar: abrir a URL implantada com `?bot=1`, usar um celular cadastrado e percorrer a seleção até confirmar. Testar também celular não cadastrado e horário que deixou de estar livre.
 - O teste integrado com o Apps Script e a planilha ainda deve ser feito após a publicação.
+
+
+## Integração incremental — interpretação Groq no bot do WhatsApp
+
+### Alteração implementada
+- O bot aceita texto livre para selecionar serviços e profissionais, informar datas como “amanhã” e escolher horários.
+- A Groq interpreta a mensagem na etapa atual; opções e datas continuam passando pelas validações existentes.
+- A primeira mensagem pode já conter o pedido. A confirmação permanece explícita, e a IA não cria reservas.
+- A mensagem do cliente e as opções da etapa atual são enviadas à API Groq. A chave `GROQ_API_KEY` é lida das Script Properties.
+
+### Arquivos criados e alterados
+- `AgendamentoWhatsAppGroqRepository.gs` e `AgendamentoWhatsAppService.gs` — integração e interpretação contextual.
+- `AgendamentoWhatsAppRepository.gs`, `AgendamentoWhatsAppRules.gs`, `AgendamentoWhatsAppValidator.gs` e `AgendamentoWhatsAppWebhook.gs` — camadas do fluxo do bot.
+- `docs/whatsapp/CONFIGURACAO.md` e `whatsapp-backend/` — instruções e backend isolado.
+- `tests/AgendamentoWhatsApp*.test.cjs` — testes do fluxo base incluídos no repositório; não executados nesta etapa.
+
+### Arquivos mantidos e exclusões
+- Mantidos o fluxo oficial de criação, as regras de conflito, o webhook Twilio e o estado temporário da conversa.
+- Nenhum arquivo excluído.
+
+### Como testar
+1. Configurar `GROQ_API_KEY` nas Script Properties do projeto Apps Script.
+2. Sincronizar os arquivos e autorizar chamadas externas.
+3. Testar no Twilio Sandbox nomes, data em linguagem natural, horário por texto e confirmação explícita com dados de teste.
+4. Confirmar que não há gravação antes da confirmação final.
+
+### Situação
+- A integração está no repositório; publicação no Apps Script e teste integrado com Groq, Twilio e Sheets ainda pendentes.
