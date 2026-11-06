@@ -1,10 +1,10 @@
 # PROJECT_STATUS.md — Status do Projeto Agenda de Serviços
 
 ## Versão atual
-Importação de agendamentos por e-mail com validação do remetente pela conta executora e recuperação segura de reservas; testes integrados reais ainda pendentes.
+Bot web de autoagendamento com interpretação pela Groq publicado no Apps Script na versão 45; teste integrado real ainda pendente.
 
 ## Etapa atual
-Correções incrementais de segurança e confiabilidade da importação de agendamentos por e-mail.
+Integração do bot web de autoagendamento com a API Groq e publicação no Apps Script.
 
 ## Concluído até o momento
 - Definição do estudo de caso Agenda de Serviços.
@@ -424,7 +424,8 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 4. Confirmar que não há gravação antes da confirmação final.
 
 ### Situação
-- A integração está no repositório; publicação no Apps Script e teste integrado com Groq, Twilio e Sheets ainda pendentes.
+- Os arquivos do projeto, incluindo o webhook Twilio, foram sincronizados; o app da Web foi atualizado na implantação existente para a versão 45.
+- O fluxo Twilio com Groq ainda não foi validado com chamadas reais.
 
 
 ## Integração incremental — Groq no bot web do Apps Script (`?bot=1`)
@@ -450,9 +451,10 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Como testar
 1. Confirmar `GROQ_API_KEY` nas Script Properties do projeto Apps Script.
-2. Sincronizar a pasta `apps-script-clone-readonly` e atualizar a implantação do app da Web.
-3. Abrir a URL da implantação com `?bot=1` e testar nome de serviço, nome de profissional, data como “amanhã” e horário em texto.
+2. Abrir `https://script.google.com/macros/s/AKfycbwfn0gri59cZEObAKHKgBwBKvGn9i0jTPasg2VKKoVPXCyg-pLc15oIrBEDfhswTDjc/exec?bot=1`.
+3. Testar nome de serviço, nome de profissional, data como “amanhã” e horário em texto.
 4. Confirmar que a planilha só é alterada depois da confirmação explícita.
 
 ### Situação
-- Código atualizado no GitHub; o editor Apps Script e a implantação publicada ainda precisam receber a sincronização. Teste integrado com Groq e Sheets pendente.
+- 39 arquivos sincronizados com o Apps Script; a implantação existente foi atualizada para a versão 45, mantendo o mesmo ID e link.
+- Sintaxe do Service, do repositório Groq e do JavaScript da interface verificada. Teste integrado real com Groq e Sheets ainda pendente.
