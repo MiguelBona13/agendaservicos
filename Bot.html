@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agende seu serviço</title>
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color:#18332d;background:#d8dbd5}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#d5e4dc,#e9e5d8)}.phone{width:min(100%,440px);height:min(850px,calc(100vh - 40px));min-height:600px;background:#efe9df;border-radius:22px;box-shadow:0 18px 60px #23362c33;display:flex;flex-direction:column;overflow:hidden}.header{background:#075e54;color:white;padding:17px 20px;display:flex;align-items:center;gap:12px}.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#d6f0e7;color:#075e54;font-size:22px}.title{font-weight:700}.subtitle{font-size:12px;opacity:.8;margin-top:4px}.messages{flex:1;overflow:auto;padding:18px 14px;display:flex;flex-direction:column;gap:10px;background-color:#e9e3d8;background-image:radial-gradient(#cfc8bb 0.6px,transparent .6px);background-size:14px 14px}.bubble{max-width:88%;padding:11px 13px;border-radius:12px;background:#fff;box-shadow:0 1px 1px #00000012;line-height:1.4;align-self:flex-start;white-space:pre-wrap}.bubble.user{background:#d9fdd3;align-self:flex-end}.options{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.choice{border:1px solid #b8d7c5;color:#075e54;background:#f4fff8;border-radius:18px;padding:9px 12px;font-size:14px;cursor:pointer}.choice:hover{background:#e2f5e9}.entry{background:#f6f4ef;padding:12px;display:flex;gap:8px;align-items:center}.entry input{min-width:0;flex:1;border:0;border-radius:22px;padding:13px 15px;background:white;font-size:15px;outline:none}.entry button{width:44px;height:44px;border:0;border-radius:50%;background:#075e54;color:white;font-size:19px;cursor:pointer}.entry button:disabled{opacity:.5;cursor:wait}.hint{text-align:center;font-size:11px;color:#6f7d76;padding:0 12px 10px;background:#f6f4ef}.hidden{display:none}.day{color:#748078;font-size:11px;text-align:center;margin:0 auto 4px;background:#f7f2e7;padding:5px 10px;border-radius:8px}@media(max-width:520px){body{padding:0;background:#efe9df}.phone{height:100vh;min-height:0;border-radius:0;width:100%;max-width:none}}
+  </style>
+</head>
+<body>
+  <main class="phone" aria-label="Assistente de agendamento">
+    <header class="header"><div class="avatar" aria-hidden="true">✦</div><div><div class="title">Agenda de Serviços</div><div class="subtitle">Assistente de agendamento</div></div></header>
+    <section id="messages" class="messages" aria-live="polite"><div class="day">HOJE</div></section>
+    <form id="entry" class="entry"><input id="answer" autocomplete="off" placeholder="Digite sua resposta..." aria-label="Sua resposta"><button id="send" type="submit" aria-label="Enviar">➤</button></form>
+    <div class="hint">Escolha uma opção ou digite sua resposta</div>
+  </main>
+  <script>
+    const state = { step: "loading", catalogs: null, customer: null, service: null, professional: null, date: "", period: null };
+    const messages = document.getElementById("messages");
+    const form = document.getElementById("entry");
+    const answer = document.getElementById("answer");
+    const send = document.getElementById("send");
+
+    function bubble(text, who) {
+      const item = document.createElement("div");
+      item.className = "bubble" + (who === "user" ? " user" : "");
+      item.textContent = text;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+      return item;
+    }
+    function choices(items, onSelect) {
+      const wrap = document.createElement("div");
+      wrap.className = "options";
+      items.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice";
+        button.textContent = item.label;
+        button.addEventListener("click", () => { wrap.remove(); bubble(item.label, "user"); onSelect(item); });
+        wrap.appendChild(button);
+      });
+      messages.appendChild(wrap);
+      messages.scrollTop = messages.scrollHeight;
+    }
+    function ask(text, placeholder, type) {
+      bubble(text);
+      answer.value = "";
+      answer.placeholder = placeholder || "Digite sua resposta...";
+      answer.type = type || "text";
+      answer.focus();
+    }
+    function callServer(name, args, success) {
+      send.disabled = true;
+      google.script.run.withSuccessHandler(result => { send.disabled = false; success(result); })
+      .withFailureHandler(error => {
+        send.disabled = false;
+        bubble(error.message || "Não foi possível concluir. Tente novamente.");
+        if (state.step === "confirm") chooseDate();
+      })[name](...args);
+    }
+    function chooseService() {
+      state.step = "service";
+      bubble("Qual serviço você gostaria de agendar?");
+      choices(state.catalogs.servicos.map(item => ({label:item.nome, value:item})), selected => { state.service = selected.value; chooseProfessional(); });
+    }
+    function chooseProfessional() {
+      state.step = "professional";
+      bubble("Com qual profissional?");
+      choices(state.catalogs.profissionais.map(item => ({label:item.nome, value:item})), selected => { state.professional = selected.value; chooseDate(); });
+    }
+    function chooseDate() { state.step = "date"; ask("Que dia fica melhor para você?", "Selecione a data", "date"); }
+    function choosePeriod(periods) {
+      state.step = "period";
+      if (!periods.length) { ask("Não encontrei horários livres nesse dia. Escolha outra data.", "Selecione outra data", "date"); state.step = "date"; return; }
+      bubble("Estes são os horários disponíveis:");
+      choices(periods.map(item => ({label:item.descricao, value:item})), selected => { state.period = selected.value; review(); });
+    }
+    function review() {
+      state.step = "confirm";
+      const [y,m,d] = state.date.split("-");
+      bubble("Confira seu pedido:\n" +
+        "Serviço: " + state.service.nome + "\n" +
+        "Profissional: " + state.professional.nome + "\n" +
+        "Data: " + d + "/" + m + "/" + y + "\n" +
+        "Horário: " + state.period.descricao + "\n\nPodemos confirmar?");
+      choices([{label:"Confirmar",value:true},{label:"Recomeçar",value:false}], selected => {
+        if (!selected.value) { chooseService(); return; }
+        callServer("agendamentoBotServiceConfirmar", [{telefone:state.phone,codigoCliente:state.customer.codigo,codigoServico:state.service.codigo,codigoFuncionario:state.professional.codigo,data:state.date,codigoPeriodo:state.period.codigo}], result => {
+          bubble(result.mensagem + "\nSeu código de agendamento é " + result.codigo + ".");
+          state.step = "done";
+          answer.disabled = true;
+          askRestart();
+        });
+      });
+    }
+    function askRestart() { choices([{label:"Fazer outro agendamento",value:true}], () => { location.reload(); }); }
+    function process(value) {
+      if (state.step === "phone") {
+        state.phone = value;
+        callServer("agendamentoBotServiceIdentificarCliente", [value], customer => { state.customer = customer; bubble("Olá, " + customer.nome + "! Vou ajudar você a agendar."); chooseService(); });
+      } else if (state.step === "date") {
+        state.date = value;
+        callServer("agendamentoBotServiceListarHorarios", [value,state.customer.codigo,state.professional.codigo], choosePeriod);
+      }
+    }
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const value = answer.value.trim();
+      if (!value || send.disabled || state.step === "done") return;
+      bubble(value, "user");
+      process(value);
+    });
+    callServer("agendamentoBotServiceInicializar", [], catalogs => {
+      state.catalogs = catalogs;
+      if (!catalogs.servicos.length || !catalogs.profissionais.length) { bubble("Ainda não há serviços ou profissionais cadastrados para agendamento."); answer.disabled = true; return; }
+      state.step = "phone";
+      ask("Olá! Para começar, informe o celular cadastrado na Agenda com DDD.", "Ex.: (11) 99999-9999", "tel");
+    });
+  </script>
+</body>
+</html>
+

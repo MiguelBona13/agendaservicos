@@ -386,3 +386,14 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Próximo passo
 - Publicar a nova versão no Google Apps Script e executar os testes integrados reais. A integração no GitHub, por si só, não atualiza automaticamente a implantação publicada.
+
+
+## Bot web de autoagendamento — publicação pelo Apps Script
+
+- Criada a rota `?bot=1` em `WebApp.js`; sem o parâmetro, a interface administrativa atual continua sendo aberta.
+- Criada interface responsiva `Bot.html`, com aparência de conversa inspirada no WhatsApp.
+- O bot mostra serviços e profissionais cadastrados, identifica o cliente pelo celular sem expor a lista de clientes, lista períodos livres e pede confirmação.
+- `AgendamentoBotService.gs`, `AgendamentoBotRules.gs`, `AgendamentoBotValidator.gs` e `AgendamentoBotRepository.gs` mantêm a lógica nas camadas definidas e chamam `criarAgendamento()` para a gravação final.
+- A publicação é feita pelo workflow `.github/workflows/publicar-apps-script.yml` após a alteração chegar à branch `main`.
+- Como validar: abrir a URL implantada com `?bot=1`, usar um celular cadastrado e percorrer a seleção até confirmar. Testar também celular não cadastrado e horário que deixou de estar livre.
+- O teste integrado com o Apps Script e a planilha ainda deve ser feito após a publicação.
