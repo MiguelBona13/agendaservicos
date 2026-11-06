@@ -1,10 +1,10 @@
 # PROJECT_STATUS.md — Status do Projeto Agenda de Serviços
 
 ## Versão atual
-Importação de agendamentos por e-mail com validação do remetente pela conta executora e recuperação segura de reservas; testes integrados reais ainda pendentes.
+Bot de agendamento pelo WhatsApp com interpretação de texto livre pela Groq preparado no repositório; publicação no Apps Script e testes integrados ainda pendentes.
 
 ## Etapa atual
-Correções incrementais de segurança e confiabilidade da importação de agendamentos por e-mail.
+Integração incremental do bot WhatsApp com a API Groq.
 
 ## Concluído até o momento
 - Definição do estudo de caso Agenda de Serviços.
@@ -386,3 +386,33 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Próximo passo
 - Publicar a nova versão no Google Apps Script e executar os testes integrados reais. A integração no GitHub, por si só, não atualiza automaticamente a implantação publicada.
+
+
+## Integração incremental — interpretação Groq no bot do WhatsApp
+
+### Alteração implementada
+- O bot aceita texto livre para selecionar serviços e profissionais, informar datas como “amanhã” e escolher horários.
+- A Groq é chamada para interpretar a mensagem na etapa atual; opções e datas continuam passando pelas validações existentes.
+- A primeira mensagem pode já conter o pedido. A confirmação permanece determinística e aceita respostas explícitas como `1`, `sim` e `confirmo`; a IA não cria reservas.
+- A mensagem do cliente e as opções da etapa atual são enviadas à API Groq. A chave `GROQ_API_KEY` é lida das Script Properties.
+
+### Arquivos criados e alterados
+- `AgendamentoWhatsAppGroqRepository.gs` — chamada HTTP à Groq e leitura da chave.
+- `AgendamentoWhatsAppService.gs` — interpretação contextual e fluxo conversacional.
+- `AgendamentoWhatsAppRepository.gs`, `AgendamentoWhatsAppRules.gs`, `AgendamentoWhatsAppValidator.gs` e `AgendamentoWhatsAppWebhook.gs` — camadas necessárias para o fluxo do bot.
+- `docs/whatsapp/CONFIGURACAO.md` e `whatsapp-backend/` — instruções e cópia do backend isolado.
+- `tests/AgendamentoWhatsApp*.test.cjs` — testes preexistentes incluídos para o fluxo base; não foram executados nesta etapa.
+
+### Arquivos mantidos e exclusões
+- Mantidos o fluxo oficial de criação, validação de conflitos, webhook Twilio e armazenamento temporário da conversa.
+- Nenhum arquivo excluído.
+
+### Como testar
+1. Configurar `GROQ_API_KEY` nas Script Properties do projeto Apps Script.
+2. Sincronizar os arquivos e autorizar chamadas externas no Apps Script.
+3. Testar no Twilio Sandbox nomes, data em linguagem natural, horário por texto e confirmação explícita, sempre com dados de teste.
+4. Confirmar que não há gravação na planilha antes da confirmação final.
+
+### Situação
+- Commit publicado na branch `feature/whatsapp-groq-integration`.
+- Código não publicado no Apps Script; integração real com Groq, Twilio e Google Sheets ainda não validada.
