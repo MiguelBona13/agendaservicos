@@ -4,7 +4,13 @@
  *
  * Responsabilidade:
  * Fornecer os dados públicos do bot, identificar o cliente pelo celular e
- * coordenar a consulta e confirmação de um agendamento pelo fluxo oficial.
+ * coordenar a interpretação das respostas e a confirmação de um agendamento
+ * pelo fluxo oficial.
+ *
+ * Dependências principais:
+ * - AgendamentoBotRepository.gs, Rules.gs e Validator.gs;
+ * - AgendamentoBotGroqRepository.gs, para interpretar texto livre;
+ * - AgendamentoService.gs, para criar o agendamento confirmado.
  */
 
 /** @return {{servicos:Array<Object>,profissionais:Array<Object>}} Opções do bot. */
@@ -50,6 +56,76 @@ function agendamentoBotServiceListarHorarios(data, codigoCliente, codigoFunciona
     dados.periodos,
     dados.agendamentos
   );
+}
+
+/**
+ * Interpreta a resposta livre de uma etapa sem delegar regras de agendamento à IA.
+ * As listas vêm do Repository e horários são consultados novamente no servidor.
+ *
+ * @param {Object} entrada Etapa, texto e identificadores necessários à consulta.
+ * @return {Object} Serviço, profissional, data ou período correspondente.
+ * @throws {Error} Quando o texto for ambíguo, inválido ou não corresponder.
+ */
+function agendamentoBotServiceInterpretarEntrada(entrada) {
+  const pedido = entrada || {};
+  const etapa = String(pedido.etapa || "");
+  const texto = String(pedido.texto || "").trim();
+  if (!texto) throw new Error("Digite sua resposta para continuar.");
+
+  let opcoes = [];
+  let instrucao = "";
+  let horarios = [];
+  let registros = [];
+
+  if (etapa === "service" || etapa === "professional") {
+    const catalogos = agendamentoBotRepositoryListarOpcoes();
+    registros = etapa === "service" ? catalogos.servicos : catalogos.profissionais;
+    instrucao = etapa === "service"
+      ? "Identifique o serviço que a pessoa escolheu."
+      : "Identifique o profissional que a pessoa escolheu.";
+    opcoes = registros.map(item => item.nome);
+  } else if (etapa === "date") {
+    instrucao = "Converta a data pedida para yyyy-MM-dd. Resolva expressões como hoje, amanhã e próxima segunda-feira usando a data de referência. Não invente datas; se estiver ambígua, retorne vazio.";
+  } else if (etapa === "period") {
+    const data = agendamentoBotValidatorValidarData(pedido.data);
+    horarios = agendamentoBotServiceListarHorarios(
+      data,
+      pedido.codigoCliente,
+      pedido.codigoFuncionario
+    );
+    opcoes = horarios.map(item => item.descricao);
+    if (!opcoes.length) throw new Error("Não há horários livres para essa data. Escolha outra data.");
+    instrucao = "Identifique qual horário disponível a pessoa escolheu. Considere formatos como 9h e 09:00 equivalentes.";
+  } else {
+    throw new Error("Esta etapa não aceita interpretação de texto livre.");
+  }
+
+  const valor = agendamentoBotGroqRepositoryInterpretarEntrada({
+    etapa: etapa,
+    texto: texto,
+    opcoes: opcoes,
+    instrucao: instrucao,
+    dataReferencia: Utilities.formatDate(
+      new Date(),
+      Session.getScriptTimeZone(),
+      "yyyy-MM-dd"
+    )
+  });
+
+  if (etapa === "date") {
+    return { etapa: etapa, valor: agendamentoBotValidatorValidarData(valor) };
+  }
+
+  const indice = Number(valor) - 1;
+  if (!Number.isInteger(indice) || indice < 0 || indice >= opcoes.length) {
+    throw new Error("Não consegui identificar uma opção única. Escolha um item da lista.");
+  }
+
+  if (etapa === "period") {
+    return { etapa: etapa, item: horarios[indice] };
+  }
+
+  return { etapa: etapa, item: registros[indice] };
 }
 
 /**

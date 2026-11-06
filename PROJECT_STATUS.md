@@ -399,7 +399,7 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 - O teste integrado com o Apps Script e a planilha ainda deve ser feito após a publicação.
 
 
-## Integração incremental — interpretação Groq no bot do WhatsApp
+## Integração Groq — webhook do WhatsApp via Twilio
 
 ### Alteração implementada
 - O bot aceita texto livre para selecionar serviços e profissionais, informar datas como “amanhã” e escolher horários.
@@ -425,3 +425,34 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Situação
 - A integração está no repositório; publicação no Apps Script e teste integrado com Groq, Twilio e Sheets ainda pendentes.
+
+
+## Integração incremental — Groq no bot web do Apps Script (`?bot=1`)
+
+### Alteração implementada
+- A interface web inspirada no WhatsApp aceita texto livre para selecionar serviço e profissional, informar datas como “amanhã” e escolher horário.
+- `AgendamentoBotGroqRepository.gs` usa `GROQ_API_KEY` e a API Groq para interpretar apenas a etapa atual.
+- `AgendamentoBotService.gs` reconsulta catálogos e disponibilidade no servidor; a resposta da IA é validada antes de avançar.
+- A confirmação é explícita pela interface ou por respostas exatas como `confirmar` e `sim`; a IA não cria nem confirma reservas.
+- As cópias de implantação foram sincronizadas em `apps-script-clone-readonly`, raiz indicada pelo `.clasp.json` local.
+
+### Arquivos criados
+- `AgendamentoBotGroqRepository.gs` — integração HTTP com a Groq.
+
+### Arquivos alterados
+- `AgendamentoBotService.gs` — interpretação contextual validada pelo Service.
+- `Bot.html` — entrada de texto livre nas etapas de serviço, profissional, data, horário e confirmação, mantendo opções clicáveis.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos e exclusões
+- Mantidos os botões de opção, a identificação do cliente, a consulta de disponibilidade e o fluxo oficial `criarAgendamento()` com confirmação.
+- Nenhum arquivo excluído.
+
+### Como testar
+1. Confirmar `GROQ_API_KEY` nas Script Properties do projeto Apps Script.
+2. Sincronizar a pasta `apps-script-clone-readonly` e atualizar a implantação do app da Web.
+3. Abrir a URL da implantação com `?bot=1` e testar nome de serviço, nome de profissional, data como “amanhã” e horário em texto.
+4. Confirmar que a planilha só é alterada depois da confirmação explícita.
+
+### Situação
+- Código atualizado no GitHub; o editor Apps Script e a implantação publicada ainda precisam receber a sincronização. Teste integrado com Groq e Sheets pendente.

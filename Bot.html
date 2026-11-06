@@ -17,7 +17,7 @@
     <div class="hint">Escolha uma opção ou digite sua resposta</div>
   </main>
   <script>
-    const state = { step: "loading", catalogs: null, customer: null, service: null, professional: null, date: "", period: null };
+    const state = { step: "loading", catalogs: null, customer: null, service: null, professional: null, date: "", period: null, availablePeriods: [] };
     const messages = document.getElementById("messages");
     const form = document.getElementById("entry");
     const answer = document.getElementById("answer");
@@ -63,20 +63,32 @@
     }
     function chooseService() {
       state.step = "service";
-      bubble("Qual serviço você gostaria de agendar?");
+      bubble("Qual serviço você gostaria de agendar? Você pode escrever o nome ou escolher uma opção.");
+      answer.placeholder = "Digite o nome do serviço...";
       choices(state.catalogs.servicos.map(item => ({label:item.nome, value:item})), selected => { state.service = selected.value; chooseProfessional(); });
     }
     function chooseProfessional() {
       state.step = "professional";
-      bubble("Com qual profissional?");
+      bubble("Com qual profissional? Você pode escrever o nome ou escolher uma opção.");
+      answer.placeholder = "Digite o nome do profissional...";
       choices(state.catalogs.profissionais.map(item => ({label:item.nome, value:item})), selected => { state.professional = selected.value; chooseDate(); });
     }
-    function chooseDate() { state.step = "date"; ask("Que dia fica melhor para você?", "Selecione a data", "date"); }
+    function chooseDate() { state.step = "date"; ask("Que dia fica melhor para você? Pode escrever uma data, como 25/12/2026, ou dizer algo como amanhã.", "Ex.: amanhã ou 25/12/2026", "text"); }
     function choosePeriod(periods) {
       state.step = "period";
-      if (!periods.length) { ask("Não encontrei horários livres nesse dia. Escolha outra data.", "Selecione outra data", "date"); state.step = "date"; return; }
-      bubble("Estes são os horários disponíveis:");
+      if (!periods.length) { ask("Não encontrei horários livres nesse dia. Escolha outra data.", "Ex.: amanhã ou 25/12/2026", "text"); state.step = "date"; return; }
+      state.availablePeriods = periods;
+      bubble("Estes são os horários disponíveis. Escreva o horário desejado ou escolha uma opção:");
+      answer.placeholder = "Ex.: 9h ou 09:00";
       choices(periods.map(item => ({label:item.descricao, value:item})), selected => { state.period = selected.value; review(); });
+    }
+    function confirmarPedido() {
+      callServer("agendamentoBotServiceConfirmar", [{telefone:state.phone,codigoCliente:state.customer.codigo,codigoServico:state.service.codigo,codigoFuncionario:state.professional.codigo,data:state.date,codigoPeriodo:state.period.codigo}], result => {
+        bubble(result.mensagem + "\nSeu código de agendamento é " + result.codigo + ".");
+        state.step = "done";
+        answer.disabled = true;
+        askRestart();
+      });
     }
     function review() {
       state.step = "confirm";
@@ -85,15 +97,11 @@
         "Serviço: " + state.service.nome + "\n" +
         "Profissional: " + state.professional.nome + "\n" +
         "Data: " + d + "/" + m + "/" + y + "\n" +
-        "Horário: " + state.period.descricao + "\n\nPodemos confirmar?");
+        "Horário: " + state.period.descricao + "\n\nPodemos confirmar? Responda *confirmar* ou escolha uma opção.");
+      answer.placeholder = "Digite confirmar para concluir...";
       choices([{label:"Confirmar",value:true},{label:"Recomeçar",value:false}], selected => {
         if (!selected.value) { chooseService(); return; }
-        callServer("agendamentoBotServiceConfirmar", [{telefone:state.phone,codigoCliente:state.customer.codigo,codigoServico:state.service.codigo,codigoFuncionario:state.professional.codigo,data:state.date,codigoPeriodo:state.period.codigo}], result => {
-          bubble(result.mensagem + "\nSeu código de agendamento é " + result.codigo + ".");
-          state.step = "done";
-          answer.disabled = true;
-          askRestart();
-        });
+        confirmarPedido();
       });
     }
     function askRestart() { choices([{label:"Fazer outro agendamento",value:true}], () => { location.reload(); }); }
@@ -101,10 +109,54 @@
       if (state.step === "phone") {
         state.phone = value;
         callServer("agendamentoBotServiceIdentificarCliente", [value], customer => { state.customer = customer; bubble("Olá, " + customer.nome + "! Vou ajudar você a agendar."); chooseService(); });
-      } else if (state.step === "date") {
-        state.date = value;
-        callServer("agendamentoBotServiceListarHorarios", [value,state.customer.codigo,state.professional.codigo], choosePeriod);
+      } else if (state.step === "confirm") {
+        const confirmation = value.toLowerCase();
+        if (["confirmar", "confirmo", "sim", "pode confirmar", "1"].includes(confirmation)) {
+          confirmarPedido();
+        } else if (["recomeçar", "recomecar", "voltar", "2", "não", "nao"].includes(confirmation)) {
+          chooseService();
+        } else {
+          bubble("Para concluir, responda *confirmar*. Para recomeçar, responda *recomeçar*.");
+        }
+      } else if (["service", "professional", "date", "period"].includes(state.step)) {
+        const etapa = state.step;
+        const listas = {
+          service: state.catalogs.servicos,
+          professional: state.catalogs.profissionais,
+          period: state.availablePeriods
+        };
+        const numero = /^(\d{1,2})$/.exec(value);
+        if (numero && listas[etapa]) {
+          const item = listas[etapa][Number(numero[1]) - 1];
+          if (item) { escolherInterpretado(etapa, item); return; }
+        }
+        if (etapa === "date") {
+          const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+          const brasileira = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+          if (iso || brasileira) {
+            const data = iso ? value : brasileira[3] + "-" + brasileira[2] + "-" + brasileira[1];
+            carregarHorarios(data);
+            return;
+          }
+        }
+        callServer("agendamentoBotServiceInterpretarEntrada", [{
+          etapa: etapa,
+          texto: value,
+          data: state.date,
+          codigoCliente: state.customer.codigo,
+          codigoFuncionario: state.professional && state.professional.codigo
+        }], resultado => escolherInterpretado(etapa, resultado.item || resultado.valor));
       }
+    }
+    function carregarHorarios(data) {
+      state.date = data;
+      callServer("agendamentoBotServiceListarHorarios", [data,state.customer.codigo,state.professional.codigo], choosePeriod);
+    }
+    function escolherInterpretado(etapa, selecao) {
+      if (etapa === "service") { state.service = selecao; chooseProfessional(); }
+      else if (etapa === "professional") { state.professional = selecao; chooseDate(); }
+      else if (etapa === "date") { carregarHorarios(selecao); }
+      else if (etapa === "period") { state.period = selecao; review(); }
     }
     form.addEventListener("submit", event => {
       event.preventDefault();
