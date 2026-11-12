@@ -3,7 +3,7 @@
  * Camada: Rules — Regras de Negócio
  *
  * Responsabilidade:
- * Aplicar as regras de conflito de data, período, funcionário e cliente.
+ * Aplicar as regras de conflito, status e horário dos agendamentos.
  *
  * Dependências principais:
  * - Utilities e Session, do Google Apps Script, para normalização de datas.
@@ -28,10 +28,10 @@ function agendamentoRulesValidarConflito(dados, agendamentos) {
     const periodoExistente = String(linha[2] || "").trim();
     const funcionarioExistente = String(linha[3] || "").trim();
     const clienteExistente = String(linha[4] || "").trim();
-    const statusExistente = String(linha[7] || "").trim().toLowerCase();
+    const statusExistente = String(linha[7] || "").trim().toLowerCase();\n    const codigoExistente = String(linha[0] || "").trim();
 
     // Cancelamentos preservam o histórico, mas liberam o horário.
-    if (statusExistente === "cancelado") {
+    if (dados.codigoIgnorado && codigoExistente === String(dados.codigoIgnorado).trim()) {\n      return false;\n    }\n\n    if (["cancelado", "reagendado"].includes(statusExistente)) {
       return false;
     }
 
@@ -151,4 +151,34 @@ function agendamentoRulesResolverPeriodoPorHorario(horaInicial, horaFinal, perio
   }
 
   return correspondencias[0];
+}
+
+
+/**
+ * Valida o status e impede registrar presença ou falta antes da data do serviço.
+ * Cancelado e Reagendado não são resultados de treinamento do K-NN.
+ *
+ * @param {string} status Status proposto.
+ * @param {string} data Data do atendimento em yyyy-MM-dd.
+ * @param {string} hora Horário inicial em HH:mm.
+ * @return {void}
+ * @throws {Error} Quando o status for desconhecido ou o atendimento ainda não ocorreu.
+ */
+function agendamentoRulesValidarStatus(status, data, hora) {
+  const statusNormalizado = String(status || "").trim();
+  const permitidos = ["Agendado", "Compareceu", "Faltou", "Cancelado", "Reagendado"];
+
+  if (!permitidos.includes(statusNormalizado)) {
+    throw new Error("Status inválido para o agendamento.");
+  }
+
+  if (["Compareceu", "Faltou"].includes(statusNormalizado)) {
+    const dataHoraAgendamento = String(data) + " " + String(hora || "00:00");
+    const agora = Utilities.formatDate(
+      new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm"
+    );
+    if (dataHoraAgendamento > agora) {
+      throw new Error("Comparecimento ou falta só pode ser registrado após o horário do atendimento.");
+    }
+  }
 }
