@@ -139,11 +139,16 @@ function atualizarAgendamento(entrada) {
     const hora = String(periodo.horaInicial || "").trim();
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) throw new Error("O horário inicial do período selecionado é inválido.");
     agendamentoRulesValidarStatus(dados.status, dados.data, hora);
-    agendamentoRulesValidarConflito({
-      data: dados.data, codigoPeriodo: dados.codigoPeriodo,
-      codigoFuncionario: dados.codigoFuncionario, codigoCliente: dados.codigoCliente,
-      codigoIgnorado: dados.codigo
-    }, agendamentoRepositoryListarRegistrosParaConflito());
+
+    // Cancelamentos e reagendamentos encerram/liberam a reserva atual.
+    // Portanto, não devem ser impedidos por conflito com outro agendamento.
+    if (!["Cancelado", "Reagendado"].includes(dados.status)) {
+      agendamentoRulesValidarConflito({
+        data: dados.data, codigoPeriodo: dados.codigoPeriodo,
+        codigoFuncionario: dados.codigoFuncionario, codigoCliente: dados.codigoCliente,
+        codigoIgnorado: dados.codigo
+      }, agendamentoRepositoryListarRegistrosParaConflito());
+    }
     agendamentoRepositoryAtualizarRegistro(existente.linha, [
       dados.codigo, dados.data, dados.codigoPeriodo, dados.codigoFuncionario,
       dados.codigoCliente, dados.codigoServico, String(valorServico), dados.status,
