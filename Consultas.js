@@ -118,28 +118,12 @@ function consultarPeriodos() {
     });
 }
 
+/**
+ * Mantém a função pública usada pela interface e delega a leitura da AGENDA
+ * ao Repository, evitando acesso direto ao Google Sheets nesta camada.
+ *
+ * @return {Array<Object>} Agendamentos com os dez campos disponíveis.
+ */
 function consultarAgendamentos() {
-  const aba = getSheet(CONFIG.ABAS.AGENDA);
-  const ultimaLinha = aba.getLastRow();
-
-  if (ultimaLinha < 2) {
-    return [];
-  }
-
-  const dados = aba
-    .getRange(2, 1, ultimaLinha - 1, 8)
-    .getValues();
-
-  return dados
-    .filter(linha => linha[0] !== "" && linha[0] !== null)
-    .map(linha => ({
-      codigo: String(linha[0]).trim(),
-      data: agendamentoRulesNormalizarData(linha[1]),
-      codigoPeriodo: String(linha[2]).trim(),
-      codigoFuncionario: String(linha[3]).trim(),
-      codigoCliente: String(linha[4]).trim(),
-      codigoServico: String(linha[5]).trim(),
-      valor: Number(linha[6]) || 0,
-      status: String(linha[7]).trim()
-    }));
+  return agendamentoRepositoryListarTodos();
 }

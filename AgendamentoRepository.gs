@@ -4,7 +4,7 @@
  *
  * Responsabilidade:
  * Centralizar as operações de leitura e gravação do Google Sheets usadas
- * pelo fluxo de criação de agendamentos.
+ * pelos fluxos de criação, consulta e atualização de agendamentos.
  *
  * Dependências principais:
  * - CONFIG, definido em Config.js;
@@ -97,7 +97,7 @@ function agendamentoRepositoryBuscarValorServico(codigoServico) {
 /**
  * Retorna os registros da agenda necessários para verificar conflitos.
  *
- * @return {Array<Array<*>>} Linhas da agenda, sem o cabeçalho, com oito colunas.
+ * @return {Array<Array<*>>} Linhas da agenda, sem o cabeçalho, com até dez colunas.
  */
 function agendamentoRepositoryListarRegistrosParaConflito() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
@@ -107,22 +107,40 @@ function agendamentoRepositoryListarRegistrosParaConflito() {
     return [];
   }
 
-  return aba.getRange(2, 1, ultimaLinha - 1, 8).getValues();
+  return aba.getRange(2, 1, ultimaLinha - 1, Math.max(8, Math.min(10, aba.getLastColumn()))).getValues();
+}
+
+/**
+ * Garante os cabeçalhos das colunas hora e Data_Cadastro sem alterar os
+ * registros históricos das oito colunas originais.
+ *
+ * @return {void}
+ */
+function agendamentoRepositoryGarantirColunasKnn() {
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  if (aba.getLastColumn() < 9) aba.getRange(1, 9).setValue("hora");
+  if (aba.getLastColumn() < 10) aba.getRange(1, 10).setValue("Data_Cadastro");
 }
 
 /**
  * Grava um agendamento na próxima linha disponível da aba AGENDA.
- * Os oito campos são formatados como texto para preservar os códigos.
+ * Os dez campos são gravados em uma única operação. Os códigos e horários\n * permanecem como texto; a data de cadastro é recebida do Service.
  *
  * @param {Array<string>} registro Dados na ordem definida para a aba AGENDA.
  * @return {void}
  */
 function agendamentoRepositoryInserir(registro) {
+  if (!Array.isArray(registro) || registro.length !== 10) {
+    throw new Error("O registro do agendamento deve conter exatamente dez campos.");
+  }
+
+  agendamentoRepositoryGarantirColunasKnn();
   const aba = getSheet(CONFIG.ABAS.AGENDA);
   const proximaLinha = aba.getLastRow() + 1;
-
-  aba.getRange(proximaLinha, 1, 1, 8).setNumberFormat("@");
-  aba.getRange(proximaLinha, 1, 1, 8).setValues([registro]);
+  aba.getRange(proximaLinha, 1, 1, 10).setNumberFormat("@");
+  aba.getRange(proximaLinha, 1, 1, 10).setValues([
+    registro.map(valor => String(valor == null ? "" : valor))
+  ]);
 }
 
 
@@ -140,7 +158,7 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     return null;
   }
 
-  const registros = aba.getRange(2, 1, ultimaLinha - 1, 8).getDisplayValues();
+  const registros = aba.getRange(2, 1, ultimaLinha - 1, 10).getDisplayValues();
   const indice = registros.findIndex(linha =>
     String(linha[0]).trim() === String(codigo).trim()
   );
@@ -159,6 +177,8 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     codigoServico: String(registro[5]).trim(),
     valor: registro[6],
     status: String(registro[7]).trim(),
+    hora: String(registro[8] || "").trim(),
+    dataCadastro: String(registro[9] || "").trim(),
     linha: indice + 2
   };
 }
@@ -182,6 +202,55 @@ function agendamentoRepositoryAtualizarStatus(linha, status) {
   aba.getRange(linha, 8).setValue(String(status));
 }
 
+
+/**
+ * Atualiza os dez campos de um agendamento existente.
+ *
+ * @param {number} linha Número da linha na aba AGENDA.
+ * @param {Array<*>} registro Dados na ordem oficial das dez colunas.
+ * @return {void}
+ */
+function agendamentoRepositoryAtualizarRegistro(linha, registro) {
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
+    throw new Error("Não foi possível localizar a linha do agendamento.");
+  }
+  if (!Array.isArray(registro) || registro.length !== 10) {
+    throw new Error("O registro do agendamento deve conter exatamente dez campos.");
+  }
+  agendamentoRepositoryGarantirColunasKnn();
+  aba.getRange(linha, 1, 1, 10).setNumberFormat("@");
+  aba.getRange(linha, 1, 1, 10).setValues([
+    registro.map(valor => String(valor == null ? "" : valor))
+  ]);
+}
+
+/**
+ * Lista todos os agendamentos, aceitando linhas históricas com apenas oito campos.
+ *
+ * @return {Array<Object>} Agendamentos com os dez campos disponíveis.
+ */
+function agendamentoRepositoryListarTodos() {
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  const ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 2) return [];
+  const colunas = Math.max(8, Math.min(10, aba.getLastColumn()));
+  return aba.getRange(2, 1, ultimaLinha - 1, colunas).getValues()
+    .map((linha, indice) => ({
+      codigo: String(linha[0] || "").trim(),
+      data: agendamentoRulesNormalizarData(linha[1]),
+      codigoPeriodo: String(linha[2] || "").trim(),
+      codigoFuncionario: String(linha[3] || "").trim(),
+      codigoCliente: String(linha[4] || "").trim(),
+      codigoServico: String(linha[5] || "").trim(),
+      valor: Number(linha[6]) || 0,
+      status: String(linha[7] || "").trim(),
+      hora: String(linha[8] || "").trim(),
+      dataCadastro: String(linha[9] || "").trim(),
+      linha: indice + 2
+    }))
+    .filter(item => item.codigo);
+}
 
 /**
  * Lê cadastros de clientes, serviços e funcionários e períodos disponíveis

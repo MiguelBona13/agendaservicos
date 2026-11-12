@@ -240,6 +240,16 @@
                 <option value="">Carregando serviços...</option>
               </select>
             </div>
+            <div class="campo">
+              <label for="statusAgendamento">Status *</label>
+              <select id="statusAgendamento" required disabled>
+                <option value="Agendado">Agendado</option>
+                <option value="Compareceu">Compareceu</option>
+                <option value="Faltou">Faltou</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Reagendado">Reagendado</option>
+              </select>
+            </div>
           </div>
 
           <div class="acoes">
@@ -321,6 +331,8 @@
   const funcionarioAgendamento = el("funcionarioAgendamento");
   const clienteAgendamento = el("clienteAgendamento");
   const servicoAgendamento = el("servicoAgendamento");
+  const statusAgendamento = el("statusAgendamento");
+  let codigoAgendamentoEmEdicao = "";
   const botaoCadastrarAgendamento = el("botaoCadastrarAgendamento");
   const botaoVerificarEmail = el("botaoVerificarEmail");
   const painelProgressoEmail = el("painelProgressoEmail");
@@ -668,29 +680,19 @@
           botaoAtualizar.disabled = false;
 
           const registros = (agendamentos || []).map(item => [
-            item.codigo,
-            item.data,
-            item.codigoPeriodo,
-            item.codigoFuncionario,
-            item.codigoCliente,
-            item.codigoServico,
+            item.codigo, item.data, item.codigoPeriodo, item.codigoFuncionario,
+            item.codigoCliente, item.codigoServico,
             Number(item.valor || 0).toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL"
+              style: "currency", currency: "BRL"
             }),
-            item.status
+            item.status, item.hora || "", item.dataCadastro || ""
           ]);
 
           exibirLista({
             colunas: [
-              "Código",
-              "Data",
-              "Código do período",
-              "Código do funcionário",
-              "Código do cliente",
-              "Código do serviço",
-              "Valor",
-              "Status"
+              "Código", "Data", "Código do período", "Código do funcionário",
+              "Código do cliente", "Código do serviço", "Valor", "Status",
+              "Hora", "Data de cadastro"
             ],
             registros: registros
           });
@@ -775,6 +777,26 @@
         const tdAcoes = document.createElement("td");
         const status = String(registro[7] || "").trim().toLowerCase();
 
+        const botaoEditar = document.createElement("button");
+        botaoEditar.type = "button";
+        botaoEditar.className = "botao botao-secundario";
+        botaoEditar.textContent = "Editar";
+        botaoEditar.addEventListener("click", () => {
+          codigoAgendamentoEmEdicao = String(registro[0] || "").trim();
+          codigoAgendamento.value = codigoAgendamentoEmEdicao;
+          dataAgendamento.value = String(registro[1] || "");
+          periodoAgendamento.value = String(registro[2] || "");
+          funcionarioAgendamento.value = String(registro[3] || "");
+          clienteAgendamento.value = String(registro[4] || "");
+          servicoAgendamento.value = String(registro[5] || "");
+          statusAgendamento.value = String(registro[7] || "Agendado");
+          statusAgendamento.disabled = false;
+          botaoCadastrarAgendamento.textContent = "Salvar alterações";
+          areaCadastroAgendamento.scrollIntoView({ behavior: "smooth", block: "start" });
+          mostrarMensagem("Editando agendamento " + codigoAgendamentoEmEdicao + ".", "sucesso");
+        });
+        tdAcoes.appendChild(botaoEditar);
+
         if (status !== "cancelado") {
           const botaoCancelar = document.createElement("button");
           botaoCancelar.type = "button";
@@ -806,7 +828,9 @@
           });
           tdAcoes.appendChild(botaoCancelar);
         } else {
-          tdAcoes.textContent = "Cancelado";
+          const textoCancelado = document.createElement("span");
+          textoCancelado.textContent = "Cancelado";
+          tdAcoes.appendChild(textoCancelado);
         }
 
         tr.appendChild(tdAcoes);
@@ -1052,7 +1076,6 @@
 
   formAgendamento.addEventListener("submit", evento => {
     evento.preventDefault();
-
     if (!formAgendamento.reportValidity()) return;
 
     const dados = {
@@ -1061,39 +1084,40 @@
       codigoPeriodo: periodoAgendamento.value,
       codigoFuncionario: funcionarioAgendamento.value,
       codigoCliente: clienteAgendamento.value,
-      codigoServico: servicoAgendamento.value
+      codigoServico: servicoAgendamento.value,
+      status: statusAgendamento.value
     };
 
     botaoCadastrarAgendamento.disabled = true;
-    botaoCadastrarAgendamento.textContent = "Cadastrando...";
+    botaoCadastrarAgendamento.textContent = codigoAgendamentoEmEdicao
+      ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
 
-    google.script.run
-      .withSuccessHandler(resultado => {
-        mostrarMensagem(
-          resultado && resultado.mensagem
-            ? resultado.mensagem
-            : "Agendamento cadastrado com sucesso!",
-          "sucesso"
-        );
+    const aoConcluir = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem ? resultado.mensagem : "Agendamento salvo com sucesso.", "sucesso");
+      codigoAgendamentoEmEdicao = "";
+      formAgendamento.reset();
+      statusAgendamento.value = "Agendado";
+      statusAgendamento.disabled = true;
+      botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
+      botaoCadastrarAgendamento.disabled = false;
+      carregarDadosAgendamento();
+      carregarLista();
+    };
 
-        formAgendamento.reset();
-        carregarDadosAgendamento();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar o agendamento: ");
-        botaoCadastrarAgendamento.disabled = false;
-        botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
-      })
-      .cadastrarAgendamento(
-        dados.codigo,
-        dados.data,
-        dados.codigoPeriodo,
-        dados.codigoFuncionario,
-        dados.codigoCliente,
-        dados.codigoServico
+    const aoFalhar = erro => {
+      falha(erro, codigoAgendamentoEmEdicao ? "Não foi possível atualizar o agendamento: " : "Não foi possível cadastrar o agendamento: ");
+      botaoCadastrarAgendamento.disabled = false;
+      botaoCadastrarAgendamento.textContent = codigoAgendamentoEmEdicao ? "Salvar alterações" : "Cadastrar agendamento";
+    };
+
+    if (codigoAgendamentoEmEdicao) {
+      google.script.run.withSuccessHandler(aoConcluir).withFailureHandler(aoFalhar).editarAgendamento(dados);
+    } else {
+      google.script.run.withSuccessHandler(aoConcluir).withFailureHandler(aoFalhar).cadastrarAgendamento(
+        dados.codigo, dados.data, dados.codigoPeriodo, dados.codigoFuncionario, dados.codigoCliente, dados.codigoServico
       );
+    }
   });
 
   carregarCodigoFuncionario();
