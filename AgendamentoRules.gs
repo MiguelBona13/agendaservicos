@@ -28,25 +28,19 @@ function agendamentoRulesValidarConflito(dados, agendamentos) {
     const periodoExistente = String(linha[2] || "").trim();
     const funcionarioExistente = String(linha[3] || "").trim();
     const clienteExistente = String(linha[4] || "").trim();
-    const statusExistente = String(linha[7] || "").trim().toLowerCase();\n    const codigoExistente = String(linha[0] || "").trim();
+    const statusExistente = String(linha[7] || "").trim().toLowerCase();
+    const codigoExistente = String(linha[0] || "").trim();
 
-    // Cancelamentos preservam o histórico, mas liberam o horário.
-    if (dados.codigoIgnorado && codigoExistente === String(dados.codigoIgnorado).trim()) {\n      return false;\n    }\n\n    if (["cancelado", "reagendado"].includes(statusExistente)) {
-      return false;
-    }
-
-    if (dataExistente !== dados.data || periodoExistente !== dados.codigoPeriodo) {
-      return false;
-    }
+    if (dados.codigoIgnorado && codigoExistente === String(dados.codigoIgnorado).trim()) return false;
+    if (["cancelado", "reagendado"].includes(statusExistente)) return false;
+    if (dataExistente !== dados.data || periodoExistente !== dados.codigoPeriodo) return false;
 
     return funcionarioExistente === dados.codigoFuncionario ||
       clienteExistente === dados.codigoCliente;
   });
 
   if (conflito) {
-    throw new Error(
-      "Conflito de horário: o funcionário ou o cliente já possui um agendamento nesse dia e período."
-    );
+    throw new Error("Conflito de horário: o funcionário ou o cliente já possui um agendamento nesse dia e período.");
   }
 }
 
