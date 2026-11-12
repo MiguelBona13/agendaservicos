@@ -246,8 +246,8 @@ function agendamentoRepositoryListarTodos() {
       codigoServico: String(linha[5] || "").trim(),
       valor: Number(linha[6]) || 0,
       status: String(linha[7] || "").trim(),
-      hora: String(linha[8] || "").trim(),
-      dataCadastro: String(linha[9] || "").trim(),
+      hora: agendamentoRulesNormalizarHora(linha[8]),
+      dataCadastro: agendamentoRulesNormalizarDataCadastro(linha[9]),
       linha: indice + 2
     }))
     .filter(item => item.codigo);

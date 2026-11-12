@@ -29,9 +29,10 @@ function carregarFonte(nomeArquivo, extras = {}) {
     Utilities: {
       formatDate(data, zona, formato) {
         const iso = data.toISOString();
-        return formato === "yyyy-MM-dd HH:mm"
-          ? iso.slice(0, 16).replace("T", " ")
-          : iso.slice(0, 10);
+        if (formato === "yyyy-MM-dd HH:mm") return iso.slice(0, 16).replace("T", " ");
+        if (formato === "HH:mm") return iso.slice(11, 16);
+        if (formato === "dd/MM/yyyy") return iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4);
+        return iso.slice(0, 10);
       }
     },
     Session: { getScriptTimeZone: () => "Etc/UTC" },
@@ -99,4 +100,24 @@ test("valida o status no payload de atualização", () => {
     () => validator.agendamentoValidatorValidarDadosAtualizacao({ ...dados, status: "Desconhecido" }),
     /status válido/
   );
+});
+
+
+test("normaliza horários armazenados como Date ou texto para HH:mm", () => {
+  const regras = carregarFonte("AgendamentoRules.gs");
+  const horaPlanilha = new Date("1899-12-30T12:30:00.000Z");
+  assert.equal(regras.agendamentoRulesNormalizarHora(horaPlanilha), "12:30");
+  assert.equal(regras.agendamentoRulesNormalizarHora("08:30:00"), "08:30");
+  assert.equal(regras.agendamentoRulesNormalizarHora("valor inválido"), "");
+});
+
+test("normaliza datas de cadastro para dd/MM/yyyy", () => {
+  const regras = carregarFonte("AgendamentoRules.gs");
+  assert.equal(
+    regras.agendamentoRulesNormalizarDataCadastro(new Date("2026-04-28T00:00:00.000Z")),
+    "28/04/2026"
+  );
+  assert.equal(regras.agendamentoRulesNormalizarDataCadastro("2026-04-28 09:15:00"), "28/04/2026");
+  assert.equal(regras.agendamentoRulesNormalizarDataCadastro("28/04/2026"), "28/04/2026");
+  assert.equal(regras.agendamentoRulesNormalizarDataCadastro("inválida"), "");
 });
