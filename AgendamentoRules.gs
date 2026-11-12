@@ -65,6 +65,79 @@ function agendamentoRulesNormalizarData(valor) {
 
 
 /**
+ * Normaliza um valor de hora da planilha para HH:mm.
+ * Valores Date (inclusive horários armazenados com a data-base de 1899)
+ * são formatados no fuso horário configurado no projeto Apps Script.
+ *
+ * @param {*} valor Hora armazenada como Date ou texto.
+ * @return {string} Hora no padrão HH:mm ou texto vazio quando inválido.
+ */
+function agendamentoRulesNormalizarHora(valor) {
+  if (valor instanceof Date && !isNaN(valor.getTime())) {
+    return Utilities.formatDate(
+      valor,
+      Session.getScriptTimeZone(),
+      "HH:mm"
+    );
+  }
+
+  const texto = String(valor == null ? "" : valor).trim();
+  const correspondencia = texto.match(/^([01]?\\d|2[0-3]):([0-5]\\d)(?::[0-5]\\d)?$/);
+  if (correspondencia) {
+    return correspondencia[1].padStart(2, "0") + ":" + correspondencia[2];
+  }
+
+  const dataInterpretada = new Date(texto);
+  if (!isNaN(dataInterpretada.getTime())) {
+    return Utilities.formatDate(
+      dataInterpretada,
+      Session.getScriptTimeZone(),
+      "HH:mm"
+    );
+  }
+
+  return "";
+}
+
+/**
+ * Normaliza a data de cadastro para o padrão brasileiro dd/MM/yyyy.
+ * Aceita datas Date do Sheets, ISO yyyy-MM-dd e textos de data reconhecíveis.
+ *
+ * @param {*} valor Data de cadastro armazenada na planilha.
+ * @return {string} Data no padrão dd/MM/yyyy ou texto vazio quando inválida.
+ */
+function agendamentoRulesNormalizarDataCadastro(valor) {
+  if (valor instanceof Date && !isNaN(valor.getTime())) {
+    return Utilities.formatDate(
+      valor,
+      Session.getScriptTimeZone(),
+      "dd/MM/yyyy"
+    );
+  }
+
+  const texto = String(valor == null ? "" : valor).trim();
+  if (!texto) return "";
+
+  const brasileira = texto.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);
+  if (brasileira) return texto;
+
+  const iso = texto.match(/^(\\d{4})-(\\d{2})-(\\d{2})(?:$|[ T])/);
+  if (iso) return iso[3] + "/" + iso[2] + "/" + iso[1];
+
+  const dataInterpretada = new Date(texto);
+  if (!isNaN(dataInterpretada.getTime())) {
+    return Utilities.formatDate(
+      dataInterpretada,
+      Session.getScriptTimeZone(),
+      "dd/MM/yyyy"
+    );
+  }
+
+  return "";
+}
+
+
+/**
  * Normaliza nomes para comparação sem diferenciar maiúsculas, espaços extras
  * ou acentos. Não altera o nome original armazenado na planilha.
  *
