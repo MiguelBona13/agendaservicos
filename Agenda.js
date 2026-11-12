@@ -48,3 +48,14 @@ function cadastrarAgendamento(
     codigoServico
   );
 }
+
+
+/**
+ * Atualiza um agendamento por meio da camada Service.
+ *
+ * @param {Object} dados Dados editáveis enviados pela interface.
+ * @return {{sucesso:boolean,mensagem:string}} Resultado da operação.
+ */
+function editarAgendamento(dados) {
+  return atualizarAgendamento(dados);
+}
