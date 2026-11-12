@@ -458,3 +458,60 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 ### Situação
 - 39 arquivos sincronizados com o Apps Script; a implantação existente foi atualizada para a versão 45, mantendo o mesmo ID e link.
 - Sintaxe do Service, do repositório Groq e do JavaScript da interface verificada. Teste integrado real com Groq e Sheets ainda pendente.
+
+
+
+## Implementação incremental — CRUD da AGENDA com dez campos para preparação do K-NN
+
+### Alterações implementadas na branch `feature/crud-agenda-campos-knn`
+- A AGENDA mantém exatamente dez colunas, nesta ordem: `codigo`, `Data`, `Codigo_Periodo`, `Funcionario`, `Cliente`, `Servico`, `Valor`, `Status`, `hora`, `Data_Cadastro`.
+- O cadastro obtém `hora` do horário inicial do período ativo e gera `Data_Cadastro` no servidor, usando o fuso horário do Apps Script.
+- O Repository grava e consulta os dez campos e acrescenta os cabeçalhos `hora` e `Data_Cadastro` quando necessário.
+- Registros históricos com oito campos continuam legíveis; os campos históricos desconhecidos permanecem vazios, sem criação retroativa de dados.
+- A consulta da AGENDA em `Consultas.js` delega a leitura ao Repository.
+- A interface apresenta os dez campos, permite editar os dados do agendamento e alterar o status durante a edição.
+- Os status previstos são `Agendado`, `Compareceu`, `Faltou`, `Cancelado` e `Reagendado`. Comparecimento e falta só podem ser registrados depois do horário agendado.
+- Cancelado e Reagendado não bloqueiam horários nem devem ser usados como rótulos de falta no treinamento.
+- O fluxo oficial de criação continua sendo reutilizado pelas integrações existentes; a AGENDA não recebeu colunas de previsão do K-NN.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — persistência, leitura e atualização dos dez campos, com compatibilidade histórica.
+- `AgendamentoService.gs` — geração de hora e data de cadastro e caso de uso de atualização.
+- `AgendamentoRules.gs` — regras de conflito e validação de status/horário.
+- `AgendamentoValidator.gs` — validação do payload de atualização.
+- `Agenda.js` — ponto de entrada para atualização, delegando ao Service.
+- `Consultas.js` — consulta da AGENDA delegada ao Repository.
+- `Index.html` — exibição dos dez campos, edição e seleção de status.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivo criado
+- `tests/AgendamentoKnnFields.test.cjs` — seis testes para status, horários futuros, conflito durante edição e validação do status.
+
+### Arquivos mantidos
+- Integrações de e-mail e WhatsApp e demais arquivos da aplicação foram preservados.
+- `PROJECT_GUIDE.md` não foi alterado.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions executou `npm test` com sucesso na branch de trabalho.
+- Execução após a alteração da interface: https://github.com/MiguelBona13/agendaservicos/actions/runs/43329107943
+- Os testes são unitários; ainda não foi realizado teste integrado real com Google Apps Script e Google Sheets.
+
+### Como testar no ambiente integrado
+1. Revisar a branch e integrar as alterações somente após aprovação.
+2. Atualizar a implantação do Apps Script em ambiente de teste.
+3. Confirmar que a aba AGENDA possui os dez cabeçalhos na ordem definida.
+4. Criar um agendamento e conferir a hora derivada do período e a Data_Cadastro gerada pelo servidor.
+5. Editar data, período, funcionário, cliente e serviço; confirmar que a Data_Cadastro original permanece igual.
+6. Tentar registrar Compareceu/Faltou antes do horário e confirmar que a operação é recusada.
+7. Após o horário, registrar Compareceu e Faltou em registros de teste e confirmar que Cancelado/Reagendado continuam distintos.
+8. Conferir importação por e-mail e WhatsApp para garantir que continuam criando pela função oficial `criarAgendamento()`.
+
+### Pendências e ressalvas
+- A migração adiciona os cabeçalhos das colunas 9 e 10 ao primeiro cadastro/atualização; não preenche retroativamente hora ou Data_Cadastro dos registros antigos.
+- A validação integrada com Apps Script, planilha real e integrações de e-mail/WhatsApp permanece pendente.
+- A previsão K-NN e o armazenamento separado de previsões não fazem parte desta etapa.
+
+### Próximo passo
+- Revisar e aprovar o pull request da branch.
+- Executar testes integrados no Apps Script antes da publicação em produção.
