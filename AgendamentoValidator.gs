@@ -227,3 +227,25 @@ function agendamentoValidatorInterpretarEmail(corpo) {
     horaFinal: horaFinal
   };
 }
+
+
+/**
+ * Valida os dados completos recebidos para atualizar um agendamento.
+ *
+ * @param {Object} entrada Dados enviados pela interface.
+ * @return {Object} Dados normalizados, incluindo status.
+ * @throws {Error} Quando campos ou status forem inválidos.
+ */
+function agendamentoValidatorValidarDadosAtualizacao(entrada) {
+  const origem = entrada || {};
+  const dados = agendamentoValidatorValidarDadosCadastro(
+    origem.codigo, origem.data, origem.codigoPeriodo, origem.codigoFuncionario,
+    origem.codigoCliente, origem.codigoServico
+  );
+  const status = String(origem.status || "").trim();
+  if (!["Agendado", "Compareceu", "Faltou", "Cancelado", "Reagendado"].includes(status)) {
+    throw new Error("Selecione um status válido para o agendamento.");
+  }
+  dados.status = status;
+  return dados;
+}
