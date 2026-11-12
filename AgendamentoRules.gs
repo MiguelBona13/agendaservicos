@@ -82,7 +82,7 @@ function agendamentoRulesNormalizarHora(valor) {
   }
 
   const texto = String(valor == null ? "" : valor).trim();
-  const correspondencia = texto.match(/^([01]?\\d|2[0-3]):([0-5]\\d)(?::[0-5]\\d)?$/);
+  const correspondencia = texto.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
   if (correspondencia) {
     return correspondencia[1].padStart(2, "0") + ":" + correspondencia[2];
   }
@@ -118,10 +118,10 @@ function agendamentoRulesNormalizarDataCadastro(valor) {
   const texto = String(valor == null ? "" : valor).trim();
   if (!texto) return "";
 
-  const brasileira = texto.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);
+  const brasileira = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (brasileira) return texto;
 
-  const iso = texto.match(/^(\\d{4})-(\\d{2})-(\\d{2})(?:$|[ T])/);
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[ T])/);
   if (iso) return iso[3] + "/" + iso[2] + "/" + iso[1];
 
   const dataInterpretada = new Date(texto);
