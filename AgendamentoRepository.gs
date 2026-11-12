@@ -111,7 +111,7 @@ function agendamentoRepositoryListarRegistrosParaConflito() {
 }
 
 /**
- * Garante os cabeçalhos das colunas hora e Data_Cadastro sem alterar os
+ * Garante os cabeçalhos hora, Data_Cadastro e Previsao_KNN sem alterar os
  * registros históricos das oito colunas originais.
  *
  * @return {void}
@@ -120,6 +120,7 @@ function agendamentoRepositoryGarantirColunasKnn() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
   if (aba.getLastColumn() < 9) aba.getRange(1, 9).setValue("hora");
   if (aba.getLastColumn() < 10) aba.getRange(1, 10).setValue("Data_Cadastro");
+  if (aba.getLastColumn() < 11) aba.getRange(1, 11).setValue("Previsao_KNN");
 }
 
 /**
@@ -138,9 +139,10 @@ function agendamentoRepositoryInserir(registro) {
   agendamentoRepositoryGarantirColunasKnn();
   const aba = getSheet(CONFIG.ABAS.AGENDA);
   const proximaLinha = aba.getLastRow() + 1;
-  aba.getRange(proximaLinha, 1, 1, 10).setNumberFormat("@");
-  aba.getRange(proximaLinha, 1, 1, 10).setValues([
-    registro.map(valor => String(valor == null ? "" : valor))
+  const valores = registro.concat([""]);
+  aba.getRange(proximaLinha, 1, 1, 11).setNumberFormat("@");
+  aba.getRange(proximaLinha, 1, 1, 11).setValues([
+    valores.map(valor => String(valor == null ? "" : valor))
   ]);
 }
 
@@ -159,7 +161,8 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     return null;
   }
 
-  const registros = aba.getRange(2, 1, ultimaLinha - 1, 10).getDisplayValues();
+  agendamentoRepositoryGarantirColunasKnn();
+  const registros = aba.getRange(2, 1, ultimaLinha - 1, 11).getDisplayValues();
   const indice = registros.findIndex(linha =>
     String(linha[0]).trim() === String(codigo).trim()
   );
@@ -180,6 +183,7 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     status: String(registro[7]).trim(),
     hora: String(registro[8] || "").trim(),
     dataCadastro: String(registro[9] || "").trim(),
+    previsaoKnnSalva: String(registro[10] || "").trim(),
     linha: indice + 2
   };
 }
@@ -224,6 +228,9 @@ function agendamentoRepositoryAtualizarRegistro(linha, registro) {
   aba.getRange(linha, 1, 1, 10).setValues([
     registro.map(valor => String(valor == null ? "" : valor))
   ]);
+  // Uma edição altera as características do agendamento; a previsão antiga
+  // deixa de ser válida e será recalculada na próxima consulta.
+  aba.getRange(linha, 11).setValue("");
 }
 
 /**
@@ -233,10 +240,10 @@ function agendamentoRepositoryAtualizarRegistro(linha, registro) {
  */
 function agendamentoRepositoryListarTodos() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
+  agendamentoRepositoryGarantirColunasKnn();
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return [];
-  const colunas = Math.max(8, Math.min(10, aba.getLastColumn()));
-  return aba.getRange(2, 1, ultimaLinha - 1, colunas).getValues()
+  return aba.getRange(2, 1, ultimaLinha - 1, 11).getValues()
     .map((linha, indice) => ({
       codigo: String(linha[0] || "").trim(),
       data: agendamentoRulesNormalizarData(linha[1]),
@@ -248,9 +255,28 @@ function agendamentoRepositoryListarTodos() {
       status: String(linha[7] || "").trim(),
       hora: agendamentoRulesNormalizarHora(linha[8]),
       dataCadastro: agendamentoRulesNormalizarDataCadastro(linha[9]),
+      previsaoKnnSalva: String(linha[10] || "").trim(),
       linha: indice + 2
     }))
     .filter(item => item.codigo);
+}
+
+
+/**
+ * Atualiza somente a previsão calculada pelo K-NN.
+ *
+ * @param {number} linha Número da linha na aba AGENDA.
+ * @param {string} previsao Texto da previsão ou justificativa de indisponibilidade.
+ * @return {void}
+ */
+function agendamentoRepositoryAtualizarPrevisao(linha, previsao) {
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
+    throw new Error("Não foi possível localizar a linha para atualizar a previsão K-NN.");
+  }
+  agendamentoRepositoryGarantirColunasKnn();
+  aba.getRange(linha, 11).setNumberFormat("@");
+  aba.getRange(linha, 11).setValue(String(previsao || ""));
 }
 
 /**
