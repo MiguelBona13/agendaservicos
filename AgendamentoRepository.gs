@@ -4,7 +4,7 @@
  *
  * Responsabilidade:
  * Centralizar as operações de leitura e gravação do Google Sheets usadas
- * pelo fluxo de criação de agendamentos.
+ * pelos fluxos de criação, consulta e atualização de agendamentos.
  *
  * Dependências principais:
  * - CONFIG, definido em Config.js;
@@ -97,7 +97,7 @@ function agendamentoRepositoryBuscarValorServico(codigoServico) {
 /**
  * Retorna os registros da agenda necessários para verificar conflitos.
  *
- * @return {Array<Array<*>>} Linhas da agenda, sem o cabeçalho, com oito colunas.
+ * @return {Array<Array<*>>} Linhas da agenda, sem o cabeçalho, com até dez colunas.
  */
 function agendamentoRepositoryListarRegistrosParaConflito() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
@@ -107,12 +107,12 @@ function agendamentoRepositoryListarRegistrosParaConflito() {
     return [];
   }
 
-  return aba.getRange(2, 1, ultimaLinha - 1, 8).getValues();
+  return aba.getRange(2, 1, ultimaLinha - 1, Math.max(8, Math.min(10, aba.getLastColumn()))).getValues();
 }
 
 /**
  * Grava um agendamento na próxima linha disponível da aba AGENDA.
- * Os oito campos são formatados como texto para preservar os códigos.
+ * Os dez campos são gravados em uma única operação. Os códigos e horários\n * permanecem como texto; a data de cadastro é recebida do Service.
  *
  * @param {Array<string>} registro Dados na ordem definida para a aba AGENDA.
  * @return {void}
@@ -140,7 +140,7 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     return null;
   }
 
-  const registros = aba.getRange(2, 1, ultimaLinha - 1, 8).getDisplayValues();
+  const registros = aba.getRange(2, 1, ultimaLinha - 1, 10).getDisplayValues();
   const indice = registros.findIndex(linha =>
     String(linha[0]).trim() === String(codigo).trim()
   );
