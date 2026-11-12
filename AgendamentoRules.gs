@@ -13,7 +13,7 @@
  */
 
 /**
- * Impede conflito de horário com agendamentos que não estejam cancelados.
+ * Impede conflito com agendamentos ativos; cancelados e reagendados liberam o horário.
  * Um conflito ocorre quando data e período coincidem e o funcionário ou o
  * cliente já está reservado nesse mesmo período.
  *
