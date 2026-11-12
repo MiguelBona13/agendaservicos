@@ -242,7 +242,7 @@
             </div>
             <div class="campo">
               <label for="statusAgendamento">Status *</label>
-              <select id="statusAgendamento" required>
+              <select id="statusAgendamento" required disabled>
                 <option value="Agendado">Agendado</option>
                 <option value="Compareceu">Compareceu</option>
                 <option value="Faltou">Faltou</option>
@@ -790,6 +790,7 @@
           clienteAgendamento.value = String(registro[4] || "");
           servicoAgendamento.value = String(registro[5] || "");
           statusAgendamento.value = String(registro[7] || "Agendado");
+          statusAgendamento.disabled = false;
           botaoCadastrarAgendamento.textContent = "Salvar alterações";
           areaCadastroAgendamento.scrollIntoView({ behavior: "smooth", block: "start" });
           mostrarMensagem("Editando agendamento " + codigoAgendamentoEmEdicao + ".", "sucesso");
@@ -827,7 +828,9 @@
           });
           tdAcoes.appendChild(botaoCancelar);
         } else {
-          tdAcoes.textContent = "Cancelado";
+          const textoCancelado = document.createElement("span");
+          textoCancelado.textContent = "Cancelado";
+          tdAcoes.appendChild(textoCancelado);
         }
 
         tr.appendChild(tdAcoes);
@@ -1095,6 +1098,7 @@
       codigoAgendamentoEmEdicao = "";
       formAgendamento.reset();
       statusAgendamento.value = "Agendado";
+      statusAgendamento.disabled = true;
       botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
       botaoCadastrarAgendamento.disabled = false;
       carregarDadosAgendamento();
