@@ -544,3 +544,32 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Próxima etapa recomendada
 - Acompanhar o uso real do cadastro para acumular resultados válidos `Compareceu` e `Faltou`; depois desenvolver e validar o modelo K-NN em etapa separada.
+
+## Correção de apresentação — formato brasileiro de data e hora na AGENDA
+
+### Alterações implementadas
+- A coluna `hora` é normalizada para `HH:mm`, inclusive quando o Google Sheets retorna um objeto Date com data-base 30/12/1899.
+- A normalização da hora utiliza o fuso horário configurado no projeto Apps Script (`America/Cuiaba`).
+- A coluna `Data_Cadastro` é normalizada para `dd/MM/yyyy`.
+- A interface apresenta `Data` e `Data_Cadastro` no formato `dd/MM/yyyy`; o valor ISO da data de atendimento continua preservado internamente para edição e envio ao servidor.
+- Foram adicionados testes unitários para os formatos de hora e data.
+
+### Arquivos alterados
+- `AgendamentoRules.gs` — normalização de hora e data de cadastro.
+- `AgendamentoRepository.gs` — aplicação das normalizações ao montar os registros consultados.
+- `Index.html` — apresentação de datas no padrão brasileiro.
+- `tests/AgendamentoKnnFields.test.cjs` — testes para os novos formatos.
+
+### Arquivos mantidos e exclusões
+- Mantidos os demais arquivos e fluxos da aplicação.
+- Nenhum arquivo criado ou excluído.
+- `PROJECT_GUIDE.md` não foi alterado.
+
+### Validação
+- A primeira execução do workflow apontou erro de sintaxe nas expressões regulares recém-adicionadas; os escapes foram corrigidos.
+- Após a correção, a sintaxe dos arquivos `AgendamentoRules.gs`, `AgendamentoRepository.gs`, `Index.html` e do teste novo foi verificada.
+- A suíte completa precisa concluir novamente no GitHub Actions após a correção.
+- O teste funcional integrado com Google Sheets/Apps Script permanece não executado manualmente.
+
+### Próximo passo
+- Integrar a correção à `main` e confirmar a publicação automática no Apps Script.
