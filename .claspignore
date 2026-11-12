@@ -1,0 +1,6 @@
+# O projeto Apps Script principal usa os arquivos da raiz.
+# O backend WhatsApp possui seu proprio appsscript.json e deve ser publicado
+# separadamente, nunca enviado ao projeto principal.
+whatsapp-backend/**
+tests/**
+.github/**
