@@ -3,7 +3,7 @@
  * Camada: Service — Camada de Serviço
  *
  * Responsabilidade:
- * Coordenar os casos de uso de criação e cancelamento de agendamentos.
+ * Coordenar os casos de uso de criação, atualização e cancelamento de agendamentos.
  *
  * Dependências principais:
  * - AgendamentoValidator.gs;
