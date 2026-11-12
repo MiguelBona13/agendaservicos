@@ -92,21 +92,64 @@ function criarAgendamento(
       codigoCliente: dados.codigoCliente
     }, agendamentoRepositoryListarRegistrosParaConflito());
 
+    const hora = String(periodo.horaInicial || "").trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) {
+      throw new Error("O horário inicial do período selecionado é inválido.");
+    }
+    const dataCadastro = Utilities.formatDate(
+      new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss"
+    );
+
     agendamentoRepositoryInserir([
-      dados.codigo,
-      dados.data,
-      dados.codigoPeriodo,
-      dados.codigoFuncionario,
-      dados.codigoCliente,
-      dados.codigoServico,
-      String(valorServico),
-      "Agendado"
+      dados.codigo, dados.data, dados.codigoPeriodo, dados.codigoFuncionario,
+      dados.codigoCliente, dados.codigoServico, String(valorServico),
+      "Agendado", hora, dataCadastro
     ]);
 
     return {
       sucesso: true,
       mensagem: "Agendamento cadastrado com sucesso."
     };
+  } finally {
+    bloqueio.releaseLock();
+  }
+}
+
+/**
+ * Atualiza os dados de um agendamento e preserva sua data original de cadastro.
+ * O valor do serviço e a hora são recuperados dos cadastros oficiais.
+ *
+ * @param {Object} entrada Dados editáveis enviados pela interface.
+ * @return {{sucesso:boolean,mensagem:string}} Resultado da atualização.
+ * @throws {Error} Quando os dados, referências, status ou conflito forem inválidos.
+ */
+function atualizarAgendamento(entrada) {
+  const bloqueio = LockService.getScriptLock();
+  bloqueio.waitLock(10000);
+  try {
+    const dados = agendamentoValidatorValidarDadosAtualizacao(entrada);
+    const existente = agendamentoRepositoryBuscarPorCodigo(dados.codigo);
+    if (!existente) throw new Error("Agendamento não encontrado.");
+    const periodo = consultarPeriodos().find(item => item.codigo === dados.codigoPeriodo);
+    if (!periodo || !periodo.ativo) throw new Error("O período selecionado não existe ou está inativo.");
+    if (!codigoExiste(CONFIG.ABAS.FUNCIONARIOS, dados.codigoFuncionario)) throw new Error("O funcionário selecionado não está cadastrado.");
+    if (!codigoExiste(CONFIG.ABAS.CLIENTES, dados.codigoCliente)) throw new Error("O cliente selecionado não está cadastrado.");
+    const valorServico = agendamentoRepositoryBuscarValorServico(dados.codigoServico);
+    if (valorServico === null || !Number.isFinite(valorServico) || valorServico < 0) throw new Error("O serviço selecionado não existe ou possui valor inválido.");
+    const hora = String(periodo.horaInicial || "").trim();
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hora)) throw new Error("O horário inicial do período selecionado é inválido.");
+    agendamentoRulesValidarStatus(dados.status, dados.data, hora);
+    agendamentoRulesValidarConflito({
+      data: dados.data, codigoPeriodo: dados.codigoPeriodo,
+      codigoFuncionario: dados.codigoFuncionario, codigoCliente: dados.codigoCliente,
+      codigoIgnorado: dados.codigo
+    }, agendamentoRepositoryListarRegistrosParaConflito());
+    agendamentoRepositoryAtualizarRegistro(existente.linha, [
+      dados.codigo, dados.data, dados.codigoPeriodo, dados.codigoFuncionario,
+      dados.codigoCliente, dados.codigoServico, String(valorServico), dados.status,
+      hora, existente.dataCadastro || ""
+    ]);
+    return { sucesso: true, mensagem: "Agendamento atualizado com sucesso." };
   } finally {
     bloqueio.releaseLock();
   }
