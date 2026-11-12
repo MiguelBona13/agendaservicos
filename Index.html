@@ -422,6 +422,34 @@
     mensagem.style.display = "none";
   }
 
+
+  /**
+   * Exibe datas da AGENDA no padrão brasileiro sem alterar o valor usado
+   * internamente pelo formulário (yyyy-MM-dd).
+   *
+   * @param {*} valor Data recebida do servidor.
+   * @return {string} Data em dd/MM/yyyy ou texto original quando não reconhecida.
+   */
+  function formatarDataBrasileira(valor) {
+    const texto = String(valor == null ? "" : valor).trim();
+    if (!texto) return "";
+
+    const iso = texto.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+    if (iso) return iso[3] + "/" + iso[2] + "/" + iso[1];
+
+    if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(texto)) return texto;
+
+    const data = new Date(texto);
+    if (isNaN(data.getTime())) return texto;
+
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Cuiaba",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }).format(data);
+  }
+
   function falha(erro, prefixo) {
     mostrarMensagem(
       prefixo + (erro && erro.message ? erro.message : String(erro)),
@@ -680,12 +708,12 @@
           botaoAtualizar.disabled = false;
 
           const registros = (agendamentos || []).map(item => [
-            item.codigo, item.data, item.codigoPeriodo, item.codigoFuncionario,
+            item.codigo, formatarDataBrasileira(item.data), item.codigoPeriodo, item.codigoFuncionario,
             item.codigoCliente, item.codigoServico,
             Number(item.valor || 0).toLocaleString("pt-BR", {
               style: "currency", currency: "BRL"
             }),
-            item.status, item.hora || "", item.dataCadastro || ""
+            item.status, item.hora || "", formatarDataBrasileira(item.dataCadastro)
           ]);
 
           exibirLista({
