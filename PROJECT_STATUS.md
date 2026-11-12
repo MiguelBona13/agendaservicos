@@ -515,3 +515,32 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 ### Próximo passo
 - Revisar e aprovar o pull request da branch.
 - Executar testes integrados no Apps Script antes da publicação em produção.
+
+
+
+## Conclusão da implementação — CRUD da AGENDA preparado para o K-NN
+
+### Integração e publicação
+- Pull Request #2 integrado à branch `main` em 12/11/2026.
+- Commit de integração: `166f6ff930005f853529d5173a6c28d68b50f3e9`.
+- Testes automatizados no commit integrado: aprovados.
+- Publicação do Apps Script concluída com sucesso na versão 46, atualizando a implantação existente.
+- Execução de publicação: https://github.com/MiguelBona13/agendaservicos/actions/runs/43330393445
+- Execução dos testes automatizados: https://github.com/MiguelBona13/agendaservicos/actions/runs/43330393390
+
+### Ajuste de publicação
+- Criado `.claspignore` para impedir que o manifesto `whatsapp-backend/appsscript.json` e os arquivos do backend WhatsApp sejam enviados ao projeto Apps Script principal.
+- O primeiro push após a integração falhou por conflito de nome entre os dois manifestos `appsscript.json`; a configuração foi corrigida e o push subsequente, a criação da versão e a atualização da implantação foram concluídos com sucesso.
+- `AgendamentoRepository.gs` recebeu apenas ajuste de documentação na quebra de linha do comentário.
+
+### Situação final
+- O CRUD de AGENDA com os dez campos está integrado na `main` e publicado no Apps Script, versão 46.
+- A estrutura de colunas permanece: `codigo`, `Data`, `Codigo_Periodo`, `Funcionario`, `Cliente`, `Servico`, `Valor`, `Status`, `hora`, `Data_Cadastro`.
+- Nenhuma coluna de previsão K-NN foi adicionada à AGENDA.
+- Não houve exclusão de arquivos.
+- `PROJECT_GUIDE.md` não foi alterado.
+- A publicação técnica foi confirmada pelo GitHub Actions; não foi realizado teste funcional manual com dados reais na planilha após a publicação.
+- A implementação do algoritmo K-NN e o armazenamento separado das previsões permanecem fora do escopo desta entrega.
+
+### Próxima etapa recomendada
+- Acompanhar o uso real do cadastro para acumular resultados válidos `Compareceu` e `Faltou`; depois desenvolver e validar o modelo K-NN em etapa separada.
