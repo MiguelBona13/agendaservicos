@@ -124,7 +124,8 @@ function agendamentoRepositoryGarantirColunasKnn() {
 
 /**
  * Grava um agendamento na próxima linha disponível da aba AGENDA.
- * Os dez campos são gravados em uma única operação. Os códigos e horários\n * permanecem como texto; a data de cadastro é recebida do Service.
+ * Os dez campos são gravados em uma única operação. Os códigos e horários
+ * permanecem como texto; a data de cadastro é recebida do Service.
  *
  * @param {Array<string>} registro Dados na ordem definida para a aba AGENDA.
  * @return {void}
