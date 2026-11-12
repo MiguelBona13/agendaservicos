@@ -240,6 +240,16 @@
                 <option value="">Carregando serviços...</option>
               </select>
             </div>
+            <div class="campo">
+              <label for="statusAgendamento">Status *</label>
+              <select id="statusAgendamento" required>
+                <option value="Agendado">Agendado</option>
+                <option value="Compareceu">Compareceu</option>
+                <option value="Faltou">Faltou</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Reagendado">Reagendado</option>
+              </select>
+            </div>
           </div>
 
           <div class="acoes">
@@ -1063,7 +1073,6 @@
 
   formAgendamento.addEventListener("submit", evento => {
     evento.preventDefault();
-
     if (!formAgendamento.reportValidity()) return;
 
     const dados = {
@@ -1072,69 +1081,39 @@
       codigoPeriodo: periodoAgendamento.value,
       codigoFuncionario: funcionarioAgendamento.value,
       codigoCliente: clienteAgendamento.value,
-      codigoServico: servicoAgendamento.value
+      codigoServico: servicoAgendamento.value,
+      status: statusAgendamento.value
     };
 
     botaoCadastrarAgendamento.disabled = true;
-    botaoCadastrarAgendamento.textContent = "Cadastrando...";
+    botaoCadastrarAgendamento.textContent = codigoAgendamentoEmEdicao
+      ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
 
-    google.script.run
-      .withSuccessHandler(resultado => {
-        mostrarMensagem(
-          resultado && resultado.mensagem
-            ? resultado.mensagem
-            : "Agendamento cadastrado com sucesso!",
-          "sucesso"
-        );
+    const aoConcluir = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem ? resultado.mensagem : "Agendamento salvo com sucesso.", "sucesso");
+      codigoAgendamentoEmEdicao = "";
+      formAgendamento.reset();
+      statusAgendamento.value = "Agendado";
+      botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
+      botaoCadastrarAgendamento.disabled = false;
+      carregarDadosAgendamento();
+      carregarLista();
+    };
 
-        formAgendamento.reset();
-        carregarDadosAgendamento();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar o agendamento: ");
-        botaoCadastrarAgendamento.disabled = false;
-        botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
-      })
-      [codigoAgendamentoEmEdicao ? "editarAgendamento" : "cadastrarAgendamento"].forEach(nomeFuncao => {
-        if (nomeFuncao === "editarAgendamento") {
-          google.script.run
-            .withSuccessHandler(resultado => {
-              mostrarMensagem(resultado.mensagem, "sucesso");
-              codigoAgendamentoEmEdicao = "";
-              formAgendamento.reset();
-              botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
-              statusAgendamento.value = "Agendado";
-              carregarDadosAgendamento();
-              carregarLista();
-            })
-            .withFailureHandler(erro => {
-              falha(erro, "Não foi possível atualizar o agendamento: ");
-              botaoCadastrarAgendamento.disabled = false;
-              botaoCadastrarAgendamento.textContent = "Salvar alterações";
-            })
-            .editarAgendamento(dados);
-        } else {
-          google.script.run
-            .withSuccessHandler(resultado => {
-              mostrarMensagem(resultado.mensagem, "sucesso");
-              formAgendamento.reset();
-              statusAgendamento.value = "Agendado";
-              carregarDadosAgendamento();
-              carregarLista();
-            })
-            .withFailureHandler(erro => {
-              falha(erro, "Não foi possível cadastrar o agendamento: ");
-              botaoCadastrarAgendamento.disabled = false;
-              botaoCadastrarAgendamento.textContent = "Cadastrar agendamento";
-            })
-            .cadastrarAgendamento(
-              dados.codigo, dados.data, dados.codigoPeriodo,
-              dados.codigoFuncionario, dados.codigoCliente, dados.codigoServico
-            );
-        }
-      });
+    const aoFalhar = erro => {
+      falha(erro, codigoAgendamentoEmEdicao ? "Não foi possível atualizar o agendamento: " : "Não foi possível cadastrar o agendamento: ");
+      botaoCadastrarAgendamento.disabled = false;
+      botaoCadastrarAgendamento.textContent = codigoAgendamentoEmEdicao ? "Salvar alterações" : "Cadastrar agendamento";
+    };
+
+    if (codigoAgendamentoEmEdicao) {
+      google.script.run.withSuccessHandler(aoConcluir).withFailureHandler(aoFalhar).editarAgendamento(dados);
+    } else {
+      google.script.run.withSuccessHandler(aoConcluir).withFailureHandler(aoFalhar).cadastrarAgendamento(
+        dados.codigo, dados.data, dados.codigoPeriodo, dados.codigoFuncionario, dados.codigoCliente, dados.codigoServico
+      );
+    }
   });
 
   carregarCodigoFuncionario();
