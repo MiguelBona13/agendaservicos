@@ -47,5 +47,5 @@ function agendamentoKnnServiceListarComPrevisoes() {
     }
   });
 
-  return agendamentos;
+  return agendamentoArvoreServiceAplicarPrevisoes(agendamentos, agora);
 }
