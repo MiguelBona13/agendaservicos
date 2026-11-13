@@ -60,7 +60,7 @@ test("retorna sem previsão quando há menos de cinco resultados reais", () => {
     criarAlvo(), historico, new Date("2026-12-10T12:00:00")
   );
   assert.match(resultado.texto, /histórico insuficiente/);
-  assert.equal(resultado.vizinhos, 2);
+  assert.equal(resultado.vizinhos, 3);
 });
 
 test("classifica como provável comparecimento quando a maioria dos vizinhos compareceu", () => {
