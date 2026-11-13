@@ -649,8 +649,9 @@ Adicionar à AGENDA uma indicação independente de risco de falta, calculada po
 
 ### Validação
 - Testes unitários novos cobrem risco, ausência de risco, histórico insuficiente, exclusão de status não elegíveis, exclusão de atendimentos futuros, data brasileira e exclusão de código/status das características.
-- A suíte completa deve ser validada no GitHub Actions após o pull request.
-- A publicação do Apps Script é executada pelo workflow de publicação quando a alteração chega à branch main; o resultado precisa ser conferido antes de considerar a implantação concluída.
+- Suíte completa validada no GitHub Actions: execução 43347942212 no pull request e execução 43347972607 após a integração, ambas concluídas com sucesso.
+- Código integrado à main pelo pull request #5, commit 411df2ff9665bc826b33d9799a72070939197fbb.
+- Publicação no Google Apps Script concluída pelo workflow 43347972480: 41 arquivos enviados, versão 52 criada e implantação existente atualizada com sucesso.
 - O desempenho real do modelo ainda precisa ser avaliado com dados históricos representativos; o rótulo não é garantia de falta.
 
 ### Como testar
@@ -663,5 +664,5 @@ Adicionar à AGENDA uma indicação independente de risco de falta, calculada po
 7. Validar com amostras reais e revisar falsos positivos/negativos antes de usar o indicador para decisões operacionais.
 
 ### Próximo passo
-- Executar a suíte completa, revisar o resultado do pull request e integrar à main se todos os checks passarem.
-- Confirmar a execução bem-sucedida da publicação Apps Script e realizar teste integrado com a planilha real.
+- Realizar teste funcional manual na aplicação publicada, confirmando a coluna Previsao_Arvore e os resultados com dados da planilha real.
+- Avaliar falsos positivos e falsos negativos com histórico representativo antes de usar o indicador como critério operacional.
