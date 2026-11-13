@@ -573,3 +573,42 @@ A confirmação apresentada pelo sistema significa que o MailApp aceitou a solic
 
 ### Próximo passo
 - Integrar a correção à `main` e confirmar a publicação automática no Apps Script.
+
+## Etapa em desenvolvimento — previsão de comparecimento com K-NN
+
+### Objetivo
+Adicionar à aba AGENDA a coluna `Previsao_KNN`, separada do `Status` real do atendimento, para estimar se cada agendamento futuro tende a resultar em comparecimento ou falta.
+
+### Regras da previsão
+- `Status` continua representando o resultado real: Agendado, Compareceu, Faltou, Cancelado ou Reagendado.
+- `Previsao_KNN` apresenta a estimativa do modelo e nunca substitui o status real.
+- O K-NN utiliza K=5 vizinhos e distância ponderada por semelhança.
+- Características consideradas: cliente, serviço, funcionário, período, dia da semana, antecedência da reserva e valor.
+- O código do agendamento e o status não são características de distância.
+- Apenas registros históricos com status Compareceu ou Faltou e atendimento anterior ao instante da previsão podem treinar o modelo.
+- Cancelados, reagendados, pendentes e atendimentos futuros são excluídos do treinamento.
+- Com menos de cinco exemplos históricos válidos, a interface informa que o histórico é insuficiente.
+- Agendamentos concluídos mostram o resultado real; cancelados/reagendados mostram que a previsão não se aplica.
+
+### Arquivos criados
+- `AgendamentoKnnRules.gs` — cálculo da distância e classificação pelos cinco vizinhos mais próximos.
+- `AgendamentoKnnService.gs` — coordena a geração e persistência das previsões.
+- `tests/AgendamentoKnnRules.test.cjs` — testes unitários de classificação, histórico insuficiente e exclusão de status não elegíveis.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — cria a 11ª coluna, lê a previsão salva e atualiza somente essa coluna.
+- `Consultas.js` — encaminha a consulta da agenda ao serviço de previsão.
+- `Index.html` — exibe a coluna Previsão K-NN na tabela.
+- `PROJECT_STATUS.md` — registra a etapa.
+
+### Arquivos mantidos
+- `AgendamentoService.gs`, `AgendamentoRules.gs`, `AgendamentoValidator.gs` e os dez campos originais da AGENDA.
+- O campo `Status` continua sendo o rótulo real para treinamento.
+- Nenhum arquivo existente foi excluído.
+- `PROJECT_GUIDE.md` não foi alterado.
+
+### Validação e pendências
+- Foram criados testes unitários para os cenários centrais do classificador.
+- A execução completa da suíte no GitHub Actions e a validação integrada com Google Sheets/Apps Script ainda precisam ser concluídas.
+- O desempenho preditivo real ainda não foi medido; não apresentar as estimativas como garantia de comparecimento ou falta.
+- A nova coluna será criada automaticamente pela camada Repository ao consultar ou gravar registros na AGENDA.
