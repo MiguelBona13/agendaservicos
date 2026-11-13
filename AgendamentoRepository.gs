@@ -120,7 +120,7 @@ function agendamentoRepositoryGarantirColunasKnn() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
   if (aba.getLastColumn() < 9) aba.getRange(1, 9).setValue("hora");
   if (aba.getLastColumn() < 10) aba.getRange(1, 10).setValue("Data_Cadastro");
-  if (aba.getLastColumn() < 11) aba.getRange(1, 11).setValue("Previsao_KNN");
+  aba.getRange(1, 11).setValue("Previsao_KNN");
 }
 
 /**
