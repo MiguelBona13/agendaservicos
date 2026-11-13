@@ -612,3 +612,56 @@ Adicionar à aba AGENDA a coluna `Previsao_KNN`, separada do `Status` real do at
 - A execução completa da suíte no GitHub Actions e a validação integrada com Google Sheets/Apps Script ainda precisam ser concluídas.
 - O desempenho preditivo real ainda não foi medido; não apresentar as estimativas como garantia de comparecimento ou falta.
 - A nova coluna será criada automaticamente pela camada Repository ao consultar ou gravar registros na AGENDA.
+
+## Etapa implementada — previsão de risco de falta com Árvore de Decisão
+
+### Objetivo
+Adicionar à AGENDA uma indicação independente de risco de falta, calculada por uma árvore de decisão CART, preservando a previsão K-NN e o Status real.
+
+### Regras implementadas
+- A interface mostra somente **Risco de falta**, **Sem risco de falta identificado** ou uma justificativa de indisponibilidade/histórico insuficiente.
+- A árvore é treinada com pelo menos oito resultados reais válidos.
+- Somente Compareceu e Faltou com atendimento anterior ao instante da previsão entram no treinamento.
+- Agendado, Cancelado, Reagendado e atendimentos futuros não são rótulos de treinamento.
+- Código do agendamento e Status não são características.
+- Cliente, serviço, funcionário e período são tratados como categorias nominais, sem atribuir ordem numérica aos códigos.
+- Dia da semana, mês, horário, antecedência e valor podem ser usados como características.
+- A árvore usa impureza Gini, profundidade máxima quatro e mínimo de dois exemplos por folha.
+- A classificação de risco ocorre quando pelo menos metade dos exemplos da folha terminal corresponde a faltas.
+- A previsão não altera o Status real nem substitui a coluna Previsao_KNN.
+
+### Arquivos criados
+- AgendamentoArvoreRules.gs — extração de características, treinamento CART e classificação de risco.
+- AgendamentoArvoreService.gs — coordena o treinamento, classificação e persistência.
+- tests/AgendamentoArvoreRules.test.cjs — testes unitários das regras temporais, categorias e classificação.
+
+### Arquivos alterados
+- AgendamentoRepository.gs — cria e lê a 12ª coluna Previsao_Arvore, preserva a 11ª coluna K-NN e grava somente a previsão da árvore.
+- AgendamentoKnnService.gs — integra a árvore ao fluxo atual de consulta, reutilizando os registros carregados.
+- Index.html — exibe a coluna Risco de falta (Árvore).
+- PROJECT_STATUS.md — registra esta etapa.
+
+### Arquivos mantidos
+- AgendamentoKnnRules.gs, AgendamentoKnnService.gs e Previsao_KNN continuam disponíveis.
+- AgendamentoService.gs, AgendamentoRules.gs, AgendamentoValidator.gs e os dez campos originais da AGENDA permanecem preservados.
+- PROJECT_GUIDE.md não foi alterado.
+- Nenhum arquivo foi excluído.
+
+### Validação
+- Testes unitários novos cobrem risco, ausência de risco, histórico insuficiente, exclusão de status não elegíveis, exclusão de atendimentos futuros, data brasileira e exclusão de código/status das características.
+- A suíte completa deve ser validada no GitHub Actions após o pull request.
+- A publicação do Apps Script é executada pelo workflow de publicação quando a alteração chega à branch main; o resultado precisa ser conferido antes de considerar a implantação concluída.
+- O desempenho real do modelo ainda precisa ser avaliado com dados históricos representativos; o rótulo não é garantia de falta.
+
+### Como testar
+1. Executar npm test e confirmar todos os testes aprovados.
+2. Integrar a branch à main após a verificação do workflow.
+3. Conferir no GitHub Actions o workflow Publicar Apps Script e o número de versão implantado.
+4. Abrir a AGENDA e confirmar a criação da coluna Previsao_Arvore.
+5. Conferir agendamentos futuros com pelo menos oito resultados reais anteriores.
+6. Confirmar que registros concluídos, cancelados e reagendados não recebem previsão ativa e que o Status não é alterado.
+7. Validar com amostras reais e revisar falsos positivos/negativos antes de usar o indicador para decisões operacionais.
+
+### Próximo passo
+- Executar a suíte completa, revisar o resultado do pull request e integrar à main se todos os checks passarem.
+- Confirmar a execução bem-sucedida da publicação Apps Script e realizar teste integrado com a planilha real.
