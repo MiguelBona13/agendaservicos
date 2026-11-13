@@ -125,5 +125,5 @@ function consultarPeriodos() {
  * @return {Array<Object>} Agendamentos com os dez campos disponíveis.
  */
 function consultarAgendamentos() {
-  return agendamentoRepositoryListarTodos();
+  return agendamentoKnnServiceListarComPrevisoes();
 }
