@@ -714,14 +714,15 @@
               style: "currency", currency: "BRL"
             }),
             item.status, item.hora || "", formatarDataBrasileira(item.dataCadastro),
-            item.previsaoKnn || "Sem previsão"
+            item.previsaoKnn || "Sem previsão",
+            item.previsaoArvore || "Sem previsão"
           ]);
 
           exibirLista({
             colunas: [
               "Código", "Data", "Código do período", "Código do funcionário",
               "Código do cliente", "Código do serviço", "Valor", "Status",
-              "Hora", "Data de cadastro", "Previsão K-NN"
+              "Hora", "Data de cadastro", "Previsão K-NN", "Risco de falta (Árvore)"
             ],
             registros: registros
           });
