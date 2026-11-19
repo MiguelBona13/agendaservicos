@@ -40,11 +40,6 @@ function agendamentoRegressaoLogisticaServiceAplicarPrevisoes(agendamentos, agor
     }
 
     agendamento.previsaoRegressaoLogistica = previsao;
-    if (previsao !== String(agendamento.previsaoRegressaoLogisticaSalva || "")) {
-      agendamentoRepositoryAtualizarPrevisaoRegressaoLogistica(
-        agendamento.linha, previsao
-      );
-    }
   });
 
   return registros;
