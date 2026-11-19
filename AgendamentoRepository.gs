@@ -122,6 +122,7 @@ function agendamentoRepositoryGarantirColunasKnn() {
   if (aba.getLastColumn() < 10) aba.getRange(1, 10).setValue("Data_Cadastro");
   aba.getRange(1, 11).setValue("Previsao_KNN");
   aba.getRange(1, 12).setValue("Previsao_Arvore");
+  aba.getRange(1, 13).setValue("Previsao_Regressao_Logistica");
 }
 
 /**
@@ -140,9 +141,9 @@ function agendamentoRepositoryInserir(registro) {
   agendamentoRepositoryGarantirColunasKnn();
   const aba = getSheet(CONFIG.ABAS.AGENDA);
   const proximaLinha = aba.getLastRow() + 1;
-  const valores = registro.concat(["", ""]);
-  aba.getRange(proximaLinha, 1, 1, 12).setNumberFormat("@");
-  aba.getRange(proximaLinha, 1, 1, 12).setValues([
+  const valores = registro.concat(["", "", ""]);
+  aba.getRange(proximaLinha, 1, 1, 13).setNumberFormat("@");
+  aba.getRange(proximaLinha, 1, 1, 13).setValues([
     valores.map(valor => String(valor == null ? "" : valor))
   ]);
 }
@@ -163,7 +164,7 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
   }
 
   agendamentoRepositoryGarantirColunasKnn();
-  const registros = aba.getRange(2, 1, ultimaLinha - 1, 12).getDisplayValues();
+  const registros = aba.getRange(2, 1, ultimaLinha - 1, 13).getDisplayValues();
   const indice = registros.findIndex(linha =>
     String(linha[0]).trim() === String(codigo).trim()
   );
@@ -186,6 +187,7 @@ function agendamentoRepositoryBuscarPorCodigo(codigo) {
     dataCadastro: String(registro[9] || "").trim(),
     previsaoKnnSalva: String(registro[10] || "").trim(),
     previsaoArvoreSalva: String(registro[11] || "").trim(),
+    previsaoRegressaoLogisticaSalva: String(registro[12] || "").trim(),
     linha: indice + 2
   };
 }
@@ -232,7 +234,7 @@ function agendamentoRepositoryAtualizarRegistro(linha, registro) {
   ]);
   // Uma edição altera as características do agendamento; a previsão antiga
   // deixa de ser válida e será recalculada na próxima consulta.
-  aba.getRange(linha, 11, 1, 2).clearContent();
+  aba.getRange(linha, 11, 1, 3).clearContent();
 }
 
 /**
@@ -245,7 +247,7 @@ function agendamentoRepositoryListarTodos() {
   agendamentoRepositoryGarantirColunasKnn();
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return [];
-  return aba.getRange(2, 1, ultimaLinha - 1, 12).getValues()
+  return aba.getRange(2, 1, ultimaLinha - 1, 13).getValues()
     .map((linha, indice) => ({
       codigo: String(linha[0] || "").trim(),
       data: agendamentoRulesNormalizarData(linha[1]),
@@ -259,6 +261,7 @@ function agendamentoRepositoryListarTodos() {
       dataCadastro: agendamentoRulesNormalizarDataCadastro(linha[9]),
       previsaoKnnSalva: String(linha[10] || "").trim(),
       previsaoArvoreSalva: String(linha[11] || "").trim(),
+      previsaoRegressaoLogisticaSalva: String(linha[12] || "").trim(),
       linha: indice + 2
     }))
     .filter(item => item.codigo);
@@ -299,6 +302,24 @@ function agendamentoRepositoryAtualizarPrevisaoArvore(linha, previsao) {
   agendamentoRepositoryGarantirColunasKnn();
   aba.getRange(linha, 12).setNumberFormat("@");
   aba.getRange(linha, 12).setValue(String(previsao || ""));
+}
+
+
+/**
+ * Atualiza somente a previsão probabilística da Regressão Logística.
+ *
+ * @param {number} linha Número da linha na aba AGENDA.
+ * @param {string} previsao Percentual estimado ou justificativa de indisponibilidade.
+ * @return {void}
+ */
+function agendamentoRepositoryAtualizarPrevisaoRegressaoLogistica(linha, previsao) {
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
+    throw new Error("Não foi possível localizar a linha para atualizar a previsão da Regressão Logística.");
+  }
+  agendamentoRepositoryGarantirColunasKnn();
+  aba.getRange(linha, 13).setNumberFormat("@");
+  aba.getRange(linha, 13).setValue(String(previsao || ""));
 }
 
 /**
