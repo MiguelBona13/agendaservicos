@@ -101,6 +101,7 @@
 
           <div class="acoes">
             <button class="botao" id="botaoCadastrarFuncionario" type="submit" disabled>Carregando código...</button>
+            <button class="botao botao-secundario" id="botaoCancelarEdicaoFuncionario" type="button" style="display:none">Cancelar edição</button>
           </div>
         </form>
       </section>
@@ -309,6 +310,8 @@
   const codigoFuncionario = el("codigoFuncionario");
   const nomeFuncionario = el("nomeFuncionario");
   const botaoCadastrarFuncionario = el("botaoCadastrarFuncionario");
+  const botaoCancelarEdicaoFuncionario = el("botaoCancelarEdicaoFuncionario");
+  let codigoFuncionarioEmEdicao = "";
 
   const formCliente = el("formCliente");
   const codigoCliente = el("codigoCliente");
@@ -784,7 +787,7 @@
       trCabecalho.appendChild(th);
     });
 
-    if (abaAtual === "AGENDA") {
+    if (["AGENDA", "FUNCIONARIOS"].includes(abaAtual)) {
       const thAcoes = document.createElement("th");
       thAcoes.textContent = "Ações";
       trCabecalho.appendChild(thAcoes);
@@ -803,6 +806,50 @@
         td.textContent = valor;
         tr.appendChild(td);
       });
+
+      if (abaAtual === "FUNCIONARIOS") {
+        const tdAcoes = document.createElement("td");
+        const codigo = String(registro[0] || "").trim();
+        const nome = String(registro[1] || "").trim();
+
+        const botaoEditarFuncionario = document.createElement("button");
+        botaoEditarFuncionario.type = "button";
+        botaoEditarFuncionario.className = "botao botao-secundario";
+        botaoEditarFuncionario.textContent = "Editar";
+        botaoEditarFuncionario.addEventListener("click", () => {
+          codigoFuncionarioEmEdicao = codigo;
+          codigoFuncionario.value = codigo;
+          nomeFuncionario.value = nome;
+          codigoFuncionario.readOnly = true;
+          botaoCadastrarFuncionario.textContent = "Salvar alterações";
+          botaoCancelarEdicaoFuncionario.style.display = "inline-block";
+          areaCadastroFuncionario.scrollIntoView({ behavior: "smooth", block: "start" });
+          mostrarMensagem("Editando funcionário " + codigo + ".", "sucesso");
+        });
+        tdAcoes.appendChild(botaoEditarFuncionario);
+
+        const botaoExcluirFuncionario = document.createElement("button");
+        botaoExcluirFuncionario.type = "button";
+        botaoExcluirFuncionario.className = "botao botao-secundario";
+        botaoExcluirFuncionario.textContent = "Excluir";
+        botaoExcluirFuncionario.addEventListener("click", () => {
+          if (!confirm("Deseja excluir o funcionário " + codigo + "?")) return;
+          botaoExcluirFuncionario.disabled = true;
+          google.script.run
+            .withSuccessHandler(resultado => {
+              mostrarMensagem(resultado && resultado.mensagem || "Funcionário excluído.", "sucesso");
+              carregarLista();
+              carregarCodigoFuncionario();
+            })
+            .withFailureHandler(erro => {
+              botaoExcluirFuncionario.disabled = false;
+              falha(erro, "Não foi possível excluir o funcionário: ");
+            })
+            .excluirFuncionario(codigo);
+        });
+        tdAcoes.appendChild(botaoExcluirFuncionario);
+        tr.appendChild(tdAcoes);
+      }
 
       if (abaAtual === "AGENDA") {
         const tdAcoes = document.createElement("td");
@@ -880,6 +927,9 @@
   }
 
   function selecionarAba(nomeAba) {
+    if (abaAtual === "FUNCIONARIOS" && nomeAba !== "FUNCIONARIOS") {
+      cancelarEdicaoFuncionario();
+    }
     abaAtual = nomeAba;
 
     botoesMenu.forEach(botao => {
@@ -1022,34 +1072,64 @@
     }
   });
 
+  function cancelarEdicaoFuncionario() {
+    codigoFuncionarioEmEdicao = "";
+    formFuncionario.reset();
+    codigoFuncionario.readOnly = true;
+    botaoCancelarEdicaoFuncionario.style.display = "none";
+    botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+    carregarCodigoFuncionario();
+    limparMensagem();
+  }
+
+  botaoCancelarEdicaoFuncionario.addEventListener("click", cancelarEdicaoFuncionario);
+
   formFuncionario.addEventListener("submit", evento => {
     evento.preventDefault();
+    if (!formFuncionario.reportValidity()) return;
 
     const codigo = codigoFuncionario.value;
     const nome = nomeFuncionario.value.trim();
-
     if (!codigo || !nome) {
       mostrarMensagem("Preencha o nome do funcionário.", "erro");
       return;
     }
 
     botaoCadastrarFuncionario.disabled = true;
-    botaoCadastrarFuncionario.textContent = "Cadastrando...";
+    botaoCadastrarFuncionario.textContent = codigoFuncionarioEmEdicao
+      ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
 
-    google.script.run
-      .withSuccessHandler(() => {
-        mostrarMensagem("Funcionário cadastrado com sucesso!", "sucesso");
-        nomeFuncionario.value = "";
-        carregarCodigoFuncionario();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar: ");
-        botaoCadastrarFuncionario.disabled = false;
-        botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
-      })
-      .cadastrarFuncionario(codigo, nome);
+    const aoConcluir = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem ||
+        (codigoFuncionarioEmEdicao ? "Funcionário atualizado." : "Funcionário cadastrado."), "sucesso");
+      codigoFuncionarioEmEdicao = "";
+      formFuncionario.reset();
+      codigoFuncionario.readOnly = true;
+      botaoCancelarEdicaoFuncionario.style.display = "none";
+      botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+      botaoCadastrarFuncionario.disabled = false;
+      carregarCodigoFuncionario();
+      carregarLista();
+    };
+    const aoFalhar = erro => {
+      falha(erro, codigoFuncionarioEmEdicao
+        ? "Não foi possível atualizar o funcionário: "
+        : "Não foi possível cadastrar: ");
+      botaoCadastrarFuncionario.disabled = false;
+      botaoCadastrarFuncionario.textContent = codigoFuncionarioEmEdicao
+        ? "Salvar alterações" : "Cadastrar funcionário";
+    };
+
+    if (codigoFuncionarioEmEdicao) {
+      google.script.run.withSuccessHandler(aoConcluir)
+        .withFailureHandler(aoFalhar)
+        .atualizarFuncionario(codigo, nome);
+    } else {
+      google.script.run.withSuccessHandler(aoConcluir)
+        .withFailureHandler(aoFalhar)
+        .cadastrarFuncionario(codigo, nome);
+    }
   });
 
   formCliente.addEventListener("submit", evento => {
