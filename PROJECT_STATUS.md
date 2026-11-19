@@ -775,3 +775,48 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - A implementação está integrada à `main` e publicada no Apps Script, versão 57.
 - A validação funcional manual com a planilha real ainda não foi realizada.
 - A avaliação de desempenho e calibração com dados históricos separados permanece pendente.
+
+
+## Otimização incremental — persistência das previsões da agenda
+
+### Análise
+- A consulta `consultarAgendamentos()` executava os três classificadores em sequência.
+- K-NN, Árvore de Decisão e Regressão Logística faziam gravações individuais por registro, aumentando o número de chamadas ao Google Sheets.
+- A rotina de garantia de cabeçalhos também regravava os cinco títulos em todas as consultas, mesmo quando já estavam corretos.
+
+### Alterações propostas nesta etapa
+- Os três serviços calculam as previsões em memória, sem gravar individualmente.
+- Ao final do fluxo, o Repository compara as três colunas com os valores existentes e persiste as alterações em uma única operação `setValues`.
+- Cabeçalhos só são escritos quando o valor atual é diferente do esperado.
+- Não foram alterados os algoritmos, os critérios de treinamento ou os textos das previsões.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — verificação condicional de cabeçalhos e nova função de persistência em lote.
+- `AgendamentoKnnService.gs` — coordena os três modelos e solicita uma única persistência ao final.
+- `AgendamentoArvoreService.gs` — remove gravações individuais.
+- `AgendamentoRegressaoLogisticaService.gs` — remove gravações individuais.
+- `PROJECT_STATUS.md` — registro da otimização e validação.
+
+### Arquivo criado
+- `tests/AgendamentoRepositoryPrevisoes.test.cjs` — verifica gravação única, preservação de linhas, ausência de gravação quando não há mudanças e rejeição de linhas inválidas.
+
+### Validação automatizada
+- GitHub Actions: 86 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44636757849.
+
+### Arquivos mantidos e exclusões
+- Os três modelos e suas regras permanecem inalterados.
+- Nenhum arquivo foi excluído.
+- `PROJECT_GUIDE.md` permanece inalterado.
+
+### Situação
+- Alterações disponíveis na branch `perf/otimizar-carregamento-agenda`.
+- Aguardando revisão e integração.
+- Não publicada no Google Apps Script nesta etapa; a versão publicada permanece inalterada.
+
+### Como validar após integração e publicação
+1. Abrir a aba Agenda e medir o tempo até a tabela aparecer.
+2. Atualizar a página e repetir a medição.
+3. Conferir se as três colunas de previsão continuam preenchidas.
+4. Conferir se status reais, cancelamentos e reagendamentos continuam com os textos esperados.
+5. Comparar o tempo com a versão anterior usando quantidade semelhante de registros.
