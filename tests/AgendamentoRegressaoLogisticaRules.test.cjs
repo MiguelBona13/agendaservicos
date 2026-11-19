@@ -53,7 +53,8 @@ function criarHistorico() {
   const registros = [];
   for (let indice = 0; indice < 10; indice++) {
     registros.push(criarRegistro("Faltou", "C-FALTA", "2026-11-01", indice));
-    registros.push(criarRegistro("Compareceu", "C-OK", "2026-11-02", indice + 10));
+    // Mantém o mesmo dia da semana para isolar o efeito da categoria de cliente neste teste.
+    registros.push(criarRegistro("Compareceu", "C-OK", "2026-11-01", indice + 10));
   }
   return registros;
 }
