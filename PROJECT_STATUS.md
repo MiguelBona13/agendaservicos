@@ -820,3 +820,35 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 3. Conferir se as três colunas de previsão continuam preenchidas.
 4. Conferir se status reais, cancelamentos e reagendamentos continuam com os textos esperados.
 5. Comparar o tempo com a versão anterior usando quantidade semelhante de registros.
+
+
+## Correção — erro ao formatar colunas tipadas na persistência em lote
+
+### Diagnóstico
+- Após o cadastro, a interface confirmou a gravação do agendamento, mas a consulta subsequente falhou.
+- A mensagem do Google Sheets informa que não é permitido definir formato numérico em uma coluna configurada com tipo.
+- Na implementação de persistência em lote, o Repository chamava `setNumberFormat("@")` sobre o intervalo das três colunas de previsão.
+- Essa formatação é desnecessária para atualizar os textos das previsões e pode conflitar com colunas tipadas da planilha.
+
+### Correção aplicada na branch de otimização
+- Removida a chamada `setNumberFormat("@")` da gravação em lote.
+- O Repository continua lendo as três colunas, comparando os valores e executando `setValues` apenas quando há diferenças.
+- O formato e o tipo configurados na planilha são preservados.
+- Adicionado ajuste ao teste unitário para não permitir dependência de formatação na persistência.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — remove a redefinição de formato do intervalo de previsões.
+- `tests/AgendamentoRepositoryPrevisoes.test.cjs` — teste da gravação em lote sem operação de formatação.
+- `PROJECT_STATUS.md` — registro do diagnóstico e da correção.
+
+### Situação
+- Correção enviada à branch `perf/otimizar-carregamento-agenda`.
+- Pull Request #7 permanece aberto; a correção ainda não está na `main`.
+- Nenhuma nova versão foi publicada no Google Apps Script nesta etapa.
+- O cadastro informado pelo usuário foi confirmado pela própria mensagem da interface; a falha ocorreu na consulta dos registros após a gravação.
+
+### Como testar
+1. Executar a suíte automatizada e confirmar a ausência de chamadas a `setNumberFormat` na gravação em lote.
+2. Após integrar e publicar, criar um novo agendamento.
+3. Confirmar que a mensagem de sucesso é exibida e que a lista é carregada sem erro.
+4. Confirmar que as três colunas de previsão permanecem atualizadas e que os tipos/formatações da planilha não foram alterados.
