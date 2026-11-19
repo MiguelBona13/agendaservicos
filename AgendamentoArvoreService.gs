@@ -37,9 +37,6 @@ function agendamentoArvoreServiceAplicarPrevisoes(agendamentos, agora) {
     }
 
     agendamento.previsaoArvore = previsao;
-    if (previsao !== String(agendamento.previsaoArvoreSalva || "")) {
-      agendamentoRepositoryAtualizarPrevisaoArvore(agendamento.linha, previsao);
-    }
   });
 
   return registros;
