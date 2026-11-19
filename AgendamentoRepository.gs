@@ -338,7 +338,7 @@ function agendamentoRepositoryAtualizarPrevisao(linha, previsao) {
     throw new Error("Não foi possível localizar a linha para atualizar a previsão K-NN.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 11).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 11).setValue(String(previsao || ""));
 }
 
@@ -357,7 +357,7 @@ function agendamentoRepositoryAtualizarPrevisaoArvore(linha, previsao) {
     throw new Error("Não foi possível localizar a linha para atualizar a previsão da árvore.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 12).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 12).setValue(String(previsao || ""));
 }
 
@@ -375,7 +375,7 @@ function agendamentoRepositoryAtualizarPrevisaoRegressaoLogistica(linha, previsa
     throw new Error("Não foi possível localizar a linha para atualizar a previsão da Regressão Logística.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 13).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 13).setValue(String(previsao || ""));
 }
 
