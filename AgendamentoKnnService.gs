@@ -42,11 +42,14 @@ function agendamentoKnnServiceListarComPrevisoes() {
     }
 
     agendamento.previsaoKnn = previsao;
-    if (agendamento.previsaoKnn !== String(agendamento.previsaoKnnSalva || "")) {
-      agendamentoRepositoryAtualizarPrevisao(agendamento.linha, previsao);
-    }
   });
 
   const registrosComArvore = agendamentoArvoreServiceAplicarPrevisoes(agendamentos, agora);
-  return agendamentoRegressaoLogisticaServiceAplicarPrevisoes(registrosComArvore, agora);
+  const registrosComRegressao = agendamentoRegressaoLogisticaServiceAplicarPrevisoes(
+    registrosComArvore, agora
+  );
+
+  // Persiste as três colunas em uma única operação após todos os modelos.
+  agendamentoRepositoryAtualizarPrevisoesEmLote(registrosComRegressao);
+  return registrosComRegressao;
 }

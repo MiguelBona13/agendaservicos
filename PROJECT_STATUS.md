@@ -775,3 +775,86 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - A implementação está integrada à `main` e publicada no Apps Script, versão 57.
 - A validação funcional manual com a planilha real ainda não foi realizada.
 - A avaliação de desempenho e calibração com dados históricos separados permanece pendente.
+
+
+## Otimização incremental — persistência das previsões da agenda
+
+### Análise
+- A consulta `consultarAgendamentos()` executava os três classificadores em sequência.
+- K-NN, Árvore de Decisão e Regressão Logística faziam gravações individuais por registro, aumentando o número de chamadas ao Google Sheets.
+- A rotina de garantia de cabeçalhos também regravava os cinco títulos em todas as consultas, mesmo quando já estavam corretos.
+
+### Alterações propostas nesta etapa
+- Os três serviços calculam as previsões em memória, sem gravar individualmente.
+- Ao final do fluxo, o Repository compara as três colunas com os valores existentes e persiste as alterações em uma única operação `setValues`.
+- Cabeçalhos só são escritos quando o valor atual é diferente do esperado.
+- Não foram alterados os algoritmos, os critérios de treinamento ou os textos das previsões.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — verificação condicional de cabeçalhos e nova função de persistência em lote.
+- `AgendamentoKnnService.gs` — coordena os três modelos e solicita uma única persistência ao final.
+- `AgendamentoArvoreService.gs` — remove gravações individuais.
+- `AgendamentoRegressaoLogisticaService.gs` — remove gravações individuais.
+- `PROJECT_STATUS.md` — registro da otimização e validação.
+
+### Arquivo criado
+- `tests/AgendamentoRepositoryPrevisoes.test.cjs` — verifica gravação única, preservação de linhas, ausência de gravação quando não há mudanças e rejeição de linhas inválidas.
+
+### Validação automatizada
+- GitHub Actions: 86 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44636757849.
+
+### Arquivos mantidos e exclusões
+- Os três modelos e suas regras permanecem inalterados.
+- Nenhum arquivo foi excluído.
+- `PROJECT_GUIDE.md` permanece inalterado.
+
+### Situação
+- Alterações disponíveis na branch `perf/otimizar-carregamento-agenda`.
+- Aguardando revisão e integração.
+- Não publicada no Google Apps Script nesta etapa; a versão publicada permanece inalterada.
+
+### Como validar após integração e publicação
+1. Abrir a aba Agenda e medir o tempo até a tabela aparecer.
+2. Atualizar a página e repetir a medição.
+3. Conferir se as três colunas de previsão continuam preenchidas.
+4. Conferir se status reais, cancelamentos e reagendamentos continuam com os textos esperados.
+5. Comparar o tempo com a versão anterior usando quantidade semelhante de registros.
+
+
+## Correção — erro ao formatar colunas tipadas na persistência em lote
+
+### Diagnóstico
+- Após o cadastro, a interface confirmou a gravação do agendamento, mas a consulta subsequente falhou.
+- A mensagem do Google Sheets informa que não é permitido definir formato numérico em uma coluna configurada com tipo.
+- Na implementação de persistência em lote, o Repository chamava `setNumberFormat("@")` sobre o intervalo das três colunas de previsão.
+- Essa formatação é desnecessária para atualizar os textos das previsões e pode conflitar com colunas tipadas da planilha.
+
+### Correção aplicada na branch de otimização
+- Removida a chamada `setNumberFormat("@")` da gravação em lote.
+- O Repository continua lendo as três colunas, comparando os valores e executando `setValues` apenas quando há diferenças.
+- O formato e o tipo configurados na planilha são preservados.
+- Adicionado ajuste ao teste unitário para não permitir dependência de formatação na persistência.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — remove a redefinição de formato do intervalo de previsões.
+- `tests/AgendamentoRepositoryPrevisoes.test.cjs` — teste da gravação em lote sem operação de formatação.
+- `PROJECT_STATUS.md` — registro do diagnóstico e da correção.
+
+### Situação
+- Correção enviada à branch `perf/otimizar-carregamento-agenda`.
+- Pull Request #7 permanece aberto; a correção ainda não está na `main`.
+- Nenhuma nova versão foi publicada no Google Apps Script nesta etapa.
+- O cadastro informado pelo usuário foi confirmado pela própria mensagem da interface; a falha ocorreu na consulta dos registros após a gravação.
+
+### Como testar
+1. Executar a suíte automatizada e confirmar a ausência de chamadas a `setNumberFormat` na gravação em lote.
+2. Após integrar e publicar, criar um novo agendamento.
+3. Confirmar que a mensagem de sucesso é exibida e que a lista é carregada sem erro.
+4. Confirmar que as três colunas de previsão permanecem atualizadas e que os tipos/formatações da planilha não foram alterados.
+
+
+### Complemento da correção de colunas tipadas
+- A mesma redefinição de formato existia nos três métodos de atualização individual de previsão do K-NN, da Árvore e da Regressão Logística.
+- As chamadas `setNumberFormat("@")` também foram removidas desses métodos. Eles passam a atualizar somente o valor, preservando o tipo da coluna.
+- A gravação do cadastro e as demais colunas não foram modificadas.

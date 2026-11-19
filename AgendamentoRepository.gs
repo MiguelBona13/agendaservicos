@@ -118,11 +118,68 @@ function agendamentoRepositoryListarRegistrosParaConflito() {
  */
 function agendamentoRepositoryGarantirColunasKnn() {
   const aba = getSheet(CONFIG.ABAS.AGENDA);
-  if (aba.getLastColumn() < 9) aba.getRange(1, 9).setValue("hora");
-  if (aba.getLastColumn() < 10) aba.getRange(1, 10).setValue("Data_Cadastro");
-  aba.getRange(1, 11).setValue("Previsao_KNN");
-  aba.getRange(1, 12).setValue("Previsao_Arvore");
-  aba.getRange(1, 13).setValue("Previsao_Regressao_Logistica");
+  const esperados = [
+    "hora",
+    "Data_Cadastro",
+    "Previsao_KNN",
+    "Previsao_Arvore",
+    "Previsao_Regressao_Logistica"
+  ];
+  const atuais = aba.getRange(1, 9, 1, esperados.length).getDisplayValues()[0];
+
+  esperados.forEach((cabecalho, indice) => {
+    if (String(atuais[indice] || "").trim() !== cabecalho) {
+      aba.getRange(1, indice + 9).setValue(cabecalho);
+    }
+  });
+}
+
+/**
+ * Persiste as três previsões da agenda em uma única gravação no Google Sheets.
+ *
+ * Os serviços de cada modelo calculam os resultados em memória. Ao final do
+ * fluxo, este método compara os valores calculados com os já armazenados e
+ * grava o bloco somente quando houver alguma diferença.
+ *
+ * @param {Array<Object>} agendamentos Registros com linha e previsões calculadas.
+ * @return {void}
+ */
+function agendamentoRepositoryAtualizarPrevisoesEmLote(agendamentos) {
+  if (!Array.isArray(agendamentos) || agendamentos.length === 0) return;
+
+  const aba = getSheet(CONFIG.ABAS.AGENDA);
+  const ultimaLinha = aba.getLastRow();
+  if (ultimaLinha < 2) return;
+
+  const quantidadeLinhas = ultimaLinha - 1;
+  const faixa = aba.getRange(2, 11, quantidadeLinhas, 3);
+  const valores = faixa.getValues();
+  let alterou = false;
+
+  agendamentos.forEach(agendamento => {
+    const linha = Number(agendamento.linha);
+    const indice = linha - 2;
+    if (!Number.isInteger(linha) || indice < 0 || indice >= quantidadeLinhas) return;
+
+    const previsoes = [
+      agendamento.previsaoKnn,
+      agendamento.previsaoArvore,
+      agendamento.previsaoRegressaoLogistica
+    ].map(valor => String(valor || ""));
+
+    previsoes.forEach((previsao, coluna) => {
+      if (String(valores[indice][coluna] || "") !== previsao) {
+        valores[indice][coluna] = previsao;
+        alterou = true;
+      }
+    });
+  });
+
+  if (alterou) {
+    // Preserva o formato/tipo definido na planilha. Não redefinir o formato
+    // evita conflito com colunas tipadas do Google Sheets.
+    faixa.setValues(valores);
+  }
 }
 
 /**
@@ -281,7 +338,7 @@ function agendamentoRepositoryAtualizarPrevisao(linha, previsao) {
     throw new Error("Não foi possível localizar a linha para atualizar a previsão K-NN.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 11).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 11).setValue(String(previsao || ""));
 }
 
@@ -300,7 +357,7 @@ function agendamentoRepositoryAtualizarPrevisaoArvore(linha, previsao) {
     throw new Error("Não foi possível localizar a linha para atualizar a previsão da árvore.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 12).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 12).setValue(String(previsao || ""));
 }
 
@@ -318,7 +375,7 @@ function agendamentoRepositoryAtualizarPrevisaoRegressaoLogistica(linha, previsa
     throw new Error("Não foi possível localizar a linha para atualizar a previsão da Regressão Logística.");
   }
   agendamentoRepositoryGarantirColunasKnn();
-  aba.getRange(linha, 13).setNumberFormat("@");
+  // Mantém o tipo/formato configurado para a coluna na planilha.
   aba.getRange(linha, 13).setValue(String(previsao || ""));
 }
 
