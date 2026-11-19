@@ -135,7 +135,8 @@ function agendamentoRegressaoLogisticaRulesMontarVetor(caracteristicas, modelo) 
   const vetor = [];
   modelo.camposCategoricos.forEach(campo => {
     const categoria = String(caracteristicas[campo] || "").trim();
-    modelo.categorias[campo].forEach(valor => {
+    // A primeira categoria é a referência; omiti-la evita colinearidade perfeita com o intercepto.
+    modelo.categorias[campo].slice(1).forEach(valor => {
       vetor.push(categoria === valor ? 1 : 0);
     });
   });
