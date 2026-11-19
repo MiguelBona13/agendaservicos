@@ -896,3 +896,51 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - Criar um agendamento de teste e confirmar que a lista carrega sem erro.
 - Conferir que as três colunas de previsão são atualizadas e que os tipos das colunas permanecem preservados.
 - Medir o tempo de carregamento da agenda antes e depois da otimização.
+
+
+## Etapa em andamento — CRUD de cadastros (Funcionários)
+
+### Escopo geral
+Implementar Criar, Consultar, Atualizar e Excluir (CRUD) nos cadastros de Funcionários, Serviços, Clientes, Cidades e Bairros, em etapas por entidade. Agendamentos já possuem criação, consulta, edição e cancelamento.
+
+### Etapa concluída — Funcionários
+- A inclusão e a consulta foram preservadas.
+- Adicionada edição do nome do funcionário pela interface.
+- Adicionada exclusão com confirmação.
+- A exclusão é bloqueada quando há agendamentos associados, preservando o histórico.
+- A geração do próximo código passou a consultar o Repository.
+- As operações de inclusão, atualização e exclusão são coordenadas pelo Service e protegidas por LockService.
+- A interface mantém o código imutável durante a edição.
+
+### Arquivos criados
+- `FuncionarioRepository.gs` — leitura, inclusão, atualização, verificação de vínculos e exclusão.
+- `FuncionarioRules.gs` — regra para impedir exclusão com agendamentos vinculados.
+- `FuncionarioValidator.gs` — validação de código e nome.
+- `FuncionarioService.gs` — coordenação das operações CRUD.
+- `tests/FuncionarioValidator.test.cjs`
+- `tests/FuncionarioRules.test.cjs`
+
+### Arquivos alterados
+- `Funcionarios.js` — funções públicas legadas delegam ao Service.
+- `Index.html` — ações Editar e Excluir e modo de edição do formulário de funcionários.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- `AgendamentoService.gs`, `AgendamentoRepository.gs`, `AgendamentoValidator.gs`, `AgendamentoRules.gs` e demais entidades não foram alterados nesta etapa.
+- `PROJECT_GUIDE.md` permanece sem alterações.
+- Nenhum arquivo foi excluído.
+
+### Como testar
+1. Executar `npm test).
+2. Abrir a aba Funcionários e cadastrar um funcionário de teste.
+3. Editar o nome e confirmar a atualização na lista.
+4. Tentar excluir um funcionário sem agendamentos e confirmar a remoção.
+5. Tentar excluir um funcionário vinculado a um agendamento e confirmar que o sistema bloqueia a operação.
+6. Confirmar que o código sequencial continua sendo gerado corretamente.
+
+### Próximas etapas
+- Serviços: criar, listar, editar e excluir com bloqueio quando houver agendamentos vinculados.
+- Clientes: criar, listar, editar e excluir com bloqueio quando houver agendamentos vinculados.
+- Cidades: criar, listar, editar e excluir com bloqueio quando houver bairros vinculados.
+- Bairros: criar, listar, editar e excluir com bloqueio quando houver clientes vinculados.
+- Validar a integração das cinco entidades e os seletores usados pela agenda.
