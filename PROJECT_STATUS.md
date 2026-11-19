@@ -1,7 +1,7 @@
 # PROJECT_STATUS.md — Status do Projeto Agenda de Serviços
 
 ## Versão atual
-Bot web de autoagendamento com interpretação pela Groq publicado no Apps Script na versão 45; teste integrado real ainda pendente.
+Bot web de autoagendamento com interpretação pela Groq e previsão de faltas por K-NN, Árvore de Decisão e Regressão Logística publicados no Apps Script na versão 57; teste funcional manual da nova coluna e avaliação preditiva com dados reais ainda pendentes.
 
 ## Etapa atual
 Integração do bot web de autoagendamento com a API Groq e publicação no Apps Script.
@@ -724,3 +724,54 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - A causa foi a codificação de todas as categorias junto com o intercepto do modelo, gerando colinearidade.
 - Correção aplicada em `AgendamentoRegressaoLogisticaRules.gs`: codificação por categoria de referência, omitindo a primeira categoria para evitar colinearidade perfeita.
 - Nova execução iniciada no GitHub Actions, workflow 44633821811; resultado ainda pendente no momento desta atualização.
+
+
+## Conclusão da implementação — previsão de faltas com Regressão Logística
+
+### Implementação e integração
+- Pull Request #6 integrado à branch `main` em 19/11/2026 pelo método Squash.
+- Commit de integração: `9f43137de9e9ee007dc667561be4cacc104e2f93`.
+- A AGENDA passa a incluir a 13ª coluna `Previsao_Regressao_Logistica`, independente do Status real, da previsão K-NN e do risco da Árvore de Decisão.
+- O modelo utiliza resultados anteriores com Status `Compareceu` e `Faltou`, com mínimo de 20 amostras e pelo menos cinco por classe.
+- A estimativa apresenta percentual e faixa de risco baixo, moderado ou alto. Não representa garantia nem probabilidade calibrada sem avaliação em dados separados.
+
+### Validação automatizada
+- Suíte completa: 83 testes aprovados e 0 falhas.
+- Execução no push da branch: https://github.com/MiguelBona13/agendaservicos/actions/runs/44634571888.
+- Execução no pull request: https://github.com/MiguelBona13/agendaservicos/actions/runs/44634581563.
+- O teste de comparação entre categorias foi ajustado para manter o mesmo dia da semana nos exemplos, isolando o efeito da categoria de cliente. A codificação categórica também omite a categoria de referência para evitar colinearidade com o intercepto.
+
+### Publicação no Google Apps Script
+- Workflow de publicação: https://github.com/MiguelBona13/agendaservicos/actions/runs/44634668521.
+- Publicação concluída com sucesso: 43 arquivos enviados, versão 57 criada e implantação existente atualizada.
+- O manifesto e a configuração de publicação não precisaram ser alterados.
+- `PROJECT_GUIDE.md` permaneceu inalterado.
+
+### Arquivos criados
+- `AgendamentoRegressaoLogisticaRules.gs` — características, treinamento e cálculo da probabilidade.
+- `AgendamentoRegressaoLogisticaService.gs` — coordenação da previsão e persistência.
+- `tests/AgendamentoRegressaoLogisticaRules.test.cjs` — testes unitários do modelo.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — leitura, gravação e atualização da 13ª coluna.
+- `AgendamentoKnnService.gs` — integração da regressão logística ao fluxo de consulta da agenda.
+- `Index.html` — exibição da probabilidade de falta.
+- `PROJECT_STATUS.md` — registro da conclusão.
+
+### Arquivos mantidos e exclusões
+- Mantidos K-NN, Árvore de Decisão, os serviços e regras centrais de Agendamento e os dez campos originais da agenda.
+- Nenhum arquivo foi excluído.
+- `PROJECT_GUIDE.md` não foi alterado.
+
+### Como testar no ambiente funcional
+1. Abrir a aplicação publicada e consultar a AGENDA.
+2. Confirmar a existência da coluna `Previsao_Regressao_Logistica`.
+3. Conferir agendamentos futuros quando houver histórico suficiente, observando percentual e faixa de risco.
+4. Conferir que agendamentos concluídos, cancelados ou reagendados não recebem previsão ativa.
+5. Confirmar que Status, K-NN e Árvore de Decisão permanecem independentes.
+6. Comparar as previsões com resultados reais posteriores e avaliar calibração, falsos positivos e falsos negativos.
+
+### Situação e próximo passo
+- A implementação está integrada à `main` e publicada no Apps Script, versão 57.
+- A validação funcional manual com a planilha real ainda não foi realizada.
+- A avaliação de desempenho e calibração com dados históricos separados permanece pendente.
