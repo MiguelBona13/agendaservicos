@@ -27,10 +27,6 @@ function criarContextoRepository(valoresIniciais) {
       estado.leituras++;
       return estado.valores.map(linha => linha.slice());
     },
-    setNumberFormat() {
-      estado.formatos++;
-      return this;
-    },
     setValues(valores) {
       estado.gravacoes++;
       estado.valores = valores.map(linha => linha.slice());
