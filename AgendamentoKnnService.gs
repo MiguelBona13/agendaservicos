@@ -47,5 +47,6 @@ function agendamentoKnnServiceListarComPrevisoes() {
     }
   });
 
-  return agendamentoArvoreServiceAplicarPrevisoes(agendamentos, agora);
+  const registrosComArvore = agendamentoArvoreServiceAplicarPrevisoes(agendamentos, agora);
+  return agendamentoRegressaoLogisticaServiceAplicarPrevisoes(registrosComArvore, agora);
 }

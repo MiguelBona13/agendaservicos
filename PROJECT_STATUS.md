@@ -666,3 +666,61 @@ Adicionar à AGENDA uma indicação independente de risco de falta, calculada po
 ### Próximo passo
 - Realizar teste funcional manual na aplicação publicada, confirmando a coluna Previsao_Arvore e os resultados com dados da planilha real.
 - Avaliar falsos positivos e falsos negativos com histórico representativo antes de usar o indicador como critério operacional.
+
+
+## Etapa em implementação — previsão de faltas com Regressão Logística
+
+### Objetivo
+Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabilidade estimada de falta, preservando as previsões K-NN e Árvore de Decisão e o Status real.
+
+### Regras previstas
+- Classe 0: Compareceu; classe 1: Faltou.
+- O treinamento considera apenas resultados reais anteriores ao instante da previsão.
+- O código do agendamento e o Status não são características do modelo.
+- Características: cliente, serviço, funcionário, período, dia da semana, mês, horário, antecedência da reserva e valor.
+- Categorias são codificadas como indicadores; características numéricas são padronizadas.
+- O modelo usa regressão logística com descida do gradiente e regularização L2.
+- Exige pelo menos 20 resultados válidos, com no mínimo cinco exemplos de cada classe.
+- A coluna apresenta percentual estimado e faixa de risco: baixo (menos de 30%), moderado (30% a 59%) ou alto (60% ou mais).
+- A previsão não substitui nem altera o Status, K-NN ou Árvore de Decisão.
+
+### Arquivos criados
+- `AgendamentoRegressaoLogisticaRules.gs` — extração de características, treinamento e cálculo da probabilidade.
+- `AgendamentoRegressaoLogisticaService.gs` — coordena a previsão e sua persistência.
+- `tests/AgendamentoRegressaoLogisticaRules.test.cjs` — testes unitários do modelo.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — cria, lê e atualiza a 13ª coluna.
+- `AgendamentoKnnService.gs` — integra o serviço da regressão logística após K-NN e Árvore.
+- `Index.html` — exibe a probabilidade estimada na tabela da agenda.
+- `PROJECT_STATUS.md` — registra esta etapa.
+
+### Arquivos mantidos
+- `AgendamentoKnnRules.gs`, `AgendamentoKnnService.gs`, `AgendamentoArvoreRules.gs` e `AgendamentoArvoreService.gs` permanecem como modelos independentes.
+- `AgendamentoService.gs`, `AgendamentoRules.gs`, `AgendamentoValidator.gs` e os dez campos originais permanecem preservados.
+- `PROJECT_GUIDE.md` não foi alterado.
+- Nenhum arquivo foi excluído.
+
+### Como testar
+1. Executar `npm test` e confirmar todos os testes.
+2. Confirmar no GitHub Actions que os testes passam na branch e no pull request.
+3. Publicar no Apps Script após a integração e conferir a criação da coluna 13.
+4. Abrir a AGENDA e confirmar que registros futuros exibem percentual e faixa de risco quando há histórico suficiente.
+5. Confirmar que registros concluídos, cancelados e reagendados mostram previsão não aplicável.
+6. Confirmar que o Status e as outras duas previsões permanecem inalterados.
+7. Avaliar calibração, falsos positivos e falsos negativos com dados históricos representativos antes de usar o percentual como critério operacional.
+
+### Validação e ressalvas
+- Os testes unitários do modelo cobrem treinamento, classes, probabilidade, histórico insuficiente, exclusão de registros inelegíveis e prevenção de vazamento temporal.
+- A probabilidade é uma estimativa do modelo, não uma garantia de falta nem uma probabilidade calibrada até que seja avaliada em dados separados.
+- A validação integrada com Google Sheets e a publicação ainda precisam ser confirmadas.
+
+### Próximo passo
+- Executar a suíte completa, revisar o pull request e confirmar a publicação automática do Apps Script.
+
+
+### Registro de validação incremental
+- Primeira execução da suíte após a integração encontrou 1 falha entre 83 testes: as probabilidades para duas categorias de cliente não se diferenciavam como esperado.
+- A causa foi a codificação de todas as categorias junto com o intercepto do modelo, gerando colinearidade.
+- Correção aplicada em `AgendamentoRegressaoLogisticaRules.gs`: codificação por categoria de referência, omitindo a primeira categoria para evitar colinearidade perfeita.
+- Nova execução iniciada no GitHub Actions, workflow 44633821811; resultado ainda pendente no momento desta atualização.
