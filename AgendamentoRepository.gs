@@ -176,7 +176,8 @@ function agendamentoRepositoryAtualizarPrevisoesEmLote(agendamentos) {
   });
 
   if (alterou) {
-    faixa.setNumberFormat("@");
+    // Preserva o formato/tipo definido na planilha. Não redefinir o formato
+    // evita conflito com colunas tipadas do Google Sheets.
     faixa.setValues(valores);
   }
 }
