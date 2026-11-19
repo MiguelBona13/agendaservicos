@@ -717,3 +717,10 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 
 ### Próximo passo
 - Executar a suíte completa, revisar o pull request e confirmar a publicação automática do Apps Script.
+
+
+### Registro de validação incremental
+- Primeira execução da suíte após a integração encontrou 1 falha entre 83 testes: as probabilidades para duas categorias de cliente não se diferenciavam como esperado.
+- A causa foi a codificação de todas as categorias junto com o intercepto do modelo, gerando colinearidade.
+- Correção aplicada em `AgendamentoRegressaoLogisticaRules.gs`: codificação por categoria de referência, omitindo a primeira categoria para evitar colinearidade perfeita.
+- Nova execução iniciada no GitHub Actions, workflow 44633821811; resultado ainda pendente no momento desta atualização.
