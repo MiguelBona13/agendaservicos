@@ -715,14 +715,15 @@
             }),
             item.status, item.hora || "", formatarDataBrasileira(item.dataCadastro),
             item.previsaoKnn || "Sem previsão",
-            item.previsaoArvore || "Sem previsão"
+            item.previsaoArvore || "Sem previsão",
+            item.previsaoRegressaoLogistica || "Sem previsão"
           ]);
 
           exibirLista({
             colunas: [
               "Código", "Data", "Código do período", "Código do funcionário",
               "Código do cliente", "Código do serviço", "Valor", "Status",
-              "Hora", "Data de cadastro", "Previsão K-NN", "Risco de falta (Árvore)"
+              "Hora", "Data de cadastro", "Previsão K-NN", "Risco de falta (Árvore)", "Probabilidade de falta (Regressão Logística)"
             ],
             registros: registros
           });
