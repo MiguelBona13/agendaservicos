@@ -1,53 +1,33 @@
+/**
+ * Entidade: Funcionário
+ * Camada: Interface legada — compatibilidade pública.
+ *
+ * Responsabilidade:
+ * Preservar os nomes de funções já utilizados pela interface e delegar
+ * as operações às camadas FuncionarioService e FuncionarioRepository.
+ */
+
+/** @return {string} Próximo código sequencial disponível. */
 function gerarCodigoFuncionario() {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
-  const ultimaLinha = aba.getLastRow();
-
-  if (ultimaLinha < 2) {
-    return "001";
-  }
-
-  const codigos = aba
-    .getRange(2, 1, ultimaLinha - 1, 1)
-    .getDisplayValues()
-    .flat();
-
-  let maiorCodigo = 0;
-
-  codigos.forEach(codigo => {
-    const numero = Number(String(codigo).trim());
-
-    if (Number.isInteger(numero) && numero > maiorCodigo) {
-      maiorCodigo = numero;
-    }
-  });
-
-  return String(maiorCodigo + 1).padStart(3, "0");
+  return funcionarioServiceGerarCodigo();
 }
 
+/**
+ * Compatibilidade com a chamada de cadastro existente na interface.
+ * @param {string} codigo Código do funcionário.
+ * @param {string} nome Nome do funcionário.
+ * @return {Object} Resultado do cadastro.
+ */
 function cadastrarFuncionario(codigo, nome) {
-  if (!codigo) {
-    throw new Error("O código do funcionário é obrigatório.");
-  }
+  return funcionarioServiceCriar(codigo, nome);
+}
 
-  if (!nome || !String(nome).trim()) {
-    throw new Error("O nome do funcionário é obrigatório.");
-  }
+/** @param {string} codigo Código do funcionário. @param {string} nome Novo nome. */
+function atualizarFuncionario(codigo, nome) {
+  return funcionarioServiceAtualizar(codigo, nome);
+}
 
-  codigo = String(codigo).trim();
-  nome = String(nome).trim();
-
-  if (codigoExiste(CONFIG.ABAS.FUNCIONARIOS, codigo)) {
-    throw new Error(`O código ${codigo} já está cadastrado.`);
-  }
-
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
-  const proximaLinha = aba.getLastRow() + 1;
-
-  // Formata a linha como texto antes de gravar os dados.
-  aba.getRange(proximaLinha, 1, 1, 2).setNumberFormat("@");
-
-  aba.getRange(proximaLinha, 1, 1, 2).setValues([[
-    codigo,
-    nome
-  ]]);
+/** @param {string} codigo Código do funcionário. */
+function excluirFuncionario(codigo) {
+  return funcionarioServiceExcluir(codigo);
 }
