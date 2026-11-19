@@ -919,6 +919,7 @@ Implementar Criar, Consultar, Atualizar e Excluir (CRUD) nos cadastros de Funcio
 - `FuncionarioService.gs` — coordenação das operações CRUD.
 - `tests/FuncionarioValidator.test.cjs`
 - `tests/FuncionarioRules.test.cjs`
+- `tests/FuncionarioService.test.cjs` — testes dos casos de uso do Service.
 
 ### Arquivos alterados
 - `Funcionarios.js` — funções públicas legadas delegam ao Service.
