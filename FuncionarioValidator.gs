@@ -25,7 +25,7 @@ function funcionarioValidatorValidarCodigo(codigo) {
  * @return {string} Nome normalizado.
  */
 function funcionarioValidatorValidarNome(nome) {
-  const valor = String(nome == null ? "" : nome).trim().replace(/\\s+/g, " ");
+  const valor = String(nome == null ? "" : nome).trim().replace(/\s+/g, " ");
   if (!valor) throw new Error("O nome do funcionário é obrigatório.");
   if (valor.length > 120) throw new Error("O nome do funcionário deve ter até 120 caracteres.");
   return valor;
