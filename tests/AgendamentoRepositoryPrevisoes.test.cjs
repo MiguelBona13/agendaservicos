@@ -20,7 +20,6 @@ function criarContextoRepository(valoresIniciais) {
     valores: valoresIniciais.map(linha => linha.slice()),
     leituras: 0,
     gravacoes: 0,
-    formatos: 0
   };
 
   const faixa = {
@@ -107,7 +106,6 @@ test("não grava quando as previsões já estão atualizadas", () => {
 
   assert.equal(estado.leituras, 1);
   assert.equal(estado.gravacoes, 0);
-  assert.equal(estado.formatos, 0);
 });
 
 test("ignora linhas inválidas e não tenta gravar quando não há registros", () => {
