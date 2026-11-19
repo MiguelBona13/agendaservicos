@@ -852,3 +852,9 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 2. Após integrar e publicar, criar um novo agendamento.
 3. Confirmar que a mensagem de sucesso é exibida e que a lista é carregada sem erro.
 4. Confirmar que as três colunas de previsão permanecem atualizadas e que os tipos/formatações da planilha não foram alterados.
+
+
+### Complemento da correção de colunas tipadas
+- A mesma redefinição de formato existia nos três métodos de atualização individual de previsão do K-NN, da Árvore e da Regressão Logística.
+- As chamadas `setNumberFormat("@")` também foram removidas desses métodos. Eles passam a atualizar somente o valor, preservando o tipo da coluna.
+- A gravação do cadastro e as demais colunas não foram modificadas.
