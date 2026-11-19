@@ -858,3 +858,41 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - A mesma redefinição de formato existia nos três métodos de atualização individual de previsão do K-NN, da Árvore e da Regressão Logística.
 - As chamadas `setNumberFormat("@")` também foram removidas desses métodos. Eles passam a atualizar somente o valor, preservando o tipo da coluna.
 - A gravação do cadastro e as demais colunas não foram modificadas.
+
+
+## Conclusão — otimização e correção de colunas tipadas
+
+### Integração
+- Pull Request #7 integrado à `main` em 19/11/2026.
+- Commit: `2e31f2e7035da28e4833fd6d812065c7ada1be5c`.
+- A branch de trabalho foi incorporada pelo método Squash.
+
+### Validação
+- Suíte automatizada executada no commit integrado: sucesso.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44638545829.
+- A correção remove as chamadas `setNumberFormat("@")` da persistência em lote e dos métodos individuais das três previsões.
+- A persistência em lote preserva o formato/tipo existente e atualiza somente os valores necessários.
+
+### Publicação
+- Workflow: https://github.com/MiguelBona13/agendaservicos/actions/runs/44638545926.
+- 43 arquivos enviados ao Apps Script.
+- Versão 60 criada e implantação existente atualizada com sucesso.
+- Commit publicado: `2e31f2e7035da28e4833fd6d812065c7ada1be5c`.
+
+### Arquivos alterados
+- `AgendamentoRepository.gs` — gravação em lote sem redefinir formato de colunas.
+- `AgendamentoKnnService.gs` — coordenação dos três modelos e persistência única.
+- `AgendamentoArvoreService.gs` — remove gravação individual no fluxo coordenado.
+- `AgendamentoRegressaoLogisticaService.gs` — remove gravação individual no fluxo coordenado.
+- `tests/AgendamentoRepositoryPrevisoes.test.cjs` — testes de persistência em lote sem formatação forçada.
+- `PROJECT_STATUS.md` — atualização do estado real da integração e publicação.
+
+### Arquivos criados e excluídos
+- Criado nesta etapa: `tests/AgendamentoRepositoryPrevisoes.test.cjs`.
+- Nenhum arquivo excluído.
+- `PROJECT_GUIDE.md` permaneceu inalterado.
+
+### Validação funcional pendente
+- Criar um agendamento de teste e confirmar que a lista carrega sem erro.
+- Conferir que as três colunas de previsão são atualizadas e que os tipos das colunas permanecem preservados.
+- Medir o tempo de carregamento da agenda antes e depois da otimização.
