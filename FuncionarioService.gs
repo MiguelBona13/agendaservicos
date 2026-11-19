@@ -53,12 +53,18 @@ function funcionarioServiceCriar(codigo, nome) {
  * @return {{sucesso:boolean,mensagem:string}} Resultado.
  */
 function funcionarioServiceAtualizar(codigo, nome) {
-  const id = funcionarioValidatorValidarCodigo(codigo);
-  const nomeValidado = funcionarioValidatorValidarNome(nome);
-  const linha = funcionarioRepositoryObterLinha(id);
-  if (linha < 2) throw new Error("Funcionário não encontrado.");
-  funcionarioRepositoryAtualizar(linha, { codigo: id, nome: nomeValidado });
-  return { sucesso: true, mensagem: "Funcionário atualizado com sucesso." };
+  const bloqueio = LockService.getScriptLock();
+  bloqueio.waitLock(10000);
+  try {
+    const id = funcionarioValidatorValidarCodigo(codigo);
+    const nomeValidado = funcionarioValidatorValidarNome(nome);
+    const linha = funcionarioRepositoryObterLinha(id);
+    if (linha < 2) throw new Error("Funcionário não encontrado.");
+    funcionarioRepositoryAtualizar(linha, { codigo: id, nome: nomeValidado });
+    return { sucesso: true, mensagem: "Funcionário atualizado com sucesso." };
+  } finally {
+    bloqueio.releaseLock();
+  }
 }
 
 /**
@@ -67,13 +73,19 @@ function funcionarioServiceAtualizar(codigo, nome) {
  * @return {{sucesso:boolean,mensagem:string}} Resultado.
  */
 function funcionarioServiceExcluir(codigo) {
-  const id = funcionarioValidatorValidarCodigo(codigo);
-  const linha = funcionarioRepositoryObterLinha(id);
-  if (linha < 2) throw new Error("Funcionário não encontrado.");
-  funcionarioRulesValidarExclusao(
-    id,
-    funcionarioRepositoryPossuiAgendamentos(id)
-  );
-  funcionarioRepositoryExcluir(linha);
-  return { sucesso: true, mensagem: "Funcionário excluído com sucesso." };
+  const bloqueio = LockService.getScriptLock();
+  bloqueio.waitLock(10000);
+  try {
+    const id = funcionarioValidatorValidarCodigo(codigo);
+    const linha = funcionarioRepositoryObterLinha(id);
+    if (linha < 2) throw new Error("Funcionário não encontrado.");
+    funcionarioRulesValidarExclusao(
+      id,
+      funcionarioRepositoryPossuiAgendamentos(id)
+    );
+    funcionarioRepositoryExcluir(linha);
+    return { sucesso: true, mensagem: "Funcionário excluído com sucesso." };
+  } finally {
+    bloqueio.releaseLock();
+  }
 }
