@@ -80,3 +80,15 @@ function servicoRepositoryExcluir(linha) {
   }
   aba.deleteRow(linha);
 }
+
+/**
+ * Retorna cabeçalhos e registros para a tabela da interface.
+ * A leitura da planilha permanece concentrada no Repository da entidade.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ */
+function servicoRepositoryConsultarTabela() {
+  const aba = getSheet(CONFIG.ABAS.SERVICO), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
+  if (ultimaLinha < 1 || ultimaColuna < 1) return { colunas: [], registros: [] };
+  const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
+  return { colunas: valores[0], registros: valores.slice(1).filter(linha => linha.some(valor => String(valor).trim() !== "")) };
+}
