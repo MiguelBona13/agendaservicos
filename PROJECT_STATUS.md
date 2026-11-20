@@ -896,3 +896,220 @@ Adicionar à aba AGENDA a coluna `Previsao_Regressao_Logistica`, com a probabili
 - Criar um agendamento de teste e confirmar que a lista carrega sem erro.
 - Conferir que as três colunas de previsão são atualizadas e que os tipos das colunas permanecem preservados.
 - Medir o tempo de carregamento da agenda antes e depois da otimização.
+
+
+## Etapa em andamento — CRUD de cadastros (Funcionários)
+
+### Escopo geral
+Implementar Criar, Consultar, Atualizar e Excluir (CRUD) nos cadastros de Funcionários, Serviços, Clientes, Cidades e Bairros, em etapas por entidade. Agendamentos já possuem criação, consulta, edição e cancelamento.
+
+### Etapa concluída — Funcionários
+- A inclusão e a consulta foram preservadas.
+- Adicionada edição do nome do funcionário pela interface.
+- Adicionada exclusão com confirmação.
+- A exclusão é bloqueada quando há agendamentos associados, preservando o histórico.
+- A geração do próximo código passou a consultar o Repository.
+- As operações de inclusão, atualização e exclusão são coordenadas pelo Service e protegidas por LockService.
+- A interface mantém o código imutável durante a edição.
+
+### Arquivos criados
+- `FuncionarioRepository.gs` — leitura, inclusão, atualização, verificação de vínculos e exclusão.
+- `FuncionarioRules.gs` — regra para impedir exclusão com agendamentos vinculados.
+- `FuncionarioValidator.gs` — validação de código e nome.
+- `FuncionarioService.gs` — coordenação das operações CRUD.
+- `tests/FuncionarioValidator.test.cjs`
+- `tests/FuncionarioRules.test.cjs`
+- `tests/FuncionarioService.test.cjs` — testes dos casos de uso do Service.
+
+### Arquivos alterados
+- `Funcionarios.js` — funções públicas legadas delegam ao Service.
+- `Index.html` — ações Editar e Excluir e modo de edição do formulário de funcionários.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- `AgendamentoService.gs`, `AgendamentoRepository.gs`, `AgendamentoValidator.gs`, `AgendamentoRules.gs` e demais entidades não foram alterados nesta etapa.
+- `PROJECT_GUIDE.md` permanece sem alterações.
+- Nenhum arquivo foi excluído.
+
+### Como testar
+1. Executar `npm test).
+2. Abrir a aba Funcionários e cadastrar um funcionário de teste.
+3. Editar o nome e confirmar a atualização na lista.
+4. Tentar excluir um funcionário sem agendamentos e confirmar a remoção.
+5. Tentar excluir um funcionário vinculado a um agendamento e confirmar que o sistema bloqueia a operação.
+6. Confirmar que o código sequencial continua sendo gerado corretamente.
+
+### Próximas etapas
+- Serviços: criar, listar, editar e excluir com bloqueio quando houver agendamentos vinculados.
+- Clientes: criar, listar, editar e excluir com bloqueio quando houver agendamentos vinculados.
+- Cidades: criar, listar, editar e excluir com bloqueio quando houver bairros vinculados.
+- Bairros: criar, listar, editar e excluir com bloqueio quando houver clientes vinculados.
+- Validar a integração das cinco entidades e os seletores usados pela agenda.
+
+
+## Etapa incremental — primeira camada do CRUD de Serviços
+
+### Análise realizada
+- O cadastro antigo de Serviços validava os campos e gravava diretamente na aba SERVICOS.
+- A interface ainda não possui formulário de criação/edição nem ações de exclusão para Serviços.
+- A aba AGENDA armazena o código do serviço na sexta coluna; por isso, a exclusão deve ser bloqueada quando houver histórico vinculado.
+- O fluxo existente de consulta genérica permanece preservado.
+
+### Alterações realizadas nesta etapa
+- Criadas as camadas ServicoValidator, ServicoRules, ServicoRepository e ServicoService.
+- O Repository concentra leitura, inclusão, atualização e exclusão na aba SERVICOS, além da consulta de vínculos na AGENDA.
+- O Service coordena operações com LockService, validação, verificação de duplicidade e proteção do histórico.
+- O código do serviço permanece imutável durante a edição.
+- Servicos.js mantém a função pública cadastrarServico e passa a delegar para ServicoService; também expõe funções de geração de código, atualização e exclusão para a próxima etapa da interface.
+- Criados testes unitários para Validator, Rules e Service.
+
+### Arquivos criados
+- ServicoValidator.gs
+- ServicoRules.gs
+- ServicoRepository.gs
+- ServicoService.gs
+- tests/ServicoValidator.test.cjs
+- tests/ServicoRules.test.cjs
+- tests/ServicoService.test.cjs
+
+### Arquivo alterado
+- Servicos.js — funções legadas delegam à nova camada Service.
+
+### Arquivos mantidos
+- Index.html — ainda sem alterações; o formulário e as ações de Serviços serão adicionados em etapa própria.
+- Consultas.js — consulta genérica preservada.
+- Config.js e Utils.js — mantidos como dependências atuais.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions: execução concluída com sucesso para o HEAD atual da PR.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44649434339
+- Os testes desta etapa cobrem validação de código/nome/valor, valores decimais, bloqueio de exclusão com agendamentos e operações coordenadas pelo Service.
+
+### Como testar
+1. Executar npm test e confirmar que toda a suíte passa.
+2. No Apps Script de teste, confirmar que servicoServiceGerarCodigo retorna o próximo código.
+3. Cadastrar um serviço com nome e valor válidos e conferir a aba SERVICOS.
+4. Tentar cadastrar código duplicado, valor vazio, texto não numérico e valor negativo; todos devem ser rejeitados.
+5. Atualizar nome e valor e confirmar que o código não muda.
+6. Tentar excluir um serviço referenciado na aba AGENDA e confirmar que a exclusão é bloqueada.
+7. Excluir um serviço sem vínculo e confirmar a remoção.
+
+### Pendências
+- Adicionar formulário e ações de CRUD de Serviços à interface.
+- Refatorar Clientes, Cidades e Bairros, incluindo integridade das referências entre cadastros.
+- Revisar a entidade Funcionários e executar a suíte completa no HEAD final.
+- Realizar testes integrados no Apps Script antes de integrar e publicar.
+
+### Próximo passo
+- Concluir a interface de Serviços e validar o fluxo ponta a ponta antes de iniciar a entidade seguinte.
+
+
+## Conclusão da implementação — CRUD dos cinco cadastros (branch de trabalho)
+
+### Escopo concluído na branch
+Implementadas as operações de Criar, Consultar, Atualizar e Excluir (CRUD) para:
+- Funcionários;
+- Serviços;
+- Clientes;
+- Cidades;
+- Bairros.
+
+A implementação preserva os formulários e validações já existentes e mantém os códigos dos registros imutáveis durante a edição.
+
+### Regras de integridade preservadas
+- Funcionário: exclusão bloqueada quando há agendamentos vinculados.
+- Serviço: exclusão bloqueada quando há agendamentos vinculados.
+- Cliente: exclusão bloqueada quando há agendamentos vinculados.
+- Cidade: exclusão bloqueada quando há bairros ou clientes vinculados.
+- Bairro: exclusão bloqueada quando há clientes vinculados.
+- Bairro: mudança de cidade bloqueada quando existem clientes associados ao bairro.
+- Cliente: CPF, data de aniversário, número do endereço, cidade, bairro, CEP, celular, e-mail e status financeiro continuam validados. O bairro precisa pertencer à cidade selecionada.
+
+### Arquitetura aplicada
+- Interface (Index.html) chama funções públicas de compatibilidade.
+- Services coordenam os casos de uso e utilizam LockService nas operações de escrita.
+- Validators normalizam e validam os dados.
+- Rules concentram as regras de integridade e exclusão.
+- Repositories concentram leitura e escrita no Google Sheets.
+- Consultas.js mantém as funções públicas de consulta, delegando as listagens e seletores aos Services/Repositories correspondentes.
+- PROJECT_GUIDE.md não foi alterado.
+
+### Arquivos criados
+- CidadeService.gs
+- CidadeRules.gs
+- CidadeValidator.gs
+- CidadeRepository.gs
+- BairroService.gs
+- BairroRules.gs
+- BairroValidator.gs
+- BairroRepository.gs
+- ClienteRules.gs
+- tests/CidadeValidator.test.cjs
+- tests/CidadeRules.test.cjs
+- tests/CidadeService.test.cjs
+- tests/BairroValidator.test.cjs
+- tests/BairroRules.test.cjs
+- tests/BairroService.test.cjs
+- tests/ClienteCrudValidator.test.cjs
+- tests/ClienteRules.test.cjs
+- tests/ClienteCrudService.test.cjs
+- tests/IndexScriptSyntax.test.cjs
+
+### Arquivos alterados
+- Index.html — formulários de Serviços, Cidades e Bairros; edição e exclusão dos cinco cadastros; edição de clientes; ações de atualização das listas.
+- Consultas.js — listagens e seletores delegados aos Repositories/Services.
+- Clientes.js — preserva as funções públicas e delega o CRUD ao ClienteService.
+- ClienteService.gs — mantém o envio de e-mail de teste e acrescenta os casos de uso CRUD.
+- ClienteValidator.gs — mantém a validação do e-mail e acrescenta a validação completa do cadastro.
+- ClienteRepository.gs — mantém a consulta de contato para e-mail e acrescenta persistência e consultas CRUD.
+- Cidades.js — delega as operações públicas ao CidadeService.
+- Bairros.js — delega as operações públicas ao BairroService.
+- Servicos.js — delega as operações públicas ao ServicoService.
+- ServicoRepository.gs — acrescenta consulta tabular para a interface.
+- FuncionarioRepository.gs — acrescenta consulta tabular para a interface.
+- CidadeRepository.gs, BairroRepository.gs e ClienteRepository.gs — acrescentam consulta tabular e mantêm acesso à planilha centralizado.
+- PROJECT_STATUS.md — registro desta etapa.
+
+### Arquivos mantidos
+- Funcionarios.js, FuncionarioService.gs, FuncionarioRules.gs e FuncionarioValidator.gs — implementação anterior de Funcionários preservada.
+- ServicoService.gs, ServicoRules.gs e ServicoValidator.gs — camadas implementadas na etapa anterior preservadas.
+- Config.js e Utils.js — mantidos como configuração e acesso compartilhado à planilha.
+- AgendamentoService.gs, AgendamentoRules.gs, AgendamentoValidator.gs, AgendamentoRepository.gs, Agenda.js e os arquivos de e-mail, WhatsApp e previsões — não alterados nesta etapa.
+- ClienteService.gs continua oferecendo o envio de e-mail de teste.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions executado no HEAD da branch: sucesso.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44651602918
+- Resultado: 125 testes aprovados e 0 falhas no HEAD 32da0de9256208f265ccf62de3ca7e4208a96858.
+- A suíte inclui validações e regras das entidades, testes de Services e verificação sintática do JavaScript embutido em Index.html.
+
+### Como testar no ambiente integrado
+1. Atualizar o projeto de teste no Google Apps Script com os arquivos desta branch, sem alterar a implantação de produção.
+2. Confirmar que as abas FUNCIONARIOS, SERVICOS, CLIENTES, CIDADES, BAIRROS e AGENDA possuem os cabeçalhos e a ordem de colunas atuais.
+3. Em cada cadastro, criar um registro de teste, atualizar seus dados e conferir a tabela e a planilha.
+4. Tentar excluir funcionário, serviço e cliente com agendamentos vinculados; as três operações devem ser bloqueadas.
+5. Tentar excluir cidade com bairros ou clientes vinculados; a operação deve ser bloqueada.
+6. Tentar excluir bairro com clientes vinculados ou mudar sua cidade; as operações devem ser bloqueadas.
+7. Excluir registros de teste sem vínculos e confirmar a remoção.
+8. Cadastrar e editar cliente com CPF, data, CEP, celular, e-mail e bairro/cidade válidos; testar também dados inválidos e CPF duplicado.
+9. Abrir a Agenda e confirmar que os seletores de funcionários, clientes, serviços, cidades e bairros continuam carregando corretamente.
+10. Testar o envio de e-mail de teste ao cliente e a criação/edição/cancelamento de agendamentos para confirmar que as funcionalidades preexistentes permanecem disponíveis.
+
+### Situação de integração e publicação
+- PR #8: https://github.com/MiguelBona13/agendaservicos/pull/8
+- Branch: feat/crud-cadastros-incremental.
+- HEAD validado: 32da0de9256208f265ccf62de3ca7e4208a96858.
+- PR permanece aberta como rascunho; não foi integrada à main.
+- Nenhuma publicação no Google Apps Script foi executada nesta etapa.
+- A versão de produção permanece na versão 60, conforme último registro confirmado antes desta PR.
+
+### Pendências antes de integrar/publicar
+- Executar testes integrados no projeto de teste do Google Apps Script com uma cópia controlada da planilha.
+- Conferir o comportamento real de edição e exclusão com dados de teste e vínculos existentes.
+- Revisar a PR após os testes integrados.
+- Somente então retirar o rascunho, integrar e executar o workflow de publicação.
+
+### Próximo passo
+- Executar a bateria de testes integrados em ambiente de teste e revisar a PR #8 antes da integração.

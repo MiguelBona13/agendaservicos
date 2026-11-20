@@ -54,3 +54,16 @@ function clienteServiceEnviarEmailTeste(codigoCliente) {
     destinatario: destinatario
   };
 }
+
+/** Próximo código sequencial. @return {string} Código. */
+function clienteServiceGerarCodigo(){return String(clienteRepositoryMaiorCodigo()+1).padStart(3,"0");}
+/** Lista clientes para o cadastro. @return {Array<Object>} Clientes. */
+function clienteServiceListar(){return clienteRepositoryListar();}
+/** Valida vínculos e duplicidade do cadastro. @param {Object} d Dados. @param {string=} codigoIgnorado Código ignorado. */
+function clienteServiceValidarReferencias(d,codigoIgnorado){if(!clienteRepositoryCidadeExiste(d.codigoCidade))throw new Error("A cidade selecionada não está cadastrada.");if(!clienteRepositoryBairroPertenceCidade(d.codigoBairro,d.codigoCidade))throw new Error("O bairro selecionado não pertence à cidade informada.");if(clienteRepositoryCpfExiste(d.cpf,codigoIgnorado))throw new Error("Este CPF já está cadastrado.");}
+/** Cria cliente preservando validações históricas. @param {Object} dados Dados do cliente. @return {Object} Resultado. */
+function clienteServiceCriarCadastro(dados){const l=LockService.getScriptLock();l.waitLock(10000);try{const d=clienteValidatorValidarCadastro(dados);if(clienteRepositoryLinha(d.codigo)>1)throw new Error("O código "+d.codigo+" já está cadastrado.");clienteServiceValidarReferencias(d);clienteRepositoryInserirCadastro(d);return{sucesso:true,mensagem:"Cliente cadastrado com sucesso."};}finally{l.releaseLock();}}
+/** Atualiza cadastro sem alterar código. @param {Object} dados Dados completos. @return {Object} Resultado. */
+function clienteServiceAtualizarCadastro(dados){const l=LockService.getScriptLock();l.waitLock(10000);try{const d=clienteValidatorValidarCadastro(dados),linha=clienteRepositoryLinha(d.codigo);if(linha<2)throw new Error("Cliente não encontrado.");clienteServiceValidarReferencias(d,d.codigo);clienteRepositoryAtualizarCadastro(linha,d);return{sucesso:true,mensagem:"Cliente atualizado com sucesso."};}finally{l.releaseLock();}}
+/** Exclui cliente sem agendamentos. @param {string} codigo Código. @return {Object} Resultado. */
+function clienteServiceExcluirCadastro(codigo){const l=LockService.getScriptLock();l.waitLock(10000);try{const id=String(codigo||"").trim(),linha=clienteRepositoryLinha(id);if(!id)throw new Error("O código do cliente é obrigatório.");if(linha<2)throw new Error("Cliente não encontrado.");clienteRulesValidarExclusao(id,clienteRepositoryPossuiAgendamentos(id));clienteRepositoryExcluir(linha);return{sucesso:true,mensagem:"Cliente excluído com sucesso."};}finally{l.releaseLock();}}

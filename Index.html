@@ -101,6 +101,7 @@
 
           <div class="acoes">
             <button class="botao" id="botaoCadastrarFuncionario" type="submit" disabled>Carregando código...</button>
+            <button class="botao botao-secundario" id="botaoCancelarEdicaoFuncionario" type="button" style="display:none">Cancelar edição</button>
           </div>
         </form>
       </section>
@@ -178,10 +179,41 @@
 
           <div class="acoes">
             <button class="botao" id="botaoCadastrarCliente" type="submit" disabled>Carregando...</button>
+            <button class="botao botao-secundario" id="botaoCancelarEdicaoCliente" type="button" style="display:none">Cancelar edição</button>
           </div>
         </form>
       </section>
 
+      <section class="card" id="areaCadastroServico" style="display:none">
+        <h3 id="tituloFormularioServico">Cadastrar serviço</h3>
+        <p class="descricao">O código é gerado automaticamente e permanece imutável na edição.</p>
+        <form id="formServico">
+          <label for="codigoServicoCadastro">Código do serviço</label><input id="codigoServicoCadastro" readonly required>
+          <label for="nomeServicoCadastro">Nome do serviço</label><input id="nomeServicoCadastro" required maxlength="120">
+          <label for="valorServicoCadastro">Valor (R$)</label><input id="valorServicoCadastro" type="number" min="0" step="0.01" required>
+          <div class="acoes"><button class="botao" id="botaoSalvarServico" type="submit">Cadastrar serviço</button><button class="botao botao-secundario" id="botaoCancelarServico" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
+      <section class="card" id="areaCadastroCidade" style="display:none">
+        <h3 id="tituloFormularioCidade">Cadastrar cidade</h3>
+        <p class="descricao">Informe o nome e a sigla do estado (UF).</p>
+        <form id="formCidade">
+          <label for="codigoCidadeCadastro">Código da cidade</label><input id="codigoCidadeCadastro" readonly required>
+          <label for="nomeCidadeCadastro">Nome da cidade</label><input id="nomeCidadeCadastro" required maxlength="120">
+          <label for="estadoCidadeCadastro">Estado (UF)</label><input id="estadoCidadeCadastro" required maxlength="2" pattern="[A-Za-z]{2}">
+          <div class="acoes"><button class="botao" id="botaoSalvarCidade" type="submit">Cadastrar cidade</button><button class="botao botao-secundario" id="botaoCancelarCidade" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
+      <section class="card" id="areaCadastroBairro" style="display:none">
+        <h3 id="tituloFormularioBairro">Cadastrar bairro</h3>
+        <p class="descricao">Selecione a cidade à qual o bairro pertence.</p>
+        <form id="formBairro">
+          <label for="codigoBairroCadastro">Código do bairro</label><input id="codigoBairroCadastro" readonly required>
+          <label for="nomeBairroCadastro">Nome do bairro</label><input id="nomeBairroCadastro" required maxlength="120">
+          <label for="cidadeBairroCadastro">Cidade</label><select id="cidadeBairroCadastro" required><option value="">Carregando cidades...</option></select>
+          <div class="acoes"><button class="botao" id="botaoSalvarBairro" type="submit">Cadastrar bairro</button><button class="botao botao-secundario" id="botaoCancelarBairro" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
       <section class="card" id="areaCadastroAgendamento" style="display:none">
         <h3>Novo agendamento</h3>
         <p class="descricao">Escolha a data, o período e os dados do atendimento. O valor será obtido do serviço selecionado.</p>
@@ -277,6 +309,10 @@
     CLIENTES: "Clientes",
     CIDADES: "Cidades",
     BAIRROS: "Bairros",
+    SERVICOS: "Serviços",
+    CLIENTES: "Clientes",
+    CIDADES: "Cidades",
+    BAIRROS: "Bairros",
     AGENDA: "Agenda de atendimentos"
   };
 
@@ -296,6 +332,9 @@
 
   const botoesMenu = document.querySelectorAll(".menu-item");
   const areaCadastroFuncionario = el("areaCadastroFuncionario");
+  const areaCadastroServico = el("areaCadastroServico");
+  const areaCadastroCidade = el("areaCadastroCidade");
+  const areaCadastroBairro = el("areaCadastroBairro");
   const areaCadastroCliente = el("areaCadastroCliente");
   const areaCadastroAgendamento = el("areaCadastroAgendamento");
   const conteudoLista = el("conteudoLista");
@@ -309,6 +348,12 @@
   const codigoFuncionario = el("codigoFuncionario");
   const nomeFuncionario = el("nomeFuncionario");
   const botaoCadastrarFuncionario = el("botaoCadastrarFuncionario");
+  const botaoCancelarEdicaoFuncionario = el("botaoCancelarEdicaoFuncionario");
+  let codigoFuncionarioEmEdicao = "";
+  let codigoClienteEmEdicao = "";
+  let codigoServicoEmEdicao = "";
+  let codigoCidadeEmEdicao = "";
+  let codigoBairroEmEdicao = "";
 
   const formCliente = el("formCliente");
   const codigoCliente = el("codigoCliente");
@@ -323,6 +368,11 @@
   const emailCliente = el("emailCliente");
   const statusFinanceiroCliente = el("statusFinanceiroCliente");
   const botaoCadastrarCliente = el("botaoCadastrarCliente");
+  const botaoCancelarEdicaoCliente = el("botaoCancelarEdicaoCliente");
+
+  const formServico = el("formServico"), codigoServicoCadastro = el("codigoServicoCadastro"), nomeServicoCadastro = el("nomeServicoCadastro"), valorServicoCadastro = el("valorServicoCadastro");
+  const formCidade = el("formCidade"), codigoCidadeCadastro = el("codigoCidadeCadastro"), nomeCidadeCadastro = el("nomeCidadeCadastro"), estadoCidadeCadastro = el("estadoCidadeCadastro");
+  const formBairro = el("formBairro"), codigoBairroCadastro = el("codigoBairroCadastro"), nomeBairroCadastro = el("nomeBairroCadastro"), cidadeBairroCadastro = el("cidadeBairroCadastro");
 
   const formAgendamento = el("formAgendamento");
   const codigoAgendamento = el("codigoAgendamento");
@@ -784,7 +834,7 @@
       trCabecalho.appendChild(th);
     });
 
-    if (abaAtual === "AGENDA") {
+    if (["AGENDA", "FUNCIONARIOS", "SERVICOS", "CLIENTES", "CIDADES", "BAIRROS"].includes(abaAtual)) {
       const thAcoes = document.createElement("th");
       thAcoes.textContent = "Ações";
       trCabecalho.appendChild(thAcoes);
@@ -803,6 +853,73 @@
         td.textContent = valor;
         tr.appendChild(td);
       });
+
+      if (abaAtual === "FUNCIONARIOS") {
+        const tdAcoes = document.createElement("td");
+        const codigo = String(registro[0] || "").trim();
+        const nome = String(registro[1] || "").trim();
+
+        const botaoEditarFuncionario = document.createElement("button");
+        botaoEditarFuncionario.type = "button";
+        botaoEditarFuncionario.className = "botao botao-secundario";
+        botaoEditarFuncionario.textContent = "Editar";
+        botaoEditarFuncionario.addEventListener("click", () => {
+          codigoFuncionarioEmEdicao = codigo;
+          codigoFuncionario.value = codigo;
+          nomeFuncionario.value = nome;
+          codigoFuncionario.readOnly = true;
+          botaoCadastrarFuncionario.textContent = "Salvar alterações";
+          botaoCancelarEdicaoFuncionario.style.display = "inline-block";
+          areaCadastroFuncionario.scrollIntoView({ behavior: "smooth", block: "start" });
+          mostrarMensagem("Editando funcionário " + codigo + ".", "sucesso");
+        });
+        tdAcoes.appendChild(botaoEditarFuncionario);
+
+        const botaoExcluirFuncionario = document.createElement("button");
+        botaoExcluirFuncionario.type = "button";
+        botaoExcluirFuncionario.className = "botao botao-secundario";
+        botaoExcluirFuncionario.textContent = "Excluir";
+        botaoExcluirFuncionario.addEventListener("click", () => {
+          if (!confirm("Deseja excluir o funcionário " + codigo + "?")) return;
+          botaoExcluirFuncionario.disabled = true;
+          google.script.run
+            .withSuccessHandler(resultado => {
+              mostrarMensagem(resultado && resultado.mensagem || "Funcionário excluído.", "sucesso");
+              carregarLista();
+              carregarCodigoFuncionario();
+              carregarDadosAgendamento();
+            })
+            .withFailureHandler(erro => {
+              botaoExcluirFuncionario.disabled = false;
+              falha(erro, "Não foi possível excluir o funcionário: ");
+            })
+            .excluirFuncionario(codigo);
+        });
+        tdAcoes.appendChild(botaoExcluirFuncionario);
+        tr.appendChild(tdAcoes);
+      }
+
+      if (["SERVICOS","CLIENTES","CIDADES","BAIRROS"].includes(abaAtual)) {
+        const tdAcoes=document.createElement("td"), codigo=String(registro[0]||"").trim();
+        const editar=document.createElement("button"); editar.type="button"; editar.className="botao botao-secundario"; editar.textContent="Editar";
+        editar.addEventListener("click",()=>{
+          if(abaAtual==="SERVICOS"){codigoServicoEmEdicao=codigo;codigoServicoCadastro.value=codigo;nomeServicoCadastro.value=registro[1]||"";valorServicoCadastro.value=String(registro[2]||"").replace(",",".");el("tituloFormularioServico").textContent="Editar serviço";el("botaoSalvarServico").textContent="Salvar alterações";el("botaoCancelarServico").style.display="inline-block";areaCadastroServico.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="CIDADES"){codigoCidadeEmEdicao=codigo;codigoCidadeCadastro.value=codigo;nomeCidadeCadastro.value=registro[1]||"";estadoCidadeCadastro.value=registro[2]||"";el("tituloFormularioCidade").textContent="Editar cidade";el("botaoSalvarCidade").textContent="Salvar alterações";el("botaoCancelarCidade").style.display="inline-block";areaCadastroCidade.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="BAIRROS"){codigoBairroEmEdicao=codigo;codigoBairroCadastro.value=codigo;nomeBairroCadastro.value=registro[1]||"";carregarCidadesBairro(()=>{cidadeBairroCadastro.value=registro[2]||"";});el("tituloFormularioBairro").textContent="Editar bairro";el("botaoSalvarBairro").textContent="Salvar alterações";el("botaoCancelarBairro").style.display="inline-block";areaCadastroBairro.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="CLIENTES"){carregarClienteParaEdicao(registro);}
+          mostrarMensagem("Editando cadastro "+codigo+".","sucesso");
+        });
+        tdAcoes.appendChild(editar);
+        const excluir=document.createElement("button"); excluir.type="button"; excluir.className="botao botao-secundario"; excluir.textContent="Excluir";
+        excluir.addEventListener("click",()=>{
+          if(!confirm("Deseja excluir o registro "+codigo+"?"))return;
+          excluir.disabled=true;
+          const metodo={SERVICOS:"excluirServico",CLIENTES:"excluirCliente",CIDADES:"excluirCidade",BAIRROS:"excluirBairro"}[abaAtual];
+          google.script.run.withSuccessHandler(r=>{mostrarMensagem(r&&r.mensagem||"Registro excluído.","sucesso");carregarLista();if(abaAtual==="CLIENTES")carregarDadosAgendamento();if(abaAtual==="SERVICOS")carregarDadosAgendamento();if(abaAtual==="CIDADES"){carregarCidades();carregarDadosAgendamento();}if(abaAtual==="BAIRROS")carregarBairros(cidadeCliente.value);})
+            .withFailureHandler(e=>{excluir.disabled=false;falha(e,"Não foi possível excluir: ");})[metodo](codigo);
+        });
+        tdAcoes.appendChild(excluir);tr.appendChild(tdAcoes);
+      }
 
       if (abaAtual === "AGENDA") {
         const tdAcoes = document.createElement("td");
@@ -880,6 +997,9 @@
   }
 
   function selecionarAba(nomeAba) {
+    if (abaAtual === "FUNCIONARIOS" && nomeAba !== "FUNCIONARIOS") {
+      cancelarEdicaoFuncionario();
+    }
     abaAtual = nomeAba;
 
     botoesMenu.forEach(botao => {
@@ -889,21 +1009,25 @@
     tituloLista.textContent = titulos[nomeAba];
     descricaoLista.textContent = descricoes[nomeAba];
 
-    areaCadastroFuncionario.style.display =
-      nomeAba === "FUNCIONARIOS" ? "block" : "none";
-
-    areaCadastroCliente.style.display =
-      nomeAba === "CLIENTES" ? "block" : "none";
-
-    areaCadastroAgendamento.style.display =
-      nomeAba === "AGENDA" ? "block" : "none";
+    areaCadastroFuncionario.style.display = nomeAba === "FUNCIONARIOS" ? "block" : "none";
+    areaCadastroServico.style.display = nomeAba === "SERVICOS" ? "block" : "none";
+    areaCadastroCliente.style.display = nomeAba === "CLIENTES" ? "block" : "none";
+    areaCadastroCidade.style.display = nomeAba === "CIDADES" ? "block" : "none";
+    areaCadastroBairro.style.display = nomeAba === "BAIRROS" ? "block" : "none";
+    areaCadastroAgendamento.style.display = nomeAba === "AGENDA" ? "block" : "none";
 
     limparMensagem();
     carregarLista();
 
     if (nomeAba === "CLIENTES") {
-      carregarCodigoCliente();
+      if (!codigoClienteEmEdicao) carregarCodigoCliente();
       carregarCidades();
+    }
+    if (nomeAba === "SERVICOS" && !codigoServicoEmEdicao) carregarCodigoServico();
+    if (nomeAba === "CIDADES" && !codigoCidadeEmEdicao) carregarCodigoCidade();
+    if (nomeAba === "BAIRROS") {
+      if (!codigoBairroEmEdicao) carregarCodigoBairro();
+      carregarCidadesBairro();
     }
 
     if (nomeAba === "AGENDA") {
@@ -1012,9 +1136,15 @@
     }
 
     if (abaAtual === "CLIENTES") {
-      carregarCodigoCliente();
+      if (!codigoClienteEmEdicao) carregarCodigoCliente();
       carregarCidades();
       carregarBairros("");
+    }
+    if (abaAtual === "SERVICOS" && !codigoServicoEmEdicao) carregarCodigoServico();
+    if (abaAtual === "CIDADES" && !codigoCidadeEmEdicao) carregarCodigoCidade();
+    if (abaAtual === "BAIRROS") {
+      if (!codigoBairroEmEdicao) carregarCodigoBairro();
+      carregarCidadesBairro();
     }
 
     if (abaAtual === "AGENDA") {
@@ -1022,88 +1152,137 @@
     }
   });
 
+  function cancelarEdicaoFuncionario() {
+    codigoFuncionarioEmEdicao = "";
+    formFuncionario.reset();
+    codigoFuncionario.readOnly = true;
+    botaoCancelarEdicaoFuncionario.style.display = "none";
+    botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+    carregarCodigoFuncionario();
+    limparMensagem();
+  }
+
+  botaoCancelarEdicaoFuncionario.addEventListener("click", cancelarEdicaoFuncionario);
+
   formFuncionario.addEventListener("submit", evento => {
     evento.preventDefault();
+    if (!formFuncionario.reportValidity()) return;
 
     const codigo = codigoFuncionario.value;
     const nome = nomeFuncionario.value.trim();
-
     if (!codigo || !nome) {
       mostrarMensagem("Preencha o nome do funcionário.", "erro");
       return;
     }
 
     botaoCadastrarFuncionario.disabled = true;
-    botaoCadastrarFuncionario.textContent = "Cadastrando...";
+    botaoCadastrarFuncionario.textContent = codigoFuncionarioEmEdicao
+      ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
 
-    google.script.run
-      .withSuccessHandler(() => {
-        mostrarMensagem("Funcionário cadastrado com sucesso!", "sucesso");
-        nomeFuncionario.value = "";
-        carregarCodigoFuncionario();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar: ");
-        botaoCadastrarFuncionario.disabled = false;
-        botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
-      })
-      .cadastrarFuncionario(codigo, nome);
+    const aoConcluir = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem ||
+        (codigoFuncionarioEmEdicao ? "Funcionário atualizado." : "Funcionário cadastrado."), "sucesso");
+      codigoFuncionarioEmEdicao = "";
+      formFuncionario.reset();
+      codigoFuncionario.readOnly = true;
+      botaoCancelarEdicaoFuncionario.style.display = "none";
+      botaoCadastrarFuncionario.textContent = "Cadastrar funcionário";
+      botaoCadastrarFuncionario.disabled = false;
+      carregarCodigoFuncionario();
+      carregarLista();
+    };
+    const aoFalhar = erro => {
+      falha(erro, codigoFuncionarioEmEdicao
+        ? "Não foi possível atualizar o funcionário: "
+        : "Não foi possível cadastrar: ");
+      botaoCadastrarFuncionario.disabled = false;
+      botaoCadastrarFuncionario.textContent = codigoFuncionarioEmEdicao
+        ? "Salvar alterações" : "Cadastrar funcionário";
+    };
+
+    if (codigoFuncionarioEmEdicao) {
+      google.script.run.withSuccessHandler(aoConcluir)
+        .withFailureHandler(aoFalhar)
+        .atualizarFuncionario(codigo, nome);
+    } else {
+      google.script.run.withSuccessHandler(aoConcluir)
+        .withFailureHandler(aoFalhar)
+        .cadastrarFuncionario(codigo, nome);
+    }
   });
 
   formCliente.addEventListener("submit", evento => {
     evento.preventDefault();
-
     if (!formCliente.reportValidity()) return;
-
     const dados = {
-      codigo: codigoCliente.value,
-      nome: nomeCliente.value.trim(),
-      cpf: cpfCliente.value,
-      dataAniversario: aniversarioCliente.value,
-      numero: numeroCliente.value.trim(),
-      codigoCidade: cidadeCliente.value,
-      codigoBairro: bairroCliente.value,
-      cep: cepCliente.value,
-      celular: celularCliente.value,
-      email: emailCliente.value.trim(),
+      codigo: codigoCliente.value, nome: nomeCliente.value.trim(), cpf: cpfCliente.value,
+      dataAniversario: aniversarioCliente.value, numero: numeroCliente.value.trim(),
+      codigoCidade: cidadeCliente.value, codigoBairro: bairroCliente.value, cep: cepCliente.value,
+      celular: celularCliente.value, email: emailCliente.value.trim(),
       statusFinanceiro: statusFinanceiroCliente.value
     };
-
     botaoCadastrarCliente.disabled = true;
-    botaoCadastrarCliente.textContent = "Cadastrando...";
+    botaoCadastrarCliente.textContent = codigoClienteEmEdicao ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
-
-    google.script.run
-      .withSuccessHandler(() => {
-        mostrarMensagem("Cliente cadastrado com sucesso!", "sucesso");
-        formCliente.reset();
-        bairroCliente.innerHTML =
-          '<option value="">Selecione uma cidade primeiro</option>';
-        bairroCliente.disabled = true;
-        carregarCodigoCliente();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar o cliente: ");
-        botaoCadastrarCliente.disabled = false;
-        botaoCadastrarCliente.textContent = "Cadastrar cliente";
-      })
-      .cadastrarCliente(
-        dados.codigo,
-        dados.nome,
-        dados.cpf,
-        dados.dataAniversario,
-        dados.numero,
-        dados.codigoCidade,
-        dados.codigoBairro,
-        dados.cep,
-        dados.celular,
-        dados.email,
-        dados.statusFinanceiro
+    const sucesso = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem || "Cliente salvo com sucesso.", "sucesso");
+      codigoClienteEmEdicao = "";
+      formCliente.reset();
+      codigoCliente.readOnly = true;
+      botaoCancelarEdicaoCliente.style.display = "none";
+      botaoCadastrarCliente.disabled = false;
+      botaoCadastrarCliente.textContent = "Cadastrar cliente";
+      bairroCliente.innerHTML = '<option value="">Selecione uma cidade primeiro</option>';
+      bairroCliente.disabled = true;
+      carregarCodigoCliente(); carregarLista(); carregarDadosAgendamento();
+    };
+    const erro = e => {
+      falha(e, "Não foi possível salvar o cliente: ");
+      botaoCadastrarCliente.disabled = false;
+      botaoCadastrarCliente.textContent = codigoClienteEmEdicao ? "Salvar alterações" : "Cadastrar cliente";
+    };
+    if (codigoClienteEmEdicao) {
+      google.script.run.withSuccessHandler(sucesso).withFailureHandler(erro).atualizarCliente(dados);
+    } else {
+      google.script.run.withSuccessHandler(sucesso).withFailureHandler(erro).cadastrarCliente(
+        dados.codigo,dados.nome,dados.cpf,dados.dataAniversario,dados.numero,
+        dados.codigoCidade,dados.codigoBairro,dados.cep,dados.celular,dados.email,dados.statusFinanceiro
       );
+    }
   });
+
+  function carregarClienteParaEdicao(registro) {
+    const codigo = String(registro[0] || "").trim();
+    google.script.run.withSuccessHandler(clientes => {
+      const cliente = (clientes || []).find(item => String(item.codigo) === codigo);
+      if (!cliente) { mostrarMensagem("Cliente não encontrado para edição.", "erro"); return; }
+      codigoClienteEmEdicao = codigo;
+      codigoCliente.value = cliente.codigo; codigoCliente.readOnly = true;
+      nomeCliente.value=cliente.nome||""; cpfCliente.value=cliente.cpf||"";
+      aniversarioCliente.value=cliente.dataAniversario||""; numeroCliente.value=cliente.numero||"";
+      cepCliente.value=cliente.cep||""; celularCliente.value=cliente.celular||"";
+      emailCliente.value=cliente.email||""; statusFinanceiroCliente.value=cliente.statusFinanceiro||"";
+      google.script.run.withSuccessHandler(cidades=>{
+        preencherSelect(cidadeCliente,cidades,"Selecione uma cidade",c=>c.nome+" - "+c.estado);
+        cidadeCliente.value=cliente.codigoCidade;
+        google.script.run.withSuccessHandler(bairros=>{
+          preencherSelect(bairroCliente,bairros,"Selecione um bairro",b=>b.nome);
+          bairroCliente.value=cliente.codigoBairro;
+        }).consultarBairros(cliente.codigoCidade);
+      }).consultarCidades();
+      botaoCadastrarCliente.textContent="Salvar alterações";
+      botaoCancelarEdicaoCliente.style.display="inline-block";
+      areaCadastroCliente.scrollIntoView({behavior:"smooth",block:"start"});
+    }).withFailureHandler(e=>falha(e,"Não foi possível carregar o cliente: ")).clienteServiceListar();
+  }
+  function cancelarEdicaoCliente() {
+    codigoClienteEmEdicao=""; formCliente.reset(); codigoCliente.readOnly=true;
+    botaoCancelarEdicaoCliente.style.display="none"; botaoCadastrarCliente.textContent="Cadastrar cliente";
+    bairroCliente.innerHTML='<option value="">Selecione uma cidade primeiro</option>'; bairroCliente.disabled=true;
+    carregarCodigoCliente();
+  }
+  botaoCancelarEdicaoCliente.addEventListener("click",cancelarEdicaoCliente);
 
   formAgendamento.addEventListener("submit", evento => {
     evento.preventDefault();
@@ -1151,6 +1330,16 @@
     }
   });
 
+  function carregarCodigoServico(){el("botaoSalvarServico").disabled=true;google.script.run.withSuccessHandler(c=>{codigoServicoCadastro.value=c;el("botaoSalvarServico").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código do serviço: ")).gerarCodigoServico();}
+  function carregarCodigoCidade(){el("botaoSalvarCidade").disabled=true;google.script.run.withSuccessHandler(c=>{codigoCidadeCadastro.value=c;el("botaoSalvarCidade").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código da cidade: ")).gerarCodigoCidade();}
+  function carregarCodigoBairro(){el("botaoSalvarBairro").disabled=true;google.script.run.withSuccessHandler(c=>{codigoBairroCadastro.value=c;el("botaoSalvarBairro").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código do bairro: ")).gerarCodigoBairro();}
+  function carregarCidadesBairro(callback){google.script.run.withSuccessHandler(items=>{preencherSelect(cidadeBairroCadastro,items,"Selecione uma cidade",c=>c.nome+" - "+c.estado);if(callback)callback();}).withFailureHandler(e=>falha(e,"Não foi possível carregar cidades: ")).consultarCidades();}
+  formServico.addEventListener("submit",ev=>{ev.preventDefault();if(!formServico.reportValidity())return;const args=[codigoServicoCadastro.value,nomeServicoCadastro.value,valorServicoCadastro.value],fn=codigoServicoEmEdicao?"atualizarServico":"cadastrarServico";el("botaoSalvarServico").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoServicoEmEdicao="";formServico.reset();el("tituloFormularioServico").textContent="Cadastrar serviço";el("botaoSalvarServico").textContent="Cadastrar serviço";el("botaoCancelarServico").style.display="none";carregarCodigoServico();carregarLista();carregarDadosAgendamento();}).withFailureHandler(e=>{falha(e,"Não foi possível salvar o serviço: ");el("botaoSalvarServico").disabled=false;})[fn](...args);});
+  el("botaoCancelarServico").addEventListener("click",()=>{codigoServicoEmEdicao="";formServico.reset();el("tituloFormularioServico").textContent="Cadastrar serviço";el("botaoSalvarServico").textContent="Cadastrar serviço";el("botaoCancelarServico").style.display="none";carregarCodigoServico();});
+  formCidade.addEventListener("submit",ev=>{ev.preventDefault();if(!formCidade.reportValidity())return;const args=[codigoCidadeCadastro.value,nomeCidadeCadastro.value,estadoCidadeCadastro.value],fn=codigoCidadeEmEdicao?"atualizarCidade":"cadastrarCidade";el("botaoSalvarCidade").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoCidadeEmEdicao="";formCidade.reset();el("tituloFormularioCidade").textContent="Cadastrar cidade";el("botaoSalvarCidade").textContent="Cadastrar cidade";el("botaoCancelarCidade").style.display="none";carregarCodigoCidade();carregarLista();carregarCidades();carregarCidadesBairro();}).withFailureHandler(e=>{falha(e,"Não foi possível salvar a cidade: ");el("botaoSalvarCidade").disabled=false;})[fn](...args);});
+  el("botaoCancelarCidade").addEventListener("click",()=>{codigoCidadeEmEdicao="";formCidade.reset();el("tituloFormularioCidade").textContent="Cadastrar cidade";el("botaoSalvarCidade").textContent="Cadastrar cidade";el("botaoCancelarCidade").style.display="none";carregarCodigoCidade();});
+  formBairro.addEventListener("submit",ev=>{ev.preventDefault();if(!formBairro.reportValidity())return;const args=[codigoBairroCadastro.value,nomeBairroCadastro.value,cidadeBairroCadastro.value],fn=codigoBairroEmEdicao?"atualizarBairro":"cadastrarBairro";el("botaoSalvarBairro").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoBairroEmEdicao="";formBairro.reset();el("tituloFormularioBairro").textContent="Cadastrar bairro";el("botaoSalvarBairro").textContent="Cadastrar bairro";el("botaoCancelarBairro").style.display="none";carregarCodigoBairro();carregarLista();carregarBairros(cidadeCliente.value);}).withFailureHandler(e=>{falha(e,"Não foi possível salvar o bairro: ");el("botaoSalvarBairro").disabled=false;})[fn](...args);});
+  el("botaoCancelarBairro").addEventListener("click",()=>{codigoBairroEmEdicao="";formBairro.reset();el("tituloFormularioBairro").textContent="Cadastrar bairro";el("botaoSalvarBairro").textContent="Cadastrar bairro";el("botaoCancelarBairro").style.display="none";carregarCodigoBairro();});
   carregarCodigoFuncionario();
   carregarLista();
 </script>
