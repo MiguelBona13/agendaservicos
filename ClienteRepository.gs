@@ -83,3 +83,15 @@ function clienteRepositoryAtualizarCadastro(linha,d){const a=getSheet(CONFIG.ABA
 function clienteRepositoryPossuiAgendamentos(codigo){const a=getSheet(CONFIG.ABAS.AGENDA),n=a.getLastRow();return n>=2&&a.getRange(2,5,n-1,1).getDisplayValues().some(r=>String(r[0]).trim()===String(codigo).trim());}
 /** Exclui cliente. @param {number} linha Linha. */
 function clienteRepositoryExcluir(linha){const a=getSheet(CONFIG.ABAS.CLIENTES);if(!Number.isInteger(linha)||linha<2||linha>a.getLastRow())throw new Error("Cliente não encontrado.");a.deleteRow(linha);}
+
+/**
+ * Retorna cabeçalhos e registros para a tabela da interface.
+ * A leitura da planilha permanece concentrada no Repository da entidade.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ */
+function clienteRepositoryConsultarTabela() {
+  const aba = getSheet(CONFIG.ABAS.CLIENTE), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
+  if (ultimaLinha < 1 || ultimaColuna < 1) return { colunas: [], registros: [] };
+  const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
+  return { colunas: valores[0], registros: valores.slice(1).filter(linha => linha.some(valor => String(valor).trim() !== "")) };
+}
