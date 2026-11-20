@@ -1081,8 +1081,8 @@ A implementação preserva os formulários e validações já existentes e mant�
 
 ### Validação automatizada
 - GitHub Actions executado no HEAD da branch: sucesso.
-- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44651348814
-- Resultado: 125 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44651602918
+- Resultado: 125 testes aprovados e 0 falhas no HEAD 32da0de9256208f265ccf62de3ca7e4208a96858.
 - A suíte inclui validações e regras das entidades, testes de Services e verificação sintática do JavaScript embutido em Index.html.
 
 ### Como testar no ambiente integrado
@@ -1100,7 +1100,7 @@ A implementação preserva os formulários e validações já existentes e mant�
 ### Situação de integração e publicação
 - PR #8: https://github.com/MiguelBona13/agendaservicos/pull/8
 - Branch: feat/crud-cadastros-incremental.
-- HEAD validado: 4c877b7b0da69df253b9be2a3d47f54051750eb7.
+- HEAD validado: 32da0de9256208f265ccf62de3ca7e4208a96858.
 - PR permanece aberta como rascunho; não foi integrada à main.
 - Nenhuma publicação no Google Apps Script foi executada nesta etapa.
 - A versão de produção permanece na versão 60, conforme último registro confirmado antes desta PR.
