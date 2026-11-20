@@ -31,3 +31,15 @@ function cidadeRepositoryPossuiBairros(codigo) { const a=getSheet(CONFIG.ABAS.BA
 function cidadeRepositoryPossuiClientes(codigo) { const a=getSheet(CONFIG.ABAS.CLIENTES),n=a.getLastRow(); return n>=2&&a.getRange(2,6,n-1,1).getDisplayValues().some(r=>String(r[0]).trim()===String(codigo).trim()); }
 /** Exclui linha validada. @param {number} linha Linha. */
 function cidadeRepositoryExcluir(linha) { const a=getSheet(CONFIG.ABAS.CIDADES); if(!Number.isInteger(linha)||linha<2||linha>a.getLastRow())throw new Error("Cidade não encontrada."); a.deleteRow(linha); }
+
+/**
+ * Retorna cabeçalhos e registros para a tabela da interface.
+ * A leitura da planilha permanece concentrada no Repository da entidade.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ */
+function cidadeRepositoryConsultarTabela() {
+  const aba = getSheet(CONFIG.ABAS.CIDADE), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
+  if (ultimaLinha < 1 || ultimaColuna < 1) return { colunas: [], registros: [] };
+  const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
+  return { colunas: valores[0], registros: valores.slice(1).filter(linha => linha.some(valor => String(valor).trim() !== "")) };
+}
