@@ -945,3 +945,61 @@ Implementar Criar, Consultar, Atualizar e Excluir (CRUD) nos cadastros de Funcio
 - Cidades: criar, listar, editar e excluir com bloqueio quando houver bairros vinculados.
 - Bairros: criar, listar, editar e excluir com bloqueio quando houver clientes vinculados.
 - Validar a integração das cinco entidades e os seletores usados pela agenda.
+
+
+## Etapa incremental — primeira camada do CRUD de Serviços
+
+### Análise realizada
+- O cadastro antigo de Serviços validava os campos e gravava diretamente na aba SERVICOS.
+- A interface ainda não possui formulário de criação/edição nem ações de exclusão para Serviços.
+- A aba AGENDA armazena o código do serviço na sexta coluna; por isso, a exclusão deve ser bloqueada quando houver histórico vinculado.
+- O fluxo existente de consulta genérica permanece preservado.
+
+### Alterações realizadas nesta etapa
+- Criadas as camadas ServicoValidator, ServicoRules, ServicoRepository e ServicoService.
+- O Repository concentra leitura, inclusão, atualização e exclusão na aba SERVICOS, além da consulta de vínculos na AGENDA.
+- O Service coordena operações com LockService, validação, verificação de duplicidade e proteção do histórico.
+- O código do serviço permanece imutável durante a edição.
+- Servicos.js mantém a função pública cadastrarServico e passa a delegar para ServicoService; também expõe funções de geração de código, atualização e exclusão para a próxima etapa da interface.
+- Criados testes unitários para Validator, Rules e Service.
+
+### Arquivos criados
+- ServicoValidator.gs
+- ServicoRules.gs
+- ServicoRepository.gs
+- ServicoService.gs
+- tests/ServicoValidator.test.cjs
+- tests/ServicoRules.test.cjs
+- tests/ServicoService.test.cjs
+
+### Arquivo alterado
+- Servicos.js — funções legadas delegam à nova camada Service.
+
+### Arquivos mantidos
+- Index.html — ainda sem alterações; o formulário e as ações de Serviços serão adicionados em etapa própria.
+- Consultas.js — consulta genérica preservada.
+- Config.js e Utils.js — mantidos como dependências atuais.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions: execução concluída com sucesso para o HEAD atual da PR.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/44649434339
+- Os testes desta etapa cobrem validação de código/nome/valor, valores decimais, bloqueio de exclusão com agendamentos e operações coordenadas pelo Service.
+
+### Como testar
+1. Executar npm test e confirmar que toda a suíte passa.
+2. No Apps Script de teste, confirmar que servicoServiceGerarCodigo retorna o próximo código.
+3. Cadastrar um serviço com nome e valor válidos e conferir a aba SERVICOS.
+4. Tentar cadastrar código duplicado, valor vazio, texto não numérico e valor negativo; todos devem ser rejeitados.
+5. Atualizar nome e valor e confirmar que o código não muda.
+6. Tentar excluir um serviço referenciado na aba AGENDA e confirmar que a exclusão é bloqueada.
+7. Excluir um serviço sem vínculo e confirmar a remoção.
+
+### Pendências
+- Adicionar formulário e ações de CRUD de Serviços à interface.
+- Refatorar Clientes, Cidades e Bairros, incluindo integridade das referências entre cadastros.
+- Revisar a entidade Funcionários e executar a suíte completa no HEAD final.
+- Realizar testes integrados no Apps Script antes de integrar e publicar.
+
+### Próximo passo
+- Concluir a interface de Serviços e validar o fluxo ponta a ponta antes de iniciar a entidade seguinte.
