@@ -1006,21 +1006,25 @@
     tituloLista.textContent = titulos[nomeAba];
     descricaoLista.textContent = descricoes[nomeAba];
 
-    areaCadastroFuncionario.style.display =
-      nomeAba === "FUNCIONARIOS" ? "block" : "none";
-
-    areaCadastroCliente.style.display =
-      nomeAba === "CLIENTES" ? "block" : "none";
-
-    areaCadastroAgendamento.style.display =
-      nomeAba === "AGENDA" ? "block" : "none";
+    areaCadastroFuncionario.style.display = nomeAba === "FUNCIONARIOS" ? "block" : "none";
+    areaCadastroServico.style.display = nomeAba === "SERVICOS" ? "block" : "none";
+    areaCadastroCliente.style.display = nomeAba === "CLIENTES" ? "block" : "none";
+    areaCadastroCidade.style.display = nomeAba === "CIDADES" ? "block" : "none";
+    areaCadastroBairro.style.display = nomeAba === "BAIRROS" ? "block" : "none";
+    areaCadastroAgendamento.style.display = nomeAba === "AGENDA" ? "block" : "none";
 
     limparMensagem();
     carregarLista();
 
     if (nomeAba === "CLIENTES") {
-      carregarCodigoCliente();
+      if (!codigoClienteEmEdicao) carregarCodigoCliente();
       carregarCidades();
+    }
+    if (nomeAba === "SERVICOS" && !codigoServicoEmEdicao) carregarCodigoServico();
+    if (nomeAba === "CIDADES" && !codigoCidadeEmEdicao) carregarCodigoCidade();
+    if (nomeAba === "BAIRROS") {
+      if (!codigoBairroEmEdicao) carregarCodigoBairro();
+      carregarCidadesBairro();
     }
 
     if (nomeAba === "AGENDA") {
@@ -1129,9 +1133,15 @@
     }
 
     if (abaAtual === "CLIENTES") {
-      carregarCodigoCliente();
+      if (!codigoClienteEmEdicao) carregarCodigoCliente();
       carregarCidades();
       carregarBairros("");
+    }
+    if (abaAtual === "SERVICOS" && !codigoServicoEmEdicao) carregarCodigoServico();
+    if (abaAtual === "CIDADES" && !codigoCidadeEmEdicao) carregarCodigoCidade();
+    if (abaAtual === "BAIRROS") {
+      if (!codigoBairroEmEdicao) carregarCodigoBairro();
+      carregarCidadesBairro();
     }
 
     if (abaAtual === "AGENDA") {
