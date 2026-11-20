@@ -94,3 +94,15 @@ function funcionarioRepositoryObterLinha(codigo) {
   const indice = codigos.findIndex(valor => String(valor).trim() === String(codigo).trim());
   return indice < 0 ? -1 : indice + 2;
 }
+
+/**
+ * Retorna cabeçalhos e registros para a tabela da interface.
+ * A leitura da planilha permanece concentrada no Repository da entidade.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ */
+function funcionarioRepositoryConsultarTabela() {
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIO), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
+  if (ultimaLinha < 1 || ultimaColuna < 1) return { colunas: [], registros: [] };
+  const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
+  return { colunas: valores[0], registros: valores.slice(1).filter(linha => linha.some(valor => String(valor).trim() !== "")) };
+}
