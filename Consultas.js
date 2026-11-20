@@ -1,85 +1,31 @@
 
+/**
+ * Consulta uma das listas de cadastro usando o Repository da própria entidade.
+ * A função mantém o contrato público esperado pela interface.
+ * @param {string} nomeAba Nome lógico da aba.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ */
 function consultarLista(nomeAba) {
-  const abasPermitidas = [
-    CONFIG.ABAS.FUNCIONARIOS,
-    CONFIG.ABAS.SERVICOS,
-    CONFIG.ABAS.CLIENTES,
-    CONFIG.ABAS.CIDADES,
-    CONFIG.ABAS.BAIRROS
-  ];
-
-  if (!abasPermitidas.includes(nomeAba)) {
-    throw new Error("Esta lista não está disponível para consulta.");
-  }
-
-  const aba = getSheet(nomeAba);
-  const ultimaLinha = aba.getLastRow();
-  const ultimaColuna = aba.getLastColumn();
-
-  if (ultimaLinha < 1 || ultimaColuna < 1) {
-    return {
-      colunas: [],
-      registros: []
-    };
-  }
-
-  const dados = aba
-    .getRange(1, 1, ultimaLinha, ultimaColuna)
-    .getDisplayValues();
-
-  return {
-    colunas: dados[0],
-    registros: dados.slice(1).filter(linha =>
-      linha.some(valor => valor.trim() !== "")
-    )
+  const consultas = {
+    [CONFIG.ABAS.FUNCIONARIOS]: funcionarioRepositoryConsultarTabela,
+    [CONFIG.ABAS.SERVICOS]: servicoRepositoryConsultarTabela,
+    [CONFIG.ABAS.CLIENTES]: clienteRepositoryConsultarTabela,
+    [CONFIG.ABAS.CIDADES]: cidadeRepositoryConsultarTabela,
+    [CONFIG.ABAS.BAIRROS]: bairroRepositoryConsultarTabela
   };
+  const consultar = consultas[nomeAba];
+  if (!consultar) throw new Error("Esta lista não está disponível para consulta.");
+  return consultar();
 }
 
+/** @return {Array<Object>} Cidades disponíveis para seletores. */
 function consultarCidades() {
-  const aba = getSheet(CONFIG.ABAS.CIDADES);
-  const ultimaLinha = aba.getLastRow();
-
-  if (ultimaLinha < 2) {
-    return [];
-  }
-
-  return aba
-    .getRange(2, 1, ultimaLinha - 1, 3)
-    .getDisplayValues()
-    .filter(linha => linha[0].trim() && linha[1].trim())
-    .map(linha => ({
-      codigo: linha[0].trim(),
-      nome: linha[1].trim(),
-      estado: linha[2].trim()
-    }));
+  return cidadeServiceListar();
 }
 
+/** @param {string} codigoCidade Código da cidade. @return {Array<Object>} Bairros da cidade. */
 function consultarBairros(codigoCidade) {
-  const cidade = String(codigoCidade || "").trim();
-
-  if (!cidade) {
-    return [];
-  }
-
-  const aba = getSheet(CONFIG.ABAS.BAIRROS);
-  const ultimaLinha = aba.getLastRow();
-
-  if (ultimaLinha < 2) {
-    return [];
-  }
-
-  return aba
-    .getRange(2, 1, ultimaLinha - 1, 3)
-    .getDisplayValues()
-    .filter(linha =>
-      linha[0].trim() &&
-      linha[1].trim() &&
-      linha[2].trim() === cidade
-    )
-    .map(linha => ({
-      codigo: linha[0].trim(),
-      nome: linha[1].trim()
-    }));
+  return bairroServiceListar(String(codigoCidade || "").trim());
 }
 
 function consultarPeriodos() {
