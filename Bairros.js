@@ -1,29 +1,13 @@
-function cadastrarBairro(codigo, nome, codigoCidade) {
-  if (!codigo) {
-    throw new Error("O código do bairro é obrigatório.");
-  }
-
-  if (!nome) {
-    throw new Error("O nome do bairro é obrigatório.");
-  }
-
-  if (!codigoCidade) {
-    throw new Error("A cidade do bairro é obrigatória.");
-  }
-
-  if (codigoExiste(CONFIG.ABAS.BAIRROS, codigo)) {
-    throw new Error(`O código ${codigo} já está cadastrado.`);
-  }
-
-  if (!codigoExiste(CONFIG.ABAS.CIDADES, codigoCidade)) {
-    throw new Error("A cidade informada não está cadastrada.");
-  }
-
-  const aba = getSheet(CONFIG.ABAS.BAIRROS);
-
-  aba.appendRow([
-    codigo,
-    nome,
-    codigoCidade
-  ]);
-}
+/**
+ * Entidade: Bairro
+ * Camada: Interface legada — compatibilidade pública.
+ * Responsabilidade: preservar as funções públicas de cadastro e delegar ao BairroService.
+ */
+/** Próximo código de bairro. @return {string} Código. */
+function gerarCodigoBairro(){return bairroServiceGerarCodigo();}
+/** Cadastra bairro. @param {string} codigo Código. @param {string} nome Nome. @param {string} codigoCidade Cidade. */
+function cadastrarBairro(codigo,nome,codigoCidade){return bairroServiceCriar(codigo,nome,codigoCidade);}
+/** Atualiza bairro. @param {string} codigo Código. @param {string} nome Nome. @param {string} codigoCidade Cidade. */
+function atualizarBairro(codigo,nome,codigoCidade){return bairroServiceAtualizar(codigo,nome,codigoCidade);}
+/** Exclui bairro sem clientes vinculados. @param {string} codigo Código. */
+function excluirBairro(codigo){return bairroServiceExcluir(codigo);}
