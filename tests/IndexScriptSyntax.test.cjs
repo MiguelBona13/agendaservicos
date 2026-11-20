@@ -13,6 +13,6 @@ test("Index.html contém JavaScript sintaticamente válido",()=>{
   assert.ok(scripts.length>0,"Nenhum bloco script encontrado.");
   for(let i=0;i<scripts.length;i++) {
     try { new vm.Script(scripts[i][1],{filename:"Index.html"}); }
-    catch(erro) { throw new Error("Bloco script "+(i+1)+": "+erro.message); }
+    catch(erro) { throw new Error("Bloco script "+(i+1)+": "+erro.stack); }
   }
 });
