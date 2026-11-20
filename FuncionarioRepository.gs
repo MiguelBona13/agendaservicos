@@ -12,7 +12,7 @@
 
 /** @return {Array<Object>} Lista de funcionários cadastrados. */
 function funcionarioRepositoryListar() {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return [];
   return aba.getRange(2, 1, ultimaLinha - 1, 2).getDisplayValues()
@@ -42,7 +42,7 @@ function funcionarioRepositoryObterMaiorCodigo() {
  * @param {{codigo:string,nome:string}} dados Dados validados.
  */
 function funcionarioRepositoryInserir(dados) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
   const linha = aba.getLastRow() + 1;
   aba.getRange(linha, 1, 1, 2).setValues([[String(dados.codigo), String(dados.nome)]]);
 }
@@ -53,7 +53,7 @@ function funcionarioRepositoryInserir(dados) {
  * @param {{codigo:string,nome:string}} dados Dados validados.
  */
 function funcionarioRepositoryAtualizar(linha, dados) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Funcionário não encontrado para atualização.");
   }
@@ -78,7 +78,7 @@ function funcionarioRepositoryPossuiAgendamentos(codigo) {
  * @param {number} linha Linha física validada.
  */
 function funcionarioRepositoryExcluir(linha) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Funcionário não encontrado para exclusão.");
   }
@@ -87,7 +87,7 @@ function funcionarioRepositoryExcluir(linha) {
 
 /** @param {string} codigo Código do funcionário. @return {number} Linha física ou -1. */
 function funcionarioRepositoryObterLinha(codigo) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return -1;
   const codigos = aba.getRange(2, 1, ultimaLinha - 1, 1).getDisplayValues().flat();
