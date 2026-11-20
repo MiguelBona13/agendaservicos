@@ -12,7 +12,7 @@
 
 /** @return {Array<Object>} Lista de funcionários cadastrados. */
 function funcionarioRepositoryListar() {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return [];
   return aba.getRange(2, 1, ultimaLinha - 1, 2).getDisplayValues()
@@ -42,7 +42,7 @@ function funcionarioRepositoryObterMaiorCodigo() {
  * @param {{codigo:string,nome:string}} dados Dados validados.
  */
 function funcionarioRepositoryInserir(dados) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
   const linha = aba.getLastRow() + 1;
   aba.getRange(linha, 1, 1, 2).setValues([[String(dados.codigo), String(dados.nome)]]);
 }
@@ -53,7 +53,7 @@ function funcionarioRepositoryInserir(dados) {
  * @param {{codigo:string,nome:string}} dados Dados validados.
  */
 function funcionarioRepositoryAtualizar(linha, dados) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Funcionário não encontrado para atualização.");
   }
@@ -78,7 +78,7 @@ function funcionarioRepositoryPossuiAgendamentos(codigo) {
  * @param {number} linha Linha física validada.
  */
 function funcionarioRepositoryExcluir(linha) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Funcionário não encontrado para exclusão.");
   }
@@ -87,7 +87,7 @@ function funcionarioRepositoryExcluir(linha) {
 
 /** @param {string} codigo Código do funcionário. @return {number} Linha física ou -1. */
 function funcionarioRepositoryObterLinha(codigo) {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS);
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOSS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return -1;
   const codigos = aba.getRange(2, 1, ultimaLinha - 1, 1).getDisplayValues().flat();
@@ -101,7 +101,7 @@ function funcionarioRepositoryObterLinha(codigo) {
  * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
  */
 function funcionarioRepositoryConsultarTabela() {
-  const aba = getSheet(CONFIG.ABAS.FUNCIONARIO), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
+  const aba = getSheet(CONFIG.ABAS.FUNCIONARIOS), ultimaLinha = aba.getLastRow(), ultimaColuna = aba.getLastColumn();
   if (ultimaLinha < 1 || ultimaColuna < 1) return { colunas: [], registros: [] };
   const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
   return { colunas: valores[0], registros: valores.slice(1).filter(linha => linha.some(valor => String(valor).trim() !== "")) };
