@@ -12,7 +12,7 @@
 
 /** @return {Array<Object>} Serviços cadastrados. */
 function servicoRepositoryListar() {
-  const aba = getSheet(CONFIG.ABAS.SERVICOSS);
+  const aba = getSheet(CONFIG.ABAS.SERVICOS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return [];
   return aba.getRange(2, 1, ultimaLinha - 1, 3).getDisplayValues()
@@ -39,13 +39,13 @@ function servicoRepositoryObterMaiorCodigo() {
 
 /** @param {Object} dados Serviço validado a inserir. */
 function servicoRepositoryInserir(dados) {
-  const aba = getSheet(CONFIG.ABAS.SERVICOSS);
+  const aba = getSheet(CONFIG.ABAS.SERVICOS);
   aba.appendRow([String(dados.codigo), String(dados.nome), Number(dados.valor)]);
 }
 
 /** @param {number} linha Linha física validada. @param {Object} dados Serviço validado. */
 function servicoRepositoryAtualizar(linha, dados) {
-  const aba = getSheet(CONFIG.ABAS.SERVICOSS);
+  const aba = getSheet(CONFIG.ABAS.SERVICOS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Serviço não encontrado para atualização.");
   }
@@ -64,7 +64,7 @@ function servicoRepositoryPossuiAgendamentos(codigo) {
 
 /** @param {string} codigo Código do serviço. @return {number} Linha física ou -1. */
 function servicoRepositoryObterLinha(codigo) {
-  const aba = getSheet(CONFIG.ABAS.SERVICOSS);
+  const aba = getSheet(CONFIG.ABAS.SERVICOS);
   const ultimaLinha = aba.getLastRow();
   if (ultimaLinha < 2) return -1;
   const codigos = aba.getRange(2, 1, ultimaLinha - 1, 1).getDisplayValues().flat();
@@ -74,7 +74,7 @@ function servicoRepositoryObterLinha(codigo) {
 
 /** @param {number} linha Linha física validada. */
 function servicoRepositoryExcluir(linha) {
-  const aba = getSheet(CONFIG.ABAS.SERVICOSS);
+  const aba = getSheet(CONFIG.ABAS.SERVICOS);
   if (!Number.isInteger(linha) || linha < 2 || linha > aba.getLastRow()) {
     throw new Error("Serviço não encontrado para exclusão.");
   }
