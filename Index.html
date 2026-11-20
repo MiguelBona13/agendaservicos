@@ -178,11 +178,41 @@
           </div>
 
           <div class="acoes">
-            <button class="botao" id="botaoCadastrarCliente" type="submit" disabled>Carregando...</button>
+            <button class="botao" id="botaoCadastrarCliente" type="submit" disabled>Carregando...</button>\n            <button class="botao botao-secundario" id="botaoCancelarEdicaoCliente" type="button" style="display:none">Cancelar edição</button>
           </div>
         </form>
       </section>
 
+      <section class="card" id="areaCadastroServico" style="display:none">
+        <h3 id="tituloFormularioServico">Cadastrar serviço</h3>
+        <p class="descricao">O código é gerado automaticamente e permanece imutável na edição.</p>
+        <form id="formServico">
+          <label for="codigoServicoCadastro">Código do serviço</label><input id="codigoServicoCadastro" readonly required>
+          <label for="nomeServicoCadastro">Nome do serviço</label><input id="nomeServicoCadastro" required maxlength="120">
+          <label for="valorServicoCadastro">Valor (R$)</label><input id="valorServicoCadastro" type="number" min="0" step="0.01" required>
+          <div class="acoes"><button class="botao" id="botaoSalvarServico" type="submit">Cadastrar serviço</button><button class="botao botao-secundario" id="botaoCancelarServico" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
+      <section class="card" id="areaCadastroCidade" style="display:none">
+        <h3 id="tituloFormularioCidade">Cadastrar cidade</h3>
+        <p class="descricao">Informe o nome e a sigla do estado (UF).</p>
+        <form id="formCidade">
+          <label for="codigoCidadeCadastro">Código da cidade</label><input id="codigoCidadeCadastro" readonly required>
+          <label for="nomeCidadeCadastro">Nome da cidade</label><input id="nomeCidadeCadastro" required maxlength="120">
+          <label for="estadoCidadeCadastro">Estado (UF)</label><input id="estadoCidadeCadastro" required maxlength="2" pattern="[A-Za-z]{2}">
+          <div class="acoes"><button class="botao" id="botaoSalvarCidade" type="submit">Cadastrar cidade</button><button class="botao botao-secundario" id="botaoCancelarCidade" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
+      <section class="card" id="areaCadastroBairro" style="display:none">
+        <h3 id="tituloFormularioBairro">Cadastrar bairro</h3>
+        <p class="descricao">Selecione a cidade à qual o bairro pertence.</p>
+        <form id="formBairro">
+          <label for="codigoBairroCadastro">Código do bairro</label><input id="codigoBairroCadastro" readonly required>
+          <label for="nomeBairroCadastro">Nome do bairro</label><input id="nomeBairroCadastro" required maxlength="120">
+          <label for="cidadeBairroCadastro">Cidade</label><select id="cidadeBairroCadastro" required><option value="">Carregando cidades...</option></select>
+          <div class="acoes"><button class="botao" id="botaoSalvarBairro" type="submit">Cadastrar bairro</button><button class="botao botao-secundario" id="botaoCancelarBairro" type="button" style="display:none">Cancelar edição</button></div>
+        </form>
+      </section>
       <section class="card" id="areaCadastroAgendamento" style="display:none">
         <h3>Novo agendamento</h3>
         <p class="descricao">Escolha a data, o período e os dados do atendimento. O valor será obtido do serviço selecionado.</p>
@@ -278,6 +308,10 @@
     CLIENTES: "Clientes",
     CIDADES: "Cidades",
     BAIRROS: "Bairros",
+    SERVICOS: "Serviços",
+    CLIENTES: "Clientes",
+    CIDADES: "Cidades",
+    BAIRROS: "Bairros",
     AGENDA: "Agenda de atendimentos"
   };
 
@@ -297,6 +331,9 @@
 
   const botoesMenu = document.querySelectorAll(".menu-item");
   const areaCadastroFuncionario = el("areaCadastroFuncionario");
+  const areaCadastroServico = el("areaCadastroServico");
+  const areaCadastroCidade = el("areaCadastroCidade");
+  const areaCadastroBairro = el("areaCadastroBairro");
   const areaCadastroCliente = el("areaCadastroCliente");
   const areaCadastroAgendamento = el("areaCadastroAgendamento");
   const conteudoLista = el("conteudoLista");
@@ -312,6 +349,10 @@
   const botaoCadastrarFuncionario = el("botaoCadastrarFuncionario");
   const botaoCancelarEdicaoFuncionario = el("botaoCancelarEdicaoFuncionario");
   let codigoFuncionarioEmEdicao = "";
+  let codigoClienteEmEdicao = "";
+  let codigoServicoEmEdicao = "";
+  let codigoCidadeEmEdicao = "";
+  let codigoBairroEmEdicao = "";
 
   const formCliente = el("formCliente");
   const codigoCliente = el("codigoCliente");
@@ -326,8 +367,12 @@
   const emailCliente = el("emailCliente");
   const statusFinanceiroCliente = el("statusFinanceiroCliente");
   const botaoCadastrarCliente = el("botaoCadastrarCliente");
+  const botaoCancelarEdicaoCliente = el("botaoCancelarEdicaoCliente");
 
-  const formAgendamento = el("formAgendamento");
+  const formServico = el("formServico"), codigoServicoCadastro = el("codigoServicoCadastro"), nomeServicoCadastro = el("nomeServicoCadastro"), valorServicoCadastro = el("valorServicoCadastro");
+  const formCidade = el("formCidade"), codigoCidadeCadastro = el("codigoCidadeCadastro"), nomeCidadeCadastro = el("nomeCidadeCadastro"), estadoCidadeCadastro = el("estadoCidadeCadastro");
+  const formBairro = el("formBairro"), codigoBairroCadastro = el("codigoBairroCadastro"), nomeBairroCadastro = el("nomeBairroCadastro"), cidadeBairroCadastro = el("cidadeBairroCadastro");
+\n  const formAgendamento = el("formAgendamento");
   const codigoAgendamento = el("codigoAgendamento");
   const dataAgendamento = el("dataAgendamento");
   const periodoAgendamento = el("periodoAgendamento");
@@ -787,7 +832,7 @@
       trCabecalho.appendChild(th);
     });
 
-    if (["AGENDA", "FUNCIONARIOS"].includes(abaAtual)) {
+    if (["AGENDA", "FUNCIONARIOS", "SERVICOS", "CLIENTES", "CIDADES", "BAIRROS"].includes(abaAtual)) {
       const thAcoes = document.createElement("th");
       thAcoes.textContent = "Ações";
       trCabecalho.appendChild(thAcoes);
@@ -849,6 +894,28 @@
         });
         tdAcoes.appendChild(botaoExcluirFuncionario);
         tr.appendChild(tdAcoes);
+      }
+
+      if (["SERVICOS","CLIENTES","CIDADES","BAIRROS"].includes(abaAtual)) {
+        const tdAcoes=document.createElement("td"), codigo=String(registro[0]||"").trim();
+        const editar=document.createElement("button"); editar.type="button"; editar.className="botao botao-secundario"; editar.textContent="Editar";
+        editar.addEventListener("click",()=>{
+          if(abaAtual==="SERVICOS"){codigoServicoEmEdicao=codigo;codigoServicoCadastro.value=codigo;nomeServicoCadastro.value=registro[1]||"";valorServicoCadastro.value=String(registro[2]||"").replace(",",".");el("tituloFormularioServico").textContent="Editar serviço";el("botaoSalvarServico").textContent="Salvar alterações";el("botaoCancelarServico").style.display="inline-block";areaCadastroServico.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="CIDADES"){codigoCidadeEmEdicao=codigo;codigoCidadeCadastro.value=codigo;nomeCidadeCadastro.value=registro[1]||"";estadoCidadeCadastro.value=registro[2]||"";el("tituloFormularioCidade").textContent="Editar cidade";el("botaoSalvarCidade").textContent="Salvar alterações";el("botaoCancelarCidade").style.display="inline-block";areaCadastroCidade.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="BAIRROS"){codigoBairroEmEdicao=codigo;codigoBairroCadastro.value=codigo;nomeBairroCadastro.value=registro[1]||"";carregarCidadesBairro(()=>{cidadeBairroCadastro.value=registro[2]||"";});el("tituloFormularioBairro").textContent="Editar bairro";el("botaoSalvarBairro").textContent="Salvar alterações";el("botaoCancelarBairro").style.display="inline-block";areaCadastroBairro.scrollIntoView({behavior:"smooth"});}
+          if(abaAtual==="CLIENTES"){iniciarEdicaoCliente(registro);}
+          mostrarMensagem("Editando cadastro "+codigo+".","sucesso");
+        });
+        tdAcoes.appendChild(editar);
+        const excluir=document.createElement("button"); excluir.type="button"; excluir.className="botao botao-secundario"; excluir.textContent="Excluir";
+        excluir.addEventListener("click",()=>{
+          if(!confirm("Deseja excluir o registro "+codigo+"?"))return;
+          excluir.disabled=true;
+          const metodo={SERVICOS:"excluirServico",CLIENTES:"excluirCliente",CIDADES:"excluirCidade",BAIRROS:"excluirBairro"}[abaAtual];
+          google.script.run.withSuccessHandler(r=>{mostrarMensagem(r&&r.mensagem||"Registro excluído.","sucesso");carregarLista();if(abaAtual==="CLIENTES")carregarDadosAgendamento();if(abaAtual==="SERVICOS")carregarDadosAgendamento();if(abaAtual==="CIDADES"){carregarCidades();carregarDadosAgendamento();}if(abaAtual==="BAIRROS")carregarBairros(cidadeCliente.value);})
+            .withFailureHandler(e=>{excluir.disabled=false;falha(e,"Não foi possível excluir: ");})[metodo](codigo);
+        });
+        tdAcoes.appendChild(excluir);tr.appendChild(tdAcoes);
       }
 
       if (abaAtual === "AGENDA") {
