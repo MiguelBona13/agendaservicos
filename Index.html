@@ -1251,36 +1251,6 @@
     }
   });
 
-  function iniciarEdicaoCliente(registro) {
-    const codigo = String(registro[0] || "").trim();
-    google.script.run.withSuccessHandler(cliente => {
-      if (!cliente) { mostrarMensagem("Cliente não encontrado para edição.", "erro"); return; }
-      codigoClienteEmEdicao = codigo;
-      codigoCliente.value = cliente.codigo;
-      codigoCliente.readOnly = true;
-      nomeCliente.value = cliente.nome || "";
-      cpfCliente.value = cliente.cpf || "";
-      aniversarioCliente.value = cliente.dataAniversario || "";
-      numeroCliente.value = cliente.numero || "";
-      cepCliente.value = cliente.cep || "";
-      celularCliente.value = cliente.celular || "";
-      emailCliente.value = cliente.email || "";
-      statusFinanceiroCliente.value = cliente.statusFinanceiro || "";
-      google.script.run.withSuccessHandler(cidades => {
-        preencherSelect(cidadeCliente,cidades,"Selecione uma cidade",c=>c.nome+" - "+c.estado);
-        cidadeCliente.value = cliente.codigoCidade;
-        google.script.run.withSuccessHandler(bairros => {
-          preencherSelect(bairroCliente,bairros,"Selecione um bairro",b=>b.nome);
-          bairroCliente.value = cliente.codigoBairro;
-        }).withFailureHandler(e=>falha(e,"Não foi possível carregar bairros: ")).consultarBairros(cliente.codigoCidade);
-      }).withFailureHandler(e=>falha(e,"Não foi possível carregar cidades: ")).consultarCidades();
-      botaoCadastrarCliente.textContent = "Salvar alterações";
-      botaoCancelarEdicaoCliente.style.display = "inline-block";
-      areaCadastroCliente.scrollIntoView({behavior:"smooth",block:"start"});
-    }).withFailureHandler(e=>falha(e,"Não foi possível carregar o cliente: ")).clienteServiceListar();
-    // A consulta acima retorna a lista completa; selecionar pelo código no callback dedicado.
-  }
-
   function carregarClienteParaEdicao(registro) {
     const codigo = String(registro[0] || "").trim();
     google.script.run.withSuccessHandler(clientes => {
