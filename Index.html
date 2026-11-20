@@ -903,7 +903,7 @@
           if(abaAtual==="SERVICOS"){codigoServicoEmEdicao=codigo;codigoServicoCadastro.value=codigo;nomeServicoCadastro.value=registro[1]||"";valorServicoCadastro.value=String(registro[2]||"").replace(",",".");el("tituloFormularioServico").textContent="Editar serviço";el("botaoSalvarServico").textContent="Salvar alterações";el("botaoCancelarServico").style.display="inline-block";areaCadastroServico.scrollIntoView({behavior:"smooth"});}
           if(abaAtual==="CIDADES"){codigoCidadeEmEdicao=codigo;codigoCidadeCadastro.value=codigo;nomeCidadeCadastro.value=registro[1]||"";estadoCidadeCadastro.value=registro[2]||"";el("tituloFormularioCidade").textContent="Editar cidade";el("botaoSalvarCidade").textContent="Salvar alterações";el("botaoCancelarCidade").style.display="inline-block";areaCadastroCidade.scrollIntoView({behavior:"smooth"});}
           if(abaAtual==="BAIRROS"){codigoBairroEmEdicao=codigo;codigoBairroCadastro.value=codigo;nomeBairroCadastro.value=registro[1]||"";carregarCidadesBairro(()=>{cidadeBairroCadastro.value=registro[2]||"";});el("tituloFormularioBairro").textContent="Editar bairro";el("botaoSalvarBairro").textContent="Salvar alterações";el("botaoCancelarBairro").style.display="inline-block";areaCadastroBairro.scrollIntoView({behavior:"smooth"});}
-          if(abaAtual==="CLIENTES"){iniciarEdicaoCliente(registro);}
+          if(abaAtual==="CLIENTES"){carregarClienteParaEdicao(registro);}
           mostrarMensagem("Editando cadastro "+codigo+".","sucesso");
         });
         tdAcoes.appendChild(editar);
@@ -1201,56 +1201,105 @@
 
   formCliente.addEventListener("submit", evento => {
     evento.preventDefault();
-
     if (!formCliente.reportValidity()) return;
-
     const dados = {
-      codigo: codigoCliente.value,
-      nome: nomeCliente.value.trim(),
-      cpf: cpfCliente.value,
-      dataAniversario: aniversarioCliente.value,
-      numero: numeroCliente.value.trim(),
-      codigoCidade: cidadeCliente.value,
-      codigoBairro: bairroCliente.value,
-      cep: cepCliente.value,
-      celular: celularCliente.value,
-      email: emailCliente.value.trim(),
+      codigo: codigoCliente.value, nome: nomeCliente.value.trim(), cpf: cpfCliente.value,
+      dataAniversario: aniversarioCliente.value, numero: numeroCliente.value.trim(),
+      codigoCidade: cidadeCliente.value, codigoBairro: bairroCliente.value, cep: cepCliente.value,
+      celular: celularCliente.value, email: emailCliente.value.trim(),
       statusFinanceiro: statusFinanceiroCliente.value
     };
-
     botaoCadastrarCliente.disabled = true;
-    botaoCadastrarCliente.textContent = "Cadastrando...";
+    botaoCadastrarCliente.textContent = codigoClienteEmEdicao ? "Salvando alterações..." : "Cadastrando...";
     limparMensagem();
-
-    google.script.run
-      .withSuccessHandler(() => {
-        mostrarMensagem("Cliente cadastrado com sucesso!", "sucesso");
-        formCliente.reset();
-        bairroCliente.innerHTML =
-          '<option value="">Selecione uma cidade primeiro</option>';
-        bairroCliente.disabled = true;
-        carregarCodigoCliente();
-        carregarLista();
-      })
-      .withFailureHandler(erro => {
-        falha(erro, "Não foi possível cadastrar o cliente: ");
-        botaoCadastrarCliente.disabled = false;
-        botaoCadastrarCliente.textContent = "Cadastrar cliente";
-      })
-      .cadastrarCliente(
-        dados.codigo,
-        dados.nome,
-        dados.cpf,
-        dados.dataAniversario,
-        dados.numero,
-        dados.codigoCidade,
-        dados.codigoBairro,
-        dados.cep,
-        dados.celular,
-        dados.email,
-        dados.statusFinanceiro
+    const sucesso = resultado => {
+      mostrarMensagem(resultado && resultado.mensagem || "Cliente salvo com sucesso.", "sucesso");
+      codigoClienteEmEdicao = "";
+      formCliente.reset();
+      codigoCliente.readOnly = true;
+      botaoCancelarEdicaoCliente.style.display = "none";
+      botaoCadastrarCliente.disabled = false;
+      botaoCadastrarCliente.textContent = "Cadastrar cliente";
+      bairroCliente.innerHTML = '<option value="">Selecione uma cidade primeiro</option>';
+      bairroCliente.disabled = true;
+      carregarCodigoCliente(); carregarLista(); carregarDadosAgendamento();
+    };
+    const erro = e => {
+      falha(e, "Não foi possível salvar o cliente: ");
+      botaoCadastrarCliente.disabled = false;
+      botaoCadastrarCliente.textContent = codigoClienteEmEdicao ? "Salvar alterações" : "Cadastrar cliente";
+    };
+    if (codigoClienteEmEdicao) {
+      google.script.run.withSuccessHandler(sucesso).withFailureHandler(erro).atualizarCliente(dados);
+    } else {
+      google.script.run.withSuccessHandler(sucesso).withFailureHandler(erro).cadastrarCliente(
+        dados.codigo,dados.nome,dados.cpf,dados.dataAniversario,dados.numero,
+        dados.codigoCidade,dados.codigoBairro,dados.cep,dados.celular,dados.email,dados.statusFinanceiro
       );
+    }
   });
+
+  function iniciarEdicaoCliente(registro) {
+    const codigo = String(registro[0] || "").trim();
+    google.script.run.withSuccessHandler(cliente => {
+      if (!cliente) { mostrarMensagem("Cliente não encontrado para edição.", "erro"); return; }
+      codigoClienteEmEdicao = codigo;
+      codigoCliente.value = cliente.codigo;
+      codigoCliente.readOnly = true;
+      nomeCliente.value = cliente.nome || "";
+      cpfCliente.value = cliente.cpf || "";
+      aniversarioCliente.value = cliente.dataAniversario || "";
+      numeroCliente.value = cliente.numero || "";
+      cepCliente.value = cliente.cep || "";
+      celularCliente.value = cliente.celular || "";
+      emailCliente.value = cliente.email || "";
+      statusFinanceiroCliente.value = cliente.statusFinanceiro || "";
+      google.script.run.withSuccessHandler(cidades => {
+        preencherSelect(cidadeCliente,cidades,"Selecione uma cidade",c=>c.nome+" - "+c.estado);
+        cidadeCliente.value = cliente.codigoCidade;
+        google.script.run.withSuccessHandler(bairros => {
+          preencherSelect(bairroCliente,bairros,"Selecione um bairro",b=>b.nome);
+          bairroCliente.value = cliente.codigoBairro;
+        }).withFailureHandler(e=>falha(e,"Não foi possível carregar bairros: ")).consultarBairros(cliente.codigoCidade);
+      }).withFailureHandler(e=>falha(e,"Não foi possível carregar cidades: ")).consultarCidades();
+      botaoCadastrarCliente.textContent = "Salvar alterações";
+      botaoCancelarEdicaoCliente.style.display = "inline-block";
+      areaCadastroCliente.scrollIntoView({behavior:"smooth",block:"start"});
+    }).withFailureHandler(e=>falha(e,"Não foi possível carregar o cliente: ")).clienteServiceListar();
+    // A consulta acima retorna a lista completa; selecionar pelo código no callback dedicado.
+  }
+
+  function carregarClienteParaEdicao(registro) {
+    const codigo = String(registro[0] || "").trim();
+    google.script.run.withSuccessHandler(clientes => {
+      const cliente = (clientes || []).find(item => String(item.codigo) === codigo);
+      if (!cliente) { mostrarMensagem("Cliente não encontrado para edição.", "erro"); return; }
+      codigoClienteEmEdicao = codigo;
+      codigoCliente.value = cliente.codigo; codigoCliente.readOnly = true;
+      nomeCliente.value=cliente.nome||""; cpfCliente.value=cliente.cpf||"";
+      aniversarioCliente.value=cliente.dataAniversario||""; numeroCliente.value=cliente.numero||"";
+      cepCliente.value=cliente.cep||""; celularCliente.value=cliente.celular||"";
+      emailCliente.value=cliente.email||""; statusFinanceiroCliente.value=cliente.statusFinanceiro||"";
+      google.script.run.withSuccessHandler(cidades=>{
+        preencherSelect(cidadeCliente,cidades,"Selecione uma cidade",c=>c.nome+" - "+c.estado);
+        cidadeCliente.value=cliente.codigoCidade;
+        google.script.run.withSuccessHandler(bairros=>{
+          preencherSelect(bairroCliente,bairros,"Selecione um bairro",b=>b.nome);
+          bairroCliente.value=cliente.codigoBairro;
+        }).consultarBairros(cliente.codigoCidade);
+      }).consultarCidades();
+      botaoCadastrarCliente.textContent="Salvar alterações";
+      botaoCancelarEdicaoCliente.style.display="inline-block";
+      areaCadastroCliente.scrollIntoView({behavior:"smooth",block:"start"});
+    }).withFailureHandler(e=>falha(e,"Não foi possível carregar o cliente: ")).clienteServiceListar();
+  }
+  function cancelarEdicaoCliente() {
+    codigoClienteEmEdicao=""; formCliente.reset(); codigoCliente.readOnly=true;
+    botaoCancelarEdicaoCliente.style.display="none"; botaoCadastrarCliente.textContent="Cadastrar cliente";
+    bairroCliente.innerHTML='<option value="">Selecione uma cidade primeiro</option>'; bairroCliente.disabled=true;
+    carregarCodigoCliente();
+  }
+  botaoCancelarEdicaoCliente.addEventListener("click",cancelarEdicaoCliente);
 
   formAgendamento.addEventListener("submit", evento => {
     evento.preventDefault();
@@ -1298,6 +1347,16 @@
     }
   });
 
+  function carregarCodigoServico(){el("botaoSalvarServico").disabled=true;google.script.run.withSuccessHandler(c=>{codigoServicoCadastro.value=c;el("botaoSalvarServico").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código do serviço: ")).gerarCodigoServico();}
+  function carregarCodigoCidade(){el("botaoSalvarCidade").disabled=true;google.script.run.withSuccessHandler(c=>{codigoCidadeCadastro.value=c;el("botaoSalvarCidade").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código da cidade: ")).gerarCodigoCidade();}
+  function carregarCodigoBairro(){el("botaoSalvarBairro").disabled=true;google.script.run.withSuccessHandler(c=>{codigoBairroCadastro.value=c;el("botaoSalvarBairro").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código do bairro: ")).gerarCodigoBairro();}
+  function carregarCidadesBairro(callback){google.script.run.withSuccessHandler(items=>{preencherSelect(cidadeBairroCadastro,items,"Selecione uma cidade",c=>c.nome+" - "+c.estado);if(callback)callback();}).withFailureHandler(e=>falha(e,"Não foi possível carregar cidades: ")).consultarCidades();}
+  formServico.addEventListener("submit",ev=>{ev.preventDefault();if(!formServico.reportValidity())return;const args=[codigoServicoCadastro.value,nomeServicoCadastro.value,valorServicoCadastro.value],fn=codigoServicoEmEdicao?"atualizarServico":"cadastrarServico";el("botaoSalvarServico").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoServicoEmEdicao="";formServico.reset();el("tituloFormularioServico").textContent="Cadastrar serviço";el("botaoSalvarServico").textContent="Cadastrar serviço";el("botaoCancelarServico").style.display="none";carregarCodigoServico();carregarLista();carregarDadosAgendamento();}).withFailureHandler(e=>{falha(e,"Não foi possível salvar o serviço: ");el("botaoSalvarServico").disabled=false;})[fn](...args);});
+  el("botaoCancelarServico").addEventListener("click",()=>{codigoServicoEmEdicao="";formServico.reset();el("tituloFormularioServico").textContent="Cadastrar serviço";el("botaoSalvarServico").textContent="Cadastrar serviço";el("botaoCancelarServico").style.display="none";carregarCodigoServico();});
+  formCidade.addEventListener("submit",ev=>{ev.preventDefault();if(!formCidade.reportValidity())return;const args=[codigoCidadeCadastro.value,nomeCidadeCadastro.value,estadoCidadeCadastro.value],fn=codigoCidadeEmEdicao?"atualizarCidade":"cadastrarCidade";el("botaoSalvarCidade").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoCidadeEmEdicao="";formCidade.reset();el("tituloFormularioCidade").textContent="Cadastrar cidade";el("botaoSalvarCidade").textContent="Cadastrar cidade";el("botaoCancelarCidade").style.display="none";carregarCodigoCidade();carregarLista();carregarCidades();carregarCidadesBairro();}).withFailureHandler(e=>{falha(e,"Não foi possível salvar a cidade: ");el("botaoSalvarCidade").disabled=false;})[fn](...args);});
+  el("botaoCancelarCidade").addEventListener("click",()=>{codigoCidadeEmEdicao="";formCidade.reset();el("tituloFormularioCidade").textContent="Cadastrar cidade";el("botaoSalvarCidade").textContent="Cadastrar cidade";el("botaoCancelarCidade").style.display="none";carregarCodigoCidade();});
+  formBairro.addEventListener("submit",ev=>{ev.preventDefault();if(!formBairro.reportValidity())return;const args=[codigoBairroCadastro.value,nomeBairroCadastro.value,cidadeBairroCadastro.value],fn=codigoBairroEmEdicao?"atualizarBairro":"cadastrarBairro";el("botaoSalvarBairro").disabled=true;google.script.run.withSuccessHandler(r=>{mostrarMensagem(r.mensagem,"sucesso");codigoBairroEmEdicao="";formBairro.reset();el("tituloFormularioBairro").textContent="Cadastrar bairro";el("botaoSalvarBairro").textContent="Cadastrar bairro";el("botaoCancelarBairro").style.display="none";carregarCodigoBairro();carregarLista();}).withFailureHandler(e=>{falha(e,"Não foi possível salvar o bairro: ");el("botaoSalvarBairro").disabled=false;})[fn](...args);});
+  el("botaoCancelarBairro").addEventListener("click",()=>{codigoBairroEmEdicao="";formBairro.reset();el("tituloFormularioBairro").textContent="Cadastrar bairro";el("botaoSalvarBairro").textContent="Cadastrar bairro";el("botaoCancelarBairro").style.display="none";carregarCodigoBairro();});
   carregarCodigoFuncionario();
   carregarLista();
 </script>
