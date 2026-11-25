@@ -51,7 +51,21 @@
     .painel-progresso-email strong{display:block;margin-bottom:8px}
     .barra-progresso-email{width:100%;height:12px;accent-color:#2563eb}
     .resumo-progresso-email{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px;color:#4b5563;font-size:13px}
-    @media(max-width:650px){
+    .deep-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+    .deep-metric{background:white;padding:16px;border-radius:10px;box-shadow:0 2px 8px #0000000a;min-width:0}
+    .deep-metric small{display:block;color:#6b7280;font-size:12px;margin-bottom:8px}
+    .deep-metric strong{font-size:22px;overflow-wrap:anywhere}
+    .deep-parameters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .deep-parameters label{font-size:13px;margin-top:8px}
+    .deep-parameters input,.deep-parameters select{margin-top:5px}
+    .deep-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .deep-chart{min-width:0;background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px}
+    .deep-chart canvas{width:100%;height:230px;display:block}
+    .deep-status{padding:12px;border-radius:8px;background:#eff6ff;color:#1e40af;margin-bottom:16px}
+    .deep-status.erro{background:#fee2e2;color:#991b1b}
+    .deep-help{color:#6b7280;font-size:12px;margin:4px 0 0}
+    @media(max-width:900px){.deep-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.deep-parameters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:650px){.deep-chart-grid{grid-template-columns:1fr}.deep-parameters{grid-template-columns:1fr 1fr}
       .layout{display:block}
       nav{width:100%;display:flex;flex-wrap:wrap;gap:6px;border-right:0;border-bottom:1px solid #e5e7eb}
       .menu-titulo{width:100%}
@@ -78,6 +92,7 @@
       <button class="menu-item" data-aba="CIDADES">Cidades</button>
       <button class="menu-item" data-aba="BAIRROS">Bairros</button>
       <button class="menu-item" data-aba="AGENDA">Agenda</button>
+      <button class="menu-item" data-aba="DEEP_LEARNING">Deep Learning</button>
     </nav>
 
     <main>
@@ -290,6 +305,41 @@
         </form>
       </section>
 
+      <section class="card" id="areaDashboardDeepLearning" style="display:none">
+        <div class="cabecalho-conteudo"><div><h3>Previsão de novos agendamentos</h3><p class="descricao">A rede utiliza a data de cadastro, não a data marcada para o atendimento.</p></div><button class="botao botao-secundario" id="botaoAtualizarDeepLearning" type="button">Atualizar histórico</button></div>
+        <div id="statusDeepLearning" class="deep-status" role="status" aria-live="polite">Carregue o histórico para verificar a disponibilidade dos dados.</div>
+        <div class="deep-grid">
+          <div class="deep-metric"><small>Total no histórico</small><strong id="deepTotal">—</strong></div>
+          <div class="deep-metric"><small>Média diária</small><strong id="deepMedia">—</strong></div>
+          <div class="deep-metric"><small>Dias analisados</small><strong id="deepDias">—</strong></div>
+          <div class="deep-metric"><small>Período disponível</small><strong id="deepPeriodo" style="font-size:14px">—</strong></div>
+          <div class="deep-metric"><small>MAE da rede neural</small><strong id="deepMaeRede">—</strong></div>
+          <div class="deep-metric"><small>MAE da média histórica</small><strong id="deepMaeMedia">—</strong></div>
+          <div class="deep-metric"><small>Dias de treino / validação</small><strong id="deepDivisao">—</strong></div>
+          <div class="deep-metric"><small>Último treinamento</small><strong id="deepTreinadoEm" style="font-size:14px">—</strong></div>
+        </div>
+        <div class="card"><h3>Parâmetros do treinamento</h3><p class="deep-help">Altere os parâmetros e treine novamente para aplicar as mudanças. O modelo não é considerado atualizado enquanto houver alterações pendentes.</p>
+          <div class="deep-parameters">
+            <div><label for="deepNeuronios">Neurônios ocultos (1–32)</label><input id="deepNeuronios" type="number" min="1" max="32" value="5"><p class="deep-help">Mais neurônios aumentam a capacidade de aprender padrões, mas podem causar excesso de ajuste.</p></div>
+            <div><label for="deepEpocas">Épocas (1–5000)</label><input id="deepEpocas" type="number" min="1" max="5000" value="500"><p class="deep-help">Número de passagens pelos exemplos de treinamento.</p></div>
+            <div><label for="deepTaxa">Taxa de aprendizado (0,0001–1)</label><input id="deepTaxa" type="number" min="0.0001" max="1" step="0.0001" value="0.05"><p class="deep-help">Define a intensidade dos ajustes dos pesos.</p></div>
+            <div><label for="deepJanela">Janela histórica (2–30 dias)</label><input id="deepJanela" type="number" min="2" max="30" value="7"><p class="deep-help">Quantidade de dias anteriores usada na média móvel.</p></div>
+            <div><label for="deepTreino">Percentual de treinamento (60–90%)</label><input id="deepTreino" type="number" min="60" max="90" value="80"><p class="deep-help">A parte final fica reservada para validação temporal.</p></div>
+            <div><label for="deepAtivacao">Ativação oculta</label><select id="deepAtivacao"><option value="tanh">tanh</option><option value="relu">ReLU</option></select><p class="deep-help">Transformação aplicada aos neurônios ocultos.</p></div>
+            <div><label for="deepSemente">Semente aleatória</label><input id="deepSemente" type="number" min="0" max="2147483647" value="12345"><p class="deep-help">A mesma semente reproduz a inicialização dos pesos.</p></div>
+            <div><label for="deepHorizonte">Horizonte (1–10 dias)</label><input id="deepHorizonte" type="number" min="1" max="10" value="10"><p class="deep-help">Quantidade de dias futuros previstos recursivamente.</p></div>
+          </div>
+          <div class="acoes"><button class="botao" id="botaoTreinarDeepLearning" type="button">Treinar rede neural</button><button class="botao botao-secundario" id="botaoPadraoDeepLearning" type="button">Restaurar parâmetros padrão</button><button class="botao botao-secundario" id="botaoPreverDeepLearning" type="button">Gerar previsão</button><button class="botao botao-secundario" id="botaoCompararDeepLearning" type="button">Comparar resultados</button></div>
+        </div>
+        <div class="deep-chart-grid">
+          <div class="deep-chart"><h3>Erro durante o treinamento</h3><canvas id="deepGraficoTreino" aria-label="Erro quadrático médio por época"></canvas></div>
+          <div class="deep-chart"><h3>Real versus previsto — validação</h3><canvas id="deepGraficoValidacao" aria-label="Comparação entre valores reais e previstos"></canvas></div>
+          <div class="deep-chart"><h3>Previsão para os próximos dias</h3><canvas id="deepGraficoFuturo" aria-label="Histórico e previsão futura"></canvas></div>
+          <div class="deep-chart"><h3>Comparação de desempenho</h3><canvas id="deepGraficoComparacao" aria-label="Erro médio absoluto dos modelos"></canvas></div>
+        </div>
+        <div class="card"><h3>Previsões futuras</h3><p id="deepResumoPrevisao" class="descricao">Treine a rede para gerar previsões.</p><div class="tabela-container"><table><thead><tr><th>Data</th><th>Dia da semana</th><th>Previsão decimal</th><th>Quantidade arredondada</th><th>Média da janela</th></tr></thead><tbody id="deepTabelaPrevisoes"><tr><td colspan="5">Ainda não há previsão calculada.</td></tr></tbody></table></div></div>
+        <div class="card"><h3>Qualidade dos dados</h3><p id="deepQualidade" class="descricao">O diagnóstico será exibido após a leitura da planilha.</p></div>
+      </section>
       <div id="mensagem" role="status" aria-live="polite"></div>
 
       <section class="card">
@@ -313,7 +363,8 @@
     CLIENTES: "Clientes",
     CIDADES: "Cidades",
     BAIRROS: "Bairros",
-    AGENDA: "Agenda de atendimentos"
+    AGENDA: "Agenda de atendimentos",
+    DEEP_LEARNING: "Dashboard de Deep Learning"
   };
 
   const descricoes = {
@@ -322,7 +373,8 @@
     CLIENTES: "Cadastre clientes e consulte os registros existentes.",
     CIDADES: "Consulte as cidades e seus estados.",
     BAIRROS: "Consulte os bairros cadastrados.",
-    AGENDA: "Cadastre e consulte os agendamentos."
+    AGENDA: "Cadastre e consulte os agendamentos.",
+    DEEP_LEARNING: "Previsão diária de novos agendamentos com rede neural artificial."
   };
 
   let abaAtual = "FUNCIONARIOS";
@@ -343,6 +395,10 @@
   const descricaoLista = el("descricaoLista");
   const botaoAtualizar = el("botaoAtualizar");
   const mensagem = el("mensagem");
+  const areaDashboardDeepLearning = el("areaDashboardDeepLearning");
+  let resultadoDeepLearning = null;
+  let diagnosticoDeepLearning = null;
+  let parametrosDeepLearningAplicados = "";
 
   const formFuncionario = el("formFuncionario");
   const codigoFuncionario = el("codigoFuncionario");
