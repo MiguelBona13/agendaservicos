@@ -170,6 +170,32 @@ function agendamentoDeepLearningRulesPreverAmostra(entrada, modelo) {
  * @param {Object} parametros Configurações validadas.
  * @return {Object} Métricas, curvas, previsões e diagnóstico.
  */
+/**
+ * Faz previsões recursivas a partir de uma origem, usando apenas dados disponíveis
+ * até aquela origem. Valores previstos entram na janela dos próximos passos.
+ *
+ * @param {Array<Object>} historico Série disponível até a origem.
+ * @param {Object} modelo Rede treinada.
+ * @param {number} janela Tamanho da janela móvel.
+ * @param {number} horizonte Quantidade de passos futuros.
+ * @return {Array<Object>} Previsões recursivas.
+ */
+function agendamentoDeepLearningRulesPreverHorizonte(historico, modelo, janela, horizonte) {
+  const serieFutura = historico.map(item => ({ data: item.data, quantidade: item.quantidade }));
+  const previsoes = [];
+  for (let passo = 0; passo < horizonte; passo++) {
+    const ultima = serieFutura[serieFutura.length - 1];
+    const dataObj = new Date(ultima.data + "T00:00:00Z");
+    dataObj.setUTCDate(dataObj.getUTCDate() + 1);
+    const data = dataObj.toISOString().slice(0, 10);
+    const entrada = agendamentoDeepLearningRulesExtrairAtributos(serieFutura, data, janela);
+    const quantidade = agendamentoDeepLearningRulesPreverAmostra(entrada, modelo);
+    previsoes.push({ data, quantidade });
+    serieFutura.push({ data, quantidade });
+  }
+  return previsoes;
+}
+
 function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
   const janela = parametros.janelaHistorica;
   if (!Array.isArray(serie) || serie.length < janela + 8) {
@@ -201,6 +227,26 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
   const mediaTreino = treino.reduce((soma, item) => soma + item.alvo, 0) / treino.length;
   const maeMedia = agendamentoDeepLearningRulesCalcularMae(reais, reais.map(() => mediaTreino));
 
+  // Backtest de origem móvel: cada origem utiliza somente o passado conhecido
+  // e avalia o horizonte completo por previsões recursivas.
+  const reaisHorizonte = [];
+  const previstosHorizonte = [];
+  const mediasHorizonte = [];
+  const primeiraOrigem = validacao[0].indice - 1;
+  for (let origem = primeiraOrigem; origem <= serie.length - parametros.horizontePrevisao - 1; origem++) {
+    const passado = serie.slice(0, origem + 1);
+    const previsoesOrigem = agendamentoDeepLearningRulesPreverHorizonte(
+      passado, modelo, janela, parametros.horizontePrevisao
+    );
+    previsoesOrigem.forEach((previsao, passo) => {
+      reaisHorizonte.push(serie[origem + passo + 1].quantidade);
+      previstosHorizonte.push(previsao.quantidade);
+      mediasHorizonte.push(mediaTreino);
+    });
+  }
+  const maeRedeHorizonte = agendamentoDeepLearningRulesCalcularMae(reaisHorizonte, previstosHorizonte);
+  const maeMediaHorizonte = agendamentoDeepLearningRulesCalcularMae(reaisHorizonte, mediasHorizonte);
+
   const historico = serie.map(item => ({ data: item.data, quantidade: item.quantidade }));
   const previsoesFuturas = [];
   for (let passo = 1; passo <= parametros.horizontePrevisao; passo++) {
@@ -231,6 +277,9 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
     diasValidacao: validacao.length,
     maeRede,
     maeMedia,
+    maeRedeHorizonte,
+    maeMediaHorizonte,
+    origensAvaliadas: Math.floor(reaisHorizonte.length / parametros.horizontePrevisao),
     melhoriaPercentual: maeMedia > 0 ? ((maeMedia - maeRede) / maeMedia) * 100 : null,
     mediaHistoricaTreino: mediaTreino,
     historicoErro: modelo.historicoErro,
