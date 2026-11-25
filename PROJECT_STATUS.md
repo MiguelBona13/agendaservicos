@@ -1113,3 +1113,74 @@ A implementação preserva os formulários e validações já existentes e mant�
 
 ### Próximo passo
 - Executar a bateria de testes integrados em ambiente de teste e revisar a PR #8 antes da integração.
+
+
+## Etapa em andamento — Dashboard de Deep Learning para previsão de novos agendamentos
+
+### Objetivo
+Integrar ao sistema um dashboard educacional que estima a quantidade diária de novos agendamentos com uma rede neural MLP, usando a data de cadastro dos registros.
+
+### Implementação realizada na branch
+- Criado o módulo de regras com série diária contínua, preenchimento de dias sem cadastros com zero, atributos cíclicos de dia da semana e média móvel.
+- Implementada uma rede MLP com uma camada oculta, ativação configurável (tanh ou ReLU), saída linear, normalização baseada exclusivamente no conjunto de treinamento e retropropagação com atualização de pesos e vieses.
+- Treinamento reproduzível por semente aleatória.
+- Divisão cronológica entre treinamento e validação.
+- Métricas MAE da rede e da média histórica.
+- Avaliação adicional de horizonte por origens móveis, com previsões recursivas e uso das previsões anteriores como entradas dos passos seguintes.
+- Previsões futuras não negativas e tabela com valores decimais, arredondados e média da janela.
+- Repository identifica a coluna de data de cadastro por cabeçalho, tolerando acentos, caixa, espaços e variações com/sem a preposição “de”.
+- Leitura somente; o módulo não cria abas, não grava colunas e não altera dados existentes.
+- Dashboard integrado ao menu atual, com parâmetros configuráveis, indicadores, quatro gráficos em canvas e tabela de previsões.
+- Mensagens explícitas para histórico insuficiente, cabeçalho ausente e parâmetros ainda não aplicados.
+
+### Arquivos criados
+- `AgendamentoDeepLearningRules.gs` — preparação da série, MLP, treinamento, avaliação e previsão recursiva.
+- `AgendamentoDeepLearningValidator.gs` — validação dos parâmetros.
+- `AgendamentoDeepLearningRepository.gs` — leitura adaptativa da data de cadastro e diagnóstico da qualidade dos registros.
+- `AgendamentoDeepLearningService.gs` — coordenação do diagnóstico, treinamento e previsão.
+- `tests/AgendamentoDeepLearningRules.test.cjs`
+- `tests/AgendamentoDeepLearningRepository.test.cjs`
+- `tests/AgendamentoDeepLearningService.test.cjs`
+
+### Arquivos alterados
+- `Index.html` — nova opção de navegação, painel de parâmetros, indicadores, gráficos e tabela.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- Os modelos existentes K-NN, Árvore de Decisão e Regressão Logística permanecem independentes e sem alterações.
+- `AgendamentoService.gs`, `AgendamentoRepository.gs`, cadastro, cancelamento, edição, bot e integração com Gmail permanecem sem alterações nesta etapa.
+- `PROJECT_GUIDE.md` permanece inalterado.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions: 138 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45525394881
+- O teste de sintaxe do JavaScript embutido em `Index.html` também passou.
+
+### Limitações e pendências
+- A planilha real não foi disponibilizada nesta conversa; portanto, o mapeamento físico, a quantidade de registros, as datas inválidas e a qualidade do histórico ainda precisam ser confirmados no Google Sheets do ambiente.
+- O teste automatizado usa dados simulados e não substitui a validação integrada com a planilha real e o Apps Script.
+- O treinamento é executado sob demanda no servidor; o modelo treinado não é persistido entre recargas da página.
+- A interface ainda precisa ser verificada visualmente no navegador e em telas móveis.
+- A publicação no Apps Script e a integração à `main` não foram executadas.
+
+### Como testar após revisão e implantação em ambiente de teste
+1. Executar `npm test` e confirmar os 138 testes.
+2. Implantar a branch em um projeto Apps Script de teste conectado a uma cópia da planilha.
+3. Abrir **Deep Learning** no menu e conferir se o Repository localiza o cabeçalho de data de cadastro correto.
+4. Confirmar que a data do atendimento não é utilizada como data de cadastro.
+5. Verificar dias sem cadastros, registros duplicados, datas vazias e inválidas.
+6. Treinar com os parâmetros padrão e confirmar os indicadores, a curva de erro, a validação e as previsões futuras.
+7. Alterar parâmetros, confirmar o aviso de modelo desatualizado e treinar novamente.
+8. Comparar MAE de um passo e MAE do horizonte recursivo; não presumir que a rede supera a média.
+9. Confirmar que nenhuma aba, coluna ou registro existente foi alterado.
+10. Regressar as telas de cadastros e Agenda para confirmar que continuam funcionando.
+
+### Situação de integração
+- Branch: `feat/dashboard-deep-learning`.
+- Implementação disponível para revisão; não integrada à `main`.
+- Nenhuma publicação no Google Apps Script foi executada.
+- Nenhum arquivo antigo foi considerado obsoleto ou recomendado para exclusão.
+
+### Próximo passo
+- Executar teste integrado com uma cópia da planilha real, revisar o dashboard no navegador e então decidir a integração da branch e a publicação no Apps Script.
