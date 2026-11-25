@@ -72,6 +72,7 @@ test("experimento faz previsão recursiva não negativa para dez dias", () => {
   assert.equal(resultado.previsoes.length, 10);
   assert.ok(resultado.previsoes.every(item => item.previsao >= 0));
   assert.equal(resultado.dataReferencia, serie[serie.length - 1].data);
+  assert.equal(resultado.diasTreinamentoFinal, serie.length - 7);
   assert.ok(Number.isFinite(resultado.maeRede));
   assert.ok(resultado.origensAvaliadas >= 1);
   assert.ok(Number.isFinite(resultado.maeRedeHorizonte));
