@@ -56,7 +56,24 @@ test("rede treina pesos e registra erro por época", () => {
     ativacao: "tanh", semente: 12345
   });
   assert.equal(modelo.historicoErro.length, 25);
-  assert.ok(modelo.rede.pesosOcultos.some(linha => linha.some(peso => peso !== 0)));
+  assert.equal(modelo.rede.camadasOcultas.length, 2);
+  assert.ok(modelo.rede.camadasOcultas.every(camada => camada.pesos.some(linha => linha.some(peso => peso !== 0))));
+  assert.equal(modelo.quantidadeCamadasOcultas, 2);
+});
+
+
+test("rede profunda possui duas camadas ocultas conectadas em sequência", () => {
+  const rede = contexto.agendamentoDeepLearningRulesCriarRede(3, 4, 99);
+  assert.equal(rede.camadasOcultas.length, 2);
+  assert.equal(rede.camadasOcultas[0].pesos.length, 4);
+  assert.equal(rede.camadasOcultas[0].pesos[0].length, 3);
+  assert.equal(rede.camadasOcultas[1].pesos.length, 4);
+  assert.equal(rede.camadasOcultas[1].pesos[0].length, 4);
+  const passagem = contexto.agendamentoDeepLearningRulesPropagar([0.1, 0.2, 0.3], rede, "tanh");
+  assert.equal(passagem.ativacoes.length, 2);
+  assert.equal(passagem.ativacoes[0].length, 4);
+  assert.equal(passagem.ativacoes[1].length, 4);
+  assert.ok(Number.isFinite(passagem.saida));
 });
 
 test("experimento faz previsão recursiva não negativa para dez dias", () => {
