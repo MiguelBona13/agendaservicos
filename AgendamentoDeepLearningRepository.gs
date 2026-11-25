@@ -14,7 +14,7 @@
 /** Normaliza cabeçalhos ignorando acentos, espaços, pontuação e caixa. */
 function agendamentoDeepLearningRepositoryNormalizarCabecalho(valor) {
   return String(valor || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\\bde\\b/g, " ").replace(/\\s/g, "");
+    .toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\bde\b/g, " ").replace(/\s/g, "");
 }
 
 /** Resolve a coluna por um conjunto de nomes semanticamente equivalentes. */
