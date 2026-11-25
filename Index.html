@@ -1052,6 +1052,217 @@
       (resultado.registros.length === 1 ? " registro" : " registros");
   }
 
+  const areaLista = conteudoLista.parentElement;
+
+  /** Lê os controles e monta os parâmetros que serão enviados ao Service. */
+  function obterParametrosDeepLearning() {
+    return {
+      neuroniosOcultos: Number(el("deepNeuronios").value),
+      epocas: Number(el("deepEpocas").value),
+      taxaAprendizado: Number(el("deepTaxa").value),
+      janelaHistorica: Number(el("deepJanela").value),
+      percentualTreinamento: Number(el("deepTreino").value),
+      ativacao: el("deepAtivacao").value,
+      semente: Number(el("deepSemente").value),
+      horizontePrevisao: Number(el("deepHorizonte").value)
+    };
+  }
+
+  /** Formata números sem esconder a precisão do resultado do modelo. */
+  function formatarDeepNumero(valor, casas) {
+    return Number.isFinite(Number(valor))
+      ? Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: casas || 0, maximumFractionDigits: casas === undefined ? 2 : casas })
+      : "—";
+  }
+
+  /** Apresenta o estado do dashboard sem afirmar que existe um modelo treinado. */
+  function definirStatusDeepLearning(texto, erro) {
+    const status = el("statusDeepLearning");
+    status.textContent = texto;
+    status.classList.toggle("erro", Boolean(erro));
+  }
+
+  /** Desenha uma série simples em canvas, sem dependência de biblioteca externa. */
+  function desenharGraficoDeepLearning(id, series) {
+    const canvas = el(id);
+    if (!canvas) return;
+    const largura = Math.max(280, canvas.clientWidth || 640);
+    const altura = 230;
+    const escala = window.devicePixelRatio || 1;
+    canvas.width = largura * escala;
+    canvas.height = altura * escala;
+    const contexto = canvas.getContext("2d");
+    contexto.scale(escala, escala);
+    contexto.clearRect(0, 0, largura, altura);
+    const margens = { esquerda: 42, direita: 12, topo: 14, baixo: 28 };
+    const areaLargura = largura - margens.esquerda - margens.direita;
+    const areaAltura = altura - margens.topo - margens.baixo;
+    const todos = series.reduce((lista, serie) => lista.concat(serie.valores || []), []);
+    if (!todos.length) {
+      contexto.fillStyle = "#6b7280";
+      contexto.font = "12px Arial";
+      contexto.fillText("Treine a rede para visualizar os dados.", 12, 30);
+      return;
+    }
+    const maximo = Math.max(1, ...todos.map(Number));
+    const minimo = Math.min(0, ...todos.map(Number));
+    const amplitude = maximo - minimo || 1;
+    contexto.strokeStyle = "#e5e7eb";
+    contexto.lineWidth = 1;
+    for (let linha = 0; linha <= 4; linha++) {
+      const y = margens.topo + areaAltura * linha / 4;
+      contexto.beginPath(); contexto.moveTo(margens.esquerda, y); contexto.lineTo(largura - margens.direita, y); contexto.stroke();
+      contexto.fillStyle = "#6b7280"; contexto.font = "10px Arial";
+      contexto.fillText(formatarDeepNumero(maximo - amplitude * linha / 4, 1), 2, y + 3);
+    }
+    const quantidade = Math.max(1, ...series.map(serie => (serie.valores || []).length));
+    series.forEach((serie, indiceSerie) => {
+      const valores = serie.valores || [];
+      if (!valores.length) return;
+      contexto.strokeStyle = ["#2563eb", "#dc6b25", "#059669", "#7c3aed"][indiceSerie % 4];
+      contexto.lineWidth = 2;
+      contexto.beginPath();
+      valores.forEach((valor, indice) => {
+        const x = margens.esquerda + (quantidade <= 1 ? 0 : areaLargura * indice / (quantidade - 1));
+        const y = margens.topo + areaAltura * (maximo - Number(valor)) / amplitude;
+        if (indice === 0) contexto.moveTo(x, y); else contexto.lineTo(x, y);
+      });
+      contexto.stroke();
+    });
+    contexto.fillStyle = "#6b7280"; contexto.font = "10px Arial";
+    contexto.fillText("Início", margens.esquerda, altura - 8);
+    contexto.fillText("Fim", largura - margens.direita - 18, altura - 8);
+  }
+
+  /** Atualiza os quatro gráficos a partir do último resultado calculado. */
+  function renderizarGraficosDeepLearning() {
+    if (!resultadoDeepLearning) return;
+    const r = resultadoDeepLearning.resultado;
+    desenharGraficoDeepLearning("deepGraficoTreino", [{ valores: r.historicoErro }]);
+    desenharGraficoDeepLearning("deepGraficoValidacao", [
+      { valores: r.validacao.map(item => item.real) },
+      { valores: r.validacao.map(item => item.previsto) },
+      { valores: r.validacao.map(item => item.media) }
+    ]);
+    desenharGraficoDeepLearning("deepGraficoFuturo", [
+      { valores: (diagnosticoDeepLearning.serie || []).slice(-30).map(item => item.quantidade) },
+      { valores: r.previsoes.map(item => item.previsao) }
+    ]);
+    desenharGraficoDeepLearning("deepGraficoComparacao", [
+      { valores: [r.maeRede] }, { valores: [r.maeMedia] }
+    ]);
+  }
+
+  /** Atualiza os indicadores, tabela e diagnóstico após o treinamento. */
+  function renderizarResultadoDeepLearning(resultado) {
+    resultadoDeepLearning = resultado;
+    const r = resultado.resultado;
+    el("deepMaeRede").textContent = formatarDeepNumero(r.maeRede, 3);
+    el("deepMaeMedia").textContent = formatarDeepNumero(r.maeMedia, 3);
+    el("deepDivisao").textContent = r.diasTreinamento + " / " + r.diasValidacao;
+    el("deepTreinadoEm").textContent = new Date(resultado.treinadoEm).toLocaleString("pt-BR");
+    el("deepResumoPrevisao").textContent =
+      "Referência: " + r.dataReferencia + ". Total previsto: " + formatarDeepNumero(r.totalPrevisto, 2) +
+      " novos agendamentos; média diária: " + formatarDeepNumero(r.mediaPrevista, 2) +
+      "; maior previsão: " + formatarDeepNumero(r.maiorPrevisao, 2) +
+      "; menor previsão: " + formatarDeepNumero(r.menorPrevisao, 2) + ".";
+    const corpo = el("deepTabelaPrevisoes");
+    corpo.replaceChildren();
+    r.previsoes.forEach(item => {
+      const linha = document.createElement("tr");
+      [item.data, item.diaSemana, formatarDeepNumero(item.previsao, 2),
+        String(item.previsaoInteira), formatarDeepNumero(item.mediaReferencia, 2)]
+        .forEach(valor => { const celula = document.createElement("td"); celula.textContent = valor; linha.appendChild(celula); });
+      corpo.appendChild(linha);
+    });
+    const comparacao = r.maeRede === null || r.maeMedia === null
+      ? "Comparação indisponível."
+      : (r.maeRede < r.maeMedia ? "A rede neural apresentou menor MAE nesta validação."
+        : r.maeRede > r.maeMedia ? "A média histórica apresentou menor MAE nesta validação."
+        : "Os dois métodos apresentaram o mesmo MAE nesta validação.");
+    definirStatusDeepLearning(comparacao + " Isso não garante desempenho futuro.");
+    renderizarGraficosDeepLearning();
+  }
+
+  /** Lê novamente a série histórica e informa os campos encontrados. */
+  function carregarDiagnosticoDeepLearning() {
+    definirStatusDeepLearning("Lendo os dados da aba de agendamentos...");
+    google.script.run
+      .withSuccessHandler(diagnostico => {
+        diagnosticoDeepLearning = diagnostico;
+        el("deepTotal").textContent = formatarDeepNumero(diagnostico.totalHistorico);
+        el("deepMedia").textContent = diagnostico.diasAnalisados
+          ? formatarDeepNumero(diagnostico.totalHistorico / diagnostico.diasAnalisados, 2) : "—";
+        el("deepDias").textContent = String(diagnostico.diasAnalisados);
+        el("deepPeriodo").textContent = diagnostico.dataInicial && diagnostico.dataFinal
+          ? diagnostico.dataInicial + " a " + diagnostico.dataFinal : "—";
+        const q = diagnostico.qualidade;
+        el("deepQualidade").textContent = "Aba: " + diagnostico.mapeamento.aba +
+          "; cabeçalho de cadastro: " + diagnostico.mapeamento.cabecalhoDataCadastro +
+          " (coluna " + diagnostico.mapeamento.colunaDataCadastro + "). Linhas lidas: " + q.linhasLidas +
+          "; registros contabilizados: " + q.registrosContabilizados +
+          "; datas inválidas: " + q.datasInvalidas.length +
+          "; datas vazias: " + q.datasVazias.length +
+          "; códigos duplicados ignorados: " + q.linhasDuplicadas.length + ".";
+        definirStatusDeepLearning(diagnostico.disponivel
+          ? "Histórico carregado. A série inclui dias sem cadastros como zero. A data de referência é " + diagnostico.dataFinal + "."
+          : "Não existem dados válidos para análise.", !diagnostico.disponivel);
+      })
+      .withFailureHandler(erro => definirStatusDeepLearning("Não foi possível ler o histórico: " + (erro.message || erro), true))
+      .agendamentoDeepLearningServiceObterDiagnostico();
+  }
+
+  /** Executa o treinamento e a previsão no servidor. */
+  function executarDeepLearning() {
+    const parametros = obterParametrosDeepLearning();
+    definirStatusDeepLearning("Treinando a rede neural e calculando a validação...");
+    ["botaoTreinarDeepLearning", "botaoPreverDeepLearning", "botaoCompararDeepLearning"].forEach(id => { el(id).disabled = true; });
+    google.script.run
+      .withSuccessHandler(resultado => {
+        parametrosDeepLearningAplicados = JSON.stringify(parametros);
+        renderizarResultadoDeepLearning(resultado);
+        ["botaoTreinarDeepLearning", "botaoPreverDeepLearning", "botaoCompararDeepLearning"].forEach(id => { el(id).disabled = false; });
+      })
+      .withFailureHandler(erro => {
+        definirStatusDeepLearning("Treinamento não concluído: " + (erro.message || erro), true);
+        ["botaoTreinarDeepLearning", "botaoPreverDeepLearning", "botaoCompararDeepLearning"].forEach(id => { el(id).disabled = false; });
+      })
+      .agendamentoDeepLearningServiceTreinar(parametros);
+  }
+
+  /** Invalida visualmente os resultados quando parâmetros ainda não aplicados mudam. */
+  function marcarParametrosDeepLearningAlterados() {
+    if (resultadoDeepLearning && parametrosDeepLearningAplicados !== JSON.stringify(obterParametrosDeepLearning())) {
+      definirStatusDeepLearning("Os parâmetros foram alterados. Treine novamente para atualizar as métricas e previsões.");
+    }
+  }
+
+  function restaurarParametrosDeepLearning() {
+    el("deepNeuronios").value = 5; el("deepEpocas").value = 500;
+    el("deepTaxa").value = 0.05; el("deepJanela").value = 7;
+    el("deepTreino").value = 80; el("deepAtivacao").value = "tanh";
+    el("deepSemente").value = 12345; el("deepHorizonte").value = 10;
+    marcarParametrosDeepLearningAlterados();
+    definirStatusDeepLearning("Parâmetros padrão restaurados. Treine novamente para aplicá-los.");
+  }
+
+  ["deepNeuronios", "deepEpocas", "deepTaxa", "deepJanela", "deepTreino", "deepAtivacao", "deepSemente", "deepHorizonte"]
+    .forEach(id => el(id).addEventListener("change", marcarParametrosDeepLearningAlterados));
+
+  el("botaoTreinarDeepLearning").addEventListener("click", executarDeepLearning);
+  el("botaoPreverDeepLearning").addEventListener("click", executarDeepLearning);
+  el("botaoCompararDeepLearning").addEventListener("click", () => {
+    if (!resultadoDeepLearning || parametrosDeepLearningAplicados !== JSON.stringify(obterParametrosDeepLearning())) {
+      definirStatusDeepLearning("Treine a rede com os parâmetros atuais antes de comparar os resultados.", true);
+      return;
+    }
+    renderizarGraficosDeepLearning();
+    definirStatusDeepLearning("Comparação atualizada com os mesmos dados de validação.");
+  });
+  el("botaoPadraoDeepLearning").addEventListener("click", restaurarParametrosDeepLearning);
+  el("botaoAtualizarDeepLearning").addEventListener("click", carregarDiagnosticoDeepLearning);
+  window.addEventListener("resize", () => { if (abaAtual === "DEEP_LEARNING") renderizarGraficosDeepLearning(); });
+
   function selecionarAba(nomeAba) {
     if (abaAtual === "FUNCIONARIOS" && nomeAba !== "FUNCIONARIOS") {
       cancelarEdicaoFuncionario();
@@ -1071,9 +1282,16 @@
     areaCadastroCidade.style.display = nomeAba === "CIDADES" ? "block" : "none";
     areaCadastroBairro.style.display = nomeAba === "BAIRROS" ? "block" : "none";
     areaCadastroAgendamento.style.display = nomeAba === "AGENDA" ? "block" : "none";
+    areaDashboardDeepLearning.style.display = nomeAba === "DEEP_LEARNING" ? "block" : "none";
+    areaLista.style.display = nomeAba === "DEEP_LEARNING" ? "none" : "block";
+    botaoAtualizar.style.display = nomeAba === "DEEP_LEARNING" ? "none" : "inline-block";
 
     limparMensagem();
-    carregarLista();
+    if (nomeAba === "DEEP_LEARNING") {
+      carregarDiagnosticoDeepLearning();
+    } else {
+      carregarLista();
+    }
 
     if (nomeAba === "CLIENTES") {
       if (!codigoClienteEmEdicao) carregarCodigoCliente();
