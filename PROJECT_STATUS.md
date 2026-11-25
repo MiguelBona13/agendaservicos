@@ -1158,7 +1158,7 @@ Integrar ao sistema um dashboard educacional que estima a quantidade diária de 
 - O teste de sintaxe do JavaScript embutido em `Index.html` também passou.
 
 ### Limitações e pendências
-- A planilha real não foi disponibilizada nesta conversa; portanto, o mapeamento físico, a quantidade de registros, as datas inválidas e a qualidade do histórico ainda precisam ser confirmados no Google Sheets do ambiente.
+- Na etapa inicial, a planilha real ainda não havia sido disponibilizada. Essa pendência foi parcialmente resolvida com a exportação `Agenda de Servicos.xlsx`, analisada em 24/11/2026; a validação cobre o arquivo exportado, não uma conexão ao vivo com o Google Sheets.
 - O teste automatizado usa dados simulados e não substitui a validação integrada com a planilha real e o Apps Script.
 - O treinamento é executado sob demanda no servidor; o modelo treinado não é persistido entre recargas da página.
 - A interface ainda precisa ser verificada visualmente no navegador e em telas móveis.
@@ -1184,3 +1184,56 @@ Integrar ao sistema um dashboard educacional que estima a quantidade diária de 
 
 ### Próximo passo
 - Executar teste integrado com uma cópia da planilha real, revisar o dashboard no navegador e então decidir a integração da branch e a publicação no Apps Script.
+
+
+## Validação com a exportação real da planilha — 24/11/2026
+
+### Fonte analisada
+- Arquivo recebido na conversa: `Agenda de Servicos.xlsx`.
+- Abas encontradas: FUNCIONARIOS, SERVICOS, CLIENTES, AGENDA, Historico_Diario, Neoronio, CIDADES, BAIRROS, PERIODOS e Configurações.
+- A aba de dados correta é `AGENDA`; o cabeçalho `Data_Cadastro` está na coluna J.
+- A aba `Historico_Diario` contém 324 dias consecutivos, de 31/12/2025 a 19/11/2026.
+
+### Qualidade e consistência
+- 202 linhas de agendamentos.
+- 202 códigos únicos; nenhuma duplicidade.
+- Nenhuma data de cadastro vazia ou inválida.
+- 202 registros contabilizados.
+- A contagem diária derivada de `AGENDA.Data_Cadastro` coincide com `Historico_Diario.Novos agendamentos` em todos os 324 dias.
+- 182 dias sem novos cadastros e 142 dias com cadastros.
+- Total: 202 novos agendamentos; média diária: 0,6235; máximo diário: 3.
+- O arquivo termina em 19/11/2026. Como a análise ocorreu em 24/11/2026, os dados exportados estão cinco dias atrás da data corrente e as previsões calculadas a partir do arquivo são apenas uma simulação histórica, não uma previsão atualizada para implantação.
+
+### Teste preliminar do modelo com os dados exportados
+- Parâmetros padrão: 5 neurônios ocultos, 500 épocas, taxa 0,05, janela 7, 80% treino, ativação tanh, semente 12345 e horizonte 10 dias.
+- Amostras supervisionadas: 317; treino: 253; validação: 64.
+- MAE de um passo: rede 0,7322; média histórica 0,6997. A rede não superou a referência neste teste.
+- Backtest recursivo de 10 dias: rede 0,6335; média histórica 0,6877; 55 origens avaliadas. Resultado favorável à rede nesta avaliação específica, ainda sem garantia de generalização.
+- Os números são uma execução local reproduzindo as regras e parâmetros do código; não representam execução integrada no Apps Script.
+
+### Correção incremental após análise
+- `AgendamentoDeepLearningRules.gs` agora treina um modelo final adicional com todas as amostras históricas depois de calcular as métricas de validação. Assim, os 20% reservados à validação continuam fora da avaliação, mas podem ser aproveitados no modelo usado para previsões futuras.
+- `diasTreinamentoFinal` informa quantas amostras foram usadas no ajuste final.
+- `tests/AgendamentoDeepLearningRules.test.cjs` verifica que o modelo final utiliza toda a série supervisionada disponível.
+- GitHub Actions: 138 testes aprovados, 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45526091396
+
+### Arquivos alterados nesta correção
+- `AgendamentoDeepLearningRules.gs` — ajuste final com o histórico completo, sem alterar a validação temporal.
+- `tests/AgendamentoDeepLearningRules.test.cjs` — teste da quantidade de amostras usadas no modelo final.
+- `PROJECT_STATUS.md` — registro da validação com o arquivo real.
+
+### Arquivos mantidos
+- `Agenda de Servicos.xlsx` foi apenas lido; nenhuma célula ou aba foi alterada.
+- Nenhum arquivo da aplicação principal, dos modelos K-NN/Árvore/Regressão Logística ou do `PROJECT_GUIDE.md` foi modificado nesta correção.
+- Nenhum arquivo foi excluído.
+
+### Pendências para concluir a integração
+- Atualizar/obter uma exportação mais recente, pois a atual termina em 19/11/2026.
+- Executar no Apps Script de teste conectado à planilha real e conferir o diagnóstico apresentado pelo Repository.
+- Verificar o dashboard visualmente em desktop e celular.
+- Medir o tempo de treinamento com os dados do ambiente real.
+- Após testes integrados, revisar a PR e decidir integração à `main` e publicação no Apps Script.
+
+### Próximo passo
+- Fazer teste integrado em uma cópia controlada da planilha; não publicar em produção antes dessa verificação.
