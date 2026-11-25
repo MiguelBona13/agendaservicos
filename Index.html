@@ -315,6 +315,7 @@
           <div class="deep-metric"><small>Período disponível</small><strong id="deepPeriodo" style="font-size:14px">—</strong></div>
           <div class="deep-metric"><small>MAE da rede neural</small><strong id="deepMaeRede">—</strong></div>
           <div class="deep-metric"><small>MAE da média histórica</small><strong id="deepMaeMedia">—</strong></div>
+          <div class="deep-metric"><small>MAE horizonte completo</small><strong id="deepMaeHorizonte">—</strong></div>
           <div class="deep-metric"><small>Dias de treino / validação</small><strong id="deepDivisao">—</strong></div>
           <div class="deep-metric"><small>Último treinamento</small><strong id="deepTreinadoEm" style="font-size:14px">—</strong></div>
         </div>
@@ -1115,7 +1116,7 @@
       contexto.fillStyle = "#6b7280"; contexto.font = "10px Arial";
       contexto.fillText(formatarDeepNumero(maximo - amplitude * linha / 4, 1), 2, y + 3);
     }
-    const quantidade = Math.max(1, ...series.map(serie => (serie.valores || []).length));
+    const quantidade = Math.max(1, ...series.map(serie => (serie.inicio || 0) + (serie.valores || []).length));
     series.forEach((serie, indiceSerie) => {
       const valores = serie.valores || [];
       if (!valores.length) return;
@@ -1123,7 +1124,7 @@
       contexto.lineWidth = 2;
       contexto.beginPath();
       valores.forEach((valor, indice) => {
-        const x = margens.esquerda + (quantidade <= 1 ? 0 : areaLargura * indice / (quantidade - 1));
+        const posicao = (serie.inicio || 0) + indice;\n        const x = margens.esquerda + (quantidade <= 1 ? 0 : areaLargura * posicao / (quantidade - 1));
         const y = margens.topo + areaAltura * (maximo - Number(valor)) / amplitude;
         if (indice === 0) contexto.moveTo(x, y); else contexto.lineTo(x, y);
       });
@@ -1158,7 +1159,7 @@
     resultadoDeepLearning = resultado;
     const r = resultado.resultado;
     el("deepMaeRede").textContent = formatarDeepNumero(r.maeRede, 3);
-    el("deepMaeMedia").textContent = formatarDeepNumero(r.maeMedia, 3);
+    el("deepMaeMedia").textContent = formatarDeepNumero(r.maeMedia, 3);\n    el("deepMaeHorizonte").textContent = formatarDeepNumero(r.maeRedeHorizonte, 3);
     el("deepDivisao").textContent = r.diasTreinamento + " / " + r.diasValidacao;
     el("deepTreinadoEm").textContent = new Date(resultado.treinadoEm).toLocaleString("pt-BR");
     el("deepResumoPrevisao").textContent =
@@ -1180,7 +1181,7 @@
       : (r.maeRede < r.maeMedia ? "A rede neural apresentou menor MAE nesta validação."
         : r.maeRede > r.maeMedia ? "A média histórica apresentou menor MAE nesta validação."
         : "Os dois métodos apresentaram o mesmo MAE nesta validação.");
-    definirStatusDeepLearning(comparacao + " Isso não garante desempenho futuro.");
+    const avaliacaoHorizonte = r.maeRedeHorizonte === null\n      ? "Ainda não há origens suficientes para avaliar todo o horizonte de " + resultado.parametros.horizontePrevisao + " dias."\n      : "MAE no backtest recursivo de " + resultado.parametros.horizontePrevisao + " dias: rede " + formatarDeepNumero(r.maeRedeHorizonte, 3) + " e média " + formatarDeepNumero(r.maeMediaHorizonte, 3) + " (" + r.origensAvaliadas + " origens).";\n    definirStatusDeepLearning(comparacao + " " + avaliacaoHorizonte + " Isso não garante desempenho futuro.");
     renderizarGraficosDeepLearning();
   }
 
