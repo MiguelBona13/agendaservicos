@@ -1113,3 +1113,181 @@ A implementação preserva os formulários e validações já existentes e mant�
 
 ### Próximo passo
 - Executar a bateria de testes integrados em ambiente de teste e revisar a PR #8 antes da integração.
+
+
+## Etapa em andamento — Dashboard de Deep Learning para previsão de novos agendamentos
+
+### Objetivo
+Integrar ao sistema um dashboard educacional que estima a quantidade diária de novos agendamentos com uma rede neural MLP, usando a data de cadastro dos registros.
+
+### Implementação realizada na branch
+- Criado o módulo de regras com série diária contínua, preenchimento de dias sem cadastros com zero, atributos cíclicos de dia da semana e média móvel.
+- Implementada uma rede MLP com uma camada oculta, ativação configurável (tanh ou ReLU), saída linear, normalização baseada exclusivamente no conjunto de treinamento e retropropagação com atualização de pesos e vieses.
+- Treinamento reproduzível por semente aleatória.
+- Divisão cronológica entre treinamento e validação.
+- Métricas MAE da rede e da média histórica.
+- Avaliação adicional de horizonte por origens móveis, com previsões recursivas e uso das previsões anteriores como entradas dos passos seguintes.
+- Previsões futuras não negativas e tabela com valores decimais, arredondados e média da janela.
+- Repository identifica a coluna de data de cadastro por cabeçalho, tolerando acentos, caixa, espaços e variações com/sem a preposição “de”.
+- Leitura somente; o módulo não cria abas, não grava colunas e não altera dados existentes.
+- Dashboard integrado ao menu atual, com parâmetros configuráveis, indicadores, quatro gráficos em canvas e tabela de previsões.
+- Mensagens explícitas para histórico insuficiente, cabeçalho ausente e parâmetros ainda não aplicados.
+
+### Arquivos criados
+- `AgendamentoDeepLearningRules.gs` — preparação da série, MLP, treinamento, avaliação e previsão recursiva.
+- `AgendamentoDeepLearningValidator.gs` — validação dos parâmetros.
+- `AgendamentoDeepLearningRepository.gs` — leitura adaptativa da data de cadastro e diagnóstico da qualidade dos registros.
+- `AgendamentoDeepLearningService.gs` — coordenação do diagnóstico, treinamento e previsão.
+- `tests/AgendamentoDeepLearningRules.test.cjs`
+- `tests/AgendamentoDeepLearningRepository.test.cjs`
+- `tests/AgendamentoDeepLearningService.test.cjs`
+
+### Arquivos alterados
+- `Index.html` — nova opção de navegação, painel de parâmetros, indicadores, gráficos e tabela.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- Os modelos existentes K-NN, Árvore de Decisão e Regressão Logística permanecem independentes e sem alterações.
+- `AgendamentoService.gs`, `AgendamentoRepository.gs`, cadastro, cancelamento, edição, bot e integração com Gmail permanecem sem alterações nesta etapa.
+- `PROJECT_GUIDE.md` permanece inalterado.
+- Nenhum arquivo foi excluído.
+
+### Validação automatizada
+- GitHub Actions: 138 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45525394881
+- O teste de sintaxe do JavaScript embutido em `Index.html` também passou.
+
+### Limitações e pendências
+- Na etapa inicial, a planilha real ainda não havia sido disponibilizada. Essa pendência foi parcialmente resolvida com a exportação `Agenda de Servicos.xlsx`, analisada em 24/11/2026; a validação cobre o arquivo exportado, não uma conexão ao vivo com o Google Sheets.
+- O teste automatizado usa dados simulados e não substitui a validação integrada com a planilha real e o Apps Script.
+- O treinamento é executado sob demanda no servidor; o modelo treinado não é persistido entre recargas da página.
+- A interface ainda precisa ser verificada visualmente no navegador e em telas móveis.
+- A publicação no Apps Script e a integração à `main` não foram executadas.
+
+### Como testar após revisão e implantação em ambiente de teste
+1. Executar `npm test` e confirmar os 138 testes.
+2. Implantar a branch em um projeto Apps Script de teste conectado a uma cópia da planilha.
+3. Abrir **Deep Learning** no menu e conferir se o Repository localiza o cabeçalho de data de cadastro correto.
+4. Confirmar que a data do atendimento não é utilizada como data de cadastro.
+5. Verificar dias sem cadastros, registros duplicados, datas vazias e inválidas.
+6. Treinar com os parâmetros padrão e confirmar os indicadores, a curva de erro, a validação e as previsões futuras.
+7. Alterar parâmetros, confirmar o aviso de modelo desatualizado e treinar novamente.
+8. Comparar MAE de um passo e MAE do horizonte recursivo; não presumir que a rede supera a média.
+9. Confirmar que nenhuma aba, coluna ou registro existente foi alterado.
+10. Regressar as telas de cadastros e Agenda para confirmar que continuam funcionando.
+
+### Situação de integração
+- Branch: `feat/dashboard-deep-learning`.
+- Implementação disponível para revisão; não integrada à `main`.
+- Nenhuma publicação no Google Apps Script foi executada.
+- Nenhum arquivo antigo foi considerado obsoleto ou recomendado para exclusão.
+
+### Próximo passo
+- Executar teste integrado com uma cópia da planilha real, revisar o dashboard no navegador e então decidir a integração da branch e a publicação no Apps Script.
+
+
+## Validação com a exportação real da planilha — 24/11/2026
+
+### Fonte analisada
+- Arquivo recebido na conversa: `Agenda de Servicos.xlsx`.
+- Abas encontradas: FUNCIONARIOS, SERVICOS, CLIENTES, AGENDA, Historico_Diario, Neoronio, CIDADES, BAIRROS, PERIODOS e Configurações.
+- A aba de dados correta é `AGENDA`; o cabeçalho `Data_Cadastro` está na coluna J.
+- A aba `Historico_Diario` contém 324 dias consecutivos, de 31/12/2025 a 19/11/2026.
+
+### Qualidade e consistência
+- 202 linhas de agendamentos.
+- 202 códigos únicos; nenhuma duplicidade.
+- Nenhuma data de cadastro vazia ou inválida.
+- 202 registros contabilizados.
+- A contagem diária derivada de `AGENDA.Data_Cadastro` coincide com `Historico_Diario.Novos agendamentos` em todos os 324 dias.
+- 182 dias sem novos cadastros e 142 dias com cadastros.
+- Total: 202 novos agendamentos; média diária: 0,6235; máximo diário: 3.
+- O arquivo termina em 19/11/2026. Como a análise ocorreu em 24/11/2026, os dados exportados estão cinco dias atrás da data corrente e as previsões calculadas a partir do arquivo são apenas uma simulação histórica, não uma previsão atualizada para implantação.
+
+### Teste preliminar do modelo com os dados exportados
+- Parâmetros padrão: 5 neurônios ocultos, 500 épocas, taxa 0,05, janela 7, 80% treino, ativação tanh, semente 12345 e horizonte 10 dias.
+- Amostras supervisionadas: 317; treino: 253; validação: 64.
+- MAE de um passo: rede 0,7322; média histórica 0,6997. A rede não superou a referência neste teste.
+- Backtest recursivo de 10 dias: rede 0,6335; média histórica 0,6877; 55 origens avaliadas. Resultado favorável à rede nesta avaliação específica, ainda sem garantia de generalização.
+- Os números são uma execução local reproduzindo as regras e parâmetros do código; não representam execução integrada no Apps Script.
+
+### Correção incremental após análise
+- `AgendamentoDeepLearningRules.gs` agora treina um modelo final adicional com todas as amostras históricas depois de calcular as métricas de validação. Assim, os 20% reservados à validação continuam fora da avaliação, mas podem ser aproveitados no modelo usado para previsões futuras.
+- `diasTreinamentoFinal` informa quantas amostras foram usadas no ajuste final.
+- `tests/AgendamentoDeepLearningRules.test.cjs` verifica que o modelo final utiliza toda a série supervisionada disponível.
+- GitHub Actions: 138 testes aprovados, 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45526091396
+
+### Arquivos alterados nesta correção
+- `AgendamentoDeepLearningRules.gs` — ajuste final com o histórico completo, sem alterar a validação temporal.
+- `tests/AgendamentoDeepLearningRules.test.cjs` — teste da quantidade de amostras usadas no modelo final.
+- `PROJECT_STATUS.md` — registro da validação com o arquivo real.
+
+### Arquivos mantidos
+- `Agenda de Servicos.xlsx` foi apenas lido; nenhuma célula ou aba foi alterada.
+- Nenhum arquivo da aplicação principal, dos modelos K-NN/Árvore/Regressão Logística ou do `PROJECT_GUIDE.md` foi modificado nesta correção.
+- Nenhum arquivo foi excluído.
+
+### Pendências para concluir a integração
+- Atualizar/obter uma exportação mais recente, pois a atual termina em 19/11/2026.
+- Executar no Apps Script de teste conectado à planilha real e conferir o diagnóstico apresentado pelo Repository.
+- Verificar o dashboard visualmente em desktop e celular.
+- Medir o tempo de treinamento com os dados do ambiente real.
+- Após testes integrados, revisar a PR e decidir integração à `main` e publicação no Apps Script.
+
+### Próximo passo
+- Fazer teste integrado em uma cópia controlada da planilha; não publicar em produção antes dessa verificação.
+
+
+## Evolução da rede — duas camadas ocultas (25/11/2026)
+
+### Objetivo
+Evoluir a MLP anterior, que possuía uma camada oculta, para uma rede com duas camadas ocultas conectadas em sequência. A quantidade configurada no dashboard representa o número de neurônios em cada uma das duas camadas.
+
+### Análise e implementação
+- A rede anterior tinha somente uma camada oculta; por isso, era uma MLP rasa e não atendia à intenção de usar uma arquitetura com múltiplas camadas ocultas.
+- `AgendamentoDeepLearningRules.gs` agora cria duas camadas ocultas, cada uma com a quantidade de neurônios configurada.
+- A passagem direta propaga os valores pelas duas camadas.
+- A retropropagação calcula os gradientes da camada de saída e das duas camadas ocultas antes de atualizar seus pesos e vieses.
+- A inicialização dos pesos usa limites calculados conforme as dimensões de cada camada.
+- A normalização, divisão temporal, avaliação sem vazamento e ajuste final com todo o histórico foram preservados.
+- `Index.html` esclarece que o parâmetro de neurônios se aplica a cada camada oculta.
+
+### Arquivos alterados
+- `AgendamentoDeepLearningRules.gs` — arquitetura de duas camadas ocultas e retropropagação correspondente.
+- `tests/AgendamentoDeepLearningRules.test.cjs` — teste da estrutura, dimensões, passagem direta e treinamento das duas camadas.
+- `Index.html` — rótulo e explicação do parâmetro de neurônios.
+- `PROJECT_STATUS.md` — registro desta evolução.
+
+### Validação automatizada
+- GitHub Actions: 139 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45526835335.
+- O teste de sintaxe da interface também foi executado no mesmo workflow.
+
+### Reavaliação com a exportação real
+Com os parâmetros padrão e a exportação analisada anteriormente (324 dias até 19/11/2026), a rede de duas camadas apresentou:
+- MAE de um passo: 0,8212 para a rede e 0,6997 para a média histórica.
+- MAE no backtest recursivo de 10 dias: 0,7490 para a rede e 0,6877 para a média histórica, em 55 origens.
+- Nesta configuração e nesta série, a rede profunda não superou a referência de média histórica nas duas métricas. Portanto, a implementação comprova a mudança arquitetural, mas não comprova vantagem preditiva. Os valores precisam ser reavaliados com dados atualizados e eventual ajuste de hiperparâmetros, sem escolher parâmetros apenas para favorecer o resultado.
+
+### Arquivos mantidos e exclusões
+- Os modelos K-NN, Árvore de Decisão e Regressão Logística permanecem intocados.
+- Repository, Service e Validator do dashboard foram mantidos.
+- Nenhum arquivo foi excluído.
+- `PROJECT_GUIDE.md` não foi alterado.
+- A exportação Excel foi somente lida; nenhuma célula ou aba foi modificada.
+
+### Como testar
+1. Executar `npm test` e confirmar 139 testes aprovados.
+2. Abrir o dashboard no projeto Apps Script de teste.
+3. Treinar com os parâmetros padrão e conferir o histórico de erro, métricas e previsões.
+4. Alterar a quantidade de neurônios e confirmar que ambas as camadas usam a nova dimensão.
+5. Conferir o funcionamento com as ativações tanh e ReLU.
+6. Verificar o dashboard em desktop e celular e medir o tempo de execução no Apps Script.
+7. Confirmar que nenhuma aba ou coluna da planilha foi alterada.
+
+### Situação e próximo passo
+- Alterações enviadas à branch `feat/dashboard-deep-learning`, na PR #9.
+- PR continua aberta; não integrada à `main`.
+- Nenhuma publicação no Google Apps Script foi realizada.
+- Próximo passo: executar a validação integrada em cópia controlada da planilha e revisão visual; só depois decidir integração e publicação.
