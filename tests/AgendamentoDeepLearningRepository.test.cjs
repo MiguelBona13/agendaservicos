@@ -11,7 +11,7 @@ const contexto = {
 vm.runInNewContext(fs.readFileSync("AgendamentoDeepLearningRepository.gs", "utf8"), contexto);
 
 test("normaliza cabeçalhos ignorando acentos e espaços", () => {
-  assert.equal(contexto.agendamentoDeepLearningRepositoryNormalizarCabecalho(" Data de Cadastro "), "datadecadastro");
+  assert.equal(contexto.agendamentoDeepLearningRepositoryNormalizarCabecalho(" Data de Cadastro "), "datacadastro");
   assert.equal(contexto.agendamentoDeepLearningRepositoryLocalizarColuna(["Código", "Data_Cadastro"], ["data de cadastro"]), 1);
 });
 
