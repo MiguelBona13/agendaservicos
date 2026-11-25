@@ -321,7 +321,7 @@
         </div>
         <div class="card"><h3>Parâmetros do treinamento</h3><p class="deep-help">Altere os parâmetros e treine novamente para aplicar as mudanças. O modelo não é considerado atualizado enquanto houver alterações pendentes.</p>
           <div class="deep-parameters">
-            <div><label for="deepNeuronios">Neurônios ocultos (1–32)</label><input id="deepNeuronios" type="number" min="1" max="32" value="5"><p class="deep-help">Mais neurônios aumentam a capacidade de aprender padrões, mas podem causar excesso de ajuste.</p></div>
+            <div><label for="deepNeuronios">Neurônios por camada oculta (1–32)</label><input id="deepNeuronios" type="number" min="1" max="32" value="5"><p class="deep-help">A rede utiliza duas camadas ocultas com essa quantidade de neurônios cada. Mais neurônios aumentam a capacidade do modelo e também o risco de excesso de ajuste.</p></div>
             <div><label for="deepEpocas">Épocas (1–5000)</label><input id="deepEpocas" type="number" min="1" max="5000" value="500"><p class="deep-help">Número de passagens pelos exemplos de treinamento.</p></div>
             <div><label for="deepTaxa">Taxa de aprendizado (0,0001–1)</label><input id="deepTaxa" type="number" min="0.0001" max="1" step="0.0001" value="0.05"><p class="deep-help">Define a intensidade dos ajustes dos pesos.</p></div>
             <div><label for="deepJanela">Janela histórica (2–30 dias)</label><input id="deepJanela" type="number" min="2" max="30" value="7"><p class="deep-help">Quantidade de dias anteriores usada na média móvel.</p></div>
