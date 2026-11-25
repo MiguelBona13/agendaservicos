@@ -77,49 +77,85 @@ function agendamentoDeepLearningRulesCalcularMae(reais, previstos) {
 }
 
 /** Cria uma rede MLP com uma camada oculta e saída linear. */
+/**
+ * Cria uma MLP profunda com duas camadas ocultas e saída linear.
+ * Ambas as camadas usam a quantidade de neurônios configurada no dashboard.
+ */
 function agendamentoDeepLearningRulesCriarRede(quantidadeEntradas, neuroniosOcultos, semente) {
   const aleatorio = agendamentoDeepLearningRulesGeradorAleatorio(semente);
-  const limiteEntrada = Math.sqrt(6 / (quantidadeEntradas + neuroniosOcultos));
-  const limiteSaida = Math.sqrt(6 / (neuroniosOcultos + 1));
-  const matriz = (linhas, colunas, limite) =>
-    Array.from({ length: linhas }, () => Array.from({ length: colunas }, () => (aleatorio() * 2 - 1) * limite));
+  const matriz = (linhas, colunas) => {
+    const limite = Math.sqrt(6 / (linhas + colunas));
+    return Array.from({ length: linhas }, () =>
+      Array.from({ length: colunas }, () => (aleatorio() * 2 - 1) * limite)
+    );
+  };
+  const criarCamada = (entradas, neuronios) => ({
+    pesos: matriz(neuronios, entradas),
+    vieses: Array(neuronios).fill(0)
+  });
 
   return {
-    pesosOcultos: matriz(neuroniosOcultos, quantidadeEntradas, limiteEntrada),
-    viesesOcultos: Array(neuroniosOcultos).fill(0),
-    pesosSaida: Array.from({ length: neuroniosOcultos }, () => (aleatorio() * 2 - 1) * limiteSaida),
+    camadasOcultas: [
+      criarCamada(quantidadeEntradas, neuroniosOcultos),
+      criarCamada(neuroniosOcultos, neuroniosOcultos)
+    ],
+    pesosSaida: Array.from({ length: neuroniosOcultos }, () => {
+      const limite = Math.sqrt(6 / (neuroniosOcultos + 1));
+      return (aleatorio() * 2 - 1) * limite;
+    }),
     viesSaida: 0
   };
 }
 
-/** Executa a passagem direta da rede neural. */
+/**
+ * Executa a passagem direta e preserva ativações e somas para a retropropagação.
+ * A saída é linear; as duas camadas ocultas usam tanh ou ReLU.
+ */
 function agendamentoDeepLearningRulesPropagar(entrada, rede, ativacao) {
-  const ocultos = rede.pesosOcultos.map((pesos, indice) => {
-    const soma = pesos.reduce((total, peso, coluna) => total + peso * entrada[coluna], rede.viesesOcultos[indice]);
-    return ativacao === "relu" ? Math.max(0, soma) : Math.tanh(soma);
+  let valores = entrada.slice();
+  const ativacoes = [];
+  const preAtivacoes = [];
+
+  rede.camadasOcultas.forEach(camada => {
+    const somas = camada.pesos.map((pesos, indice) =>
+      pesos.reduce((total, peso, coluna) => total + peso * valores[coluna], camada.vieses[indice])
+    );
+    valores = somas.map(soma => ativacao === "relu" ? Math.max(0, soma) : Math.tanh(soma));
+    preAtivacoes.push(somas);
+    ativacoes.push(valores);
   });
-  const saida = ocultos.reduce((total, valor, indice) => total + valor * rede.pesosSaida[indice], rede.viesSaida);
-  return { ocultos, saida };
+
+  const ultimaCamada = ativacoes[ativacoes.length - 1];
+  const saida = ultimaCamada.reduce(
+    (total, valor, indice) => total + valor * rede.pesosSaida[indice],
+    rede.viesSaida
+  );
+  return { ativacoes, preAtivacoes, saida };
 }
 
 /**
- * Treina a rede MLP por retropropagação real, atualizando pesos e vieses.
- * Normalização de atributos e alvo é calculada somente no conjunto de treino.
- *
- * @param {Array<{entrada:number[],alvo:number}>} amostras Amostras cronológicas.
- * @param {Object} parametros Parâmetros validados do treinamento.
- * @return {Object} Rede treinada, normalização e histórico de erro por época.
+ * Treina uma MLP com duas camadas ocultas por retropropagação.
+ * A normalização é calculada exclusivamente com as amostras recebidas.
  */
 function agendamentoDeepLearningRulesTreinarRede(amostras, parametros) {
   const { neuroniosOcultos, epocas, taxaAprendizado, ativacao, semente } = parametros;
-  if (!Array.isArray(amostras) || amostras.length < 3) throw new Error("Não há amostras suficientes para treinar a rede neural.");
-  const medias = [0, 1, 2].map(coluna => amostras.reduce((soma, item) => soma + item.entrada[coluna], 0) / amostras.length);
+  if (!Array.isArray(amostras) || amostras.length < 3) {
+    throw new Error("Não há amostras suficientes para treinar a rede neural.");
+  }
+
+  const medias = [0, 1, 2].map(coluna =>
+    amostras.reduce((soma, item) => soma + item.entrada[coluna], 0) / amostras.length
+  );
   const desvios = [0, 1, 2].map(coluna => {
-    const variancia = amostras.reduce((soma, item) => soma + Math.pow(item.entrada[coluna] - medias[coluna], 2), 0) / amostras.length;
+    const variancia = amostras.reduce(
+      (soma, item) => soma + Math.pow(item.entrada[coluna] - medias[coluna], 2), 0
+    ) / amostras.length;
     return Math.sqrt(variancia) || 1;
   });
   const mediaAlvo = amostras.reduce((soma, item) => soma + item.alvo, 0) / amostras.length;
-  const desvioAlvo = Math.sqrt(amostras.reduce((soma, item) => soma + Math.pow(item.alvo - mediaAlvo, 2), 0) / amostras.length) || 1;
+  const desvioAlvo = Math.sqrt(
+    amostras.reduce((soma, item) => soma + Math.pow(item.alvo - mediaAlvo, 2), 0) / amostras.length
+  ) || 1;
   const normalizadas = amostras.map(item => ({
     entrada: item.entrada.map((valor, coluna) => (valor - medias[coluna]) / desvios[coluna]),
     alvo: (item.alvo - mediaAlvo) / desvioAlvo
@@ -134,23 +170,63 @@ function agendamentoDeepLearningRulesTreinarRede(amostras, parametros) {
       const erro = passagem.saida - amostra.alvo;
       erroTotal += erro * erro;
       const gradienteSaida = 2 * erro;
-      const pesosSaidaAntigos = rede.pesosSaida.slice();
+      const ultimaAtivacao = passagem.ativacoes[passagem.ativacoes.length - 1];
 
-      passagem.ocultos.forEach((valor, indice) => {
-        const derivada = ativacao === "relu"
-          ? (rede.pesosOcultos[indice].reduce((soma, peso, coluna) => soma + peso * amostra.entrada[coluna], rede.viesesOcultos[indice]) > 0 ? 1 : 0)
-          : 1 - valor * valor;
-        const gradienteOculto = gradienteSaida * pesosSaidaAntigos[indice] * derivada;
-        rede.pesosOcultos[indice] = rede.pesosOcultos[indice].map((peso, coluna) => peso - taxaAprendizado * gradienteOculto * amostra.entrada[coluna]);
-        rede.viesesOcultos[indice] -= taxaAprendizado * gradienteOculto;
+      // Calcula todos os deltas antes de atualizar os pesos usados no gradiente.
+      const deltas = new Array(rede.camadasOcultas.length);
+      let gradienteSeguinte = rede.pesosSaida.map(peso => gradienteSaida * peso);
+      for (let indiceCamada = rede.camadasOcultas.length - 1; indiceCamada >= 0; indiceCamada--) {
+        const camada = rede.camadasOcultas[indiceCamada];
+        const ativacoesCamada = passagem.ativacoes[indiceCamada];
+        const somasCamada = passagem.preAtivacoes[indiceCamada];
+        deltas[indiceCamada] = ativacoesCamada.map((valor, indiceNeuronio) => {
+          const derivada = ativacao === "relu"
+            ? (somasCamada[indiceNeuronio] > 0 ? 1 : 0)
+            : 1 - valor * valor;
+          return gradienteSeguinte[indiceNeuronio] * derivada;
+        });
+        if (indiceCamada > 0) {
+          const camadaSeguinte = rede.camadasOcultas[indiceCamada];
+          gradienteSeguinte = rede.camadasOcultas[indiceCamada - 1].pesos.map((_, indiceNeuronioAnterior) =>
+            camadaSeguinte.pesos.reduce(
+              (soma, pesosNeuronioSeguinte, indiceNeuronioSeguinte) =>
+                soma + pesosNeuronioSeguinte[indiceNeuronioAnterior] * deltas[indiceCamada][indiceNeuronioSeguinte],
+              0
+            )
+          );
+        }
+      }
+
+      // Atualiza a camada de saída.
+      ultimaAtivacao.forEach((valor, indice) => {
         rede.pesosSaida[indice] -= taxaAprendizado * gradienteSaida * valor;
       });
       rede.viesSaida -= taxaAprendizado * gradienteSaida;
+
+      // Atualiza as camadas ocultas da última para a primeira.
+      for (let indiceCamada = rede.camadasOcultas.length - 1; indiceCamada >= 0; indiceCamada--) {
+        const camada = rede.camadasOcultas[indiceCamada];
+        const entradaCamada = indiceCamada === 0
+          ? amostra.entrada
+          : passagem.ativacoes[indiceCamada - 1];
+        deltas[indiceCamada].forEach((delta, indiceNeuronio) => {
+          camada.pesos[indiceNeuronio] = camada.pesos[indiceNeuronio].map(
+            (peso, indiceEntrada) => peso - taxaAprendizado * delta * entradaCamada[indiceEntrada]
+          );
+          camada.vieses[indiceNeuronio] -= taxaAprendizado * delta;
+        });
+      }
     });
     historicoErro.push(erroTotal / normalizadas.length);
   }
 
-  return { rede, normalizacao: { medias, desvios, mediaAlvo, desvioAlvo }, historicoErro, ativacao };
+  return {
+    rede,
+    normalizacao: { medias, desvios, mediaAlvo, desvioAlvo },
+    historicoErro,
+    ativacao,
+    quantidadeCamadasOcultas: 2
+  };
 }
 
 /** Executa a previsão numérica e desfaz a normalização do alvo. */
