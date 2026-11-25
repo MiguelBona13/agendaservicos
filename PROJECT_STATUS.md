@@ -1237,3 +1237,57 @@ Integrar ao sistema um dashboard educacional que estima a quantidade diária de 
 
 ### Próximo passo
 - Fazer teste integrado em uma cópia controlada da planilha; não publicar em produção antes dessa verificação.
+
+
+## Evolução da rede — duas camadas ocultas (25/11/2026)
+
+### Objetivo
+Evoluir a MLP anterior, que possuía uma camada oculta, para uma rede com duas camadas ocultas conectadas em sequência. A quantidade configurada no dashboard representa o número de neurônios em cada uma das duas camadas.
+
+### Análise e implementação
+- A rede anterior tinha somente uma camada oculta; por isso, era uma MLP rasa e não atendia à intenção de usar uma arquitetura com múltiplas camadas ocultas.
+- `AgendamentoDeepLearningRules.gs` agora cria duas camadas ocultas, cada uma com a quantidade de neurônios configurada.
+- A passagem direta propaga os valores pelas duas camadas.
+- A retropropagação calcula os gradientes da camada de saída e das duas camadas ocultas antes de atualizar seus pesos e vieses.
+- A inicialização dos pesos usa limites calculados conforme as dimensões de cada camada.
+- A normalização, divisão temporal, avaliação sem vazamento e ajuste final com todo o histórico foram preservados.
+- `Index.html` esclarece que o parâmetro de neurônios se aplica a cada camada oculta.
+
+### Arquivos alterados
+- `AgendamentoDeepLearningRules.gs` — arquitetura de duas camadas ocultas e retropropagação correspondente.
+- `tests/AgendamentoDeepLearningRules.test.cjs` — teste da estrutura, dimensões, passagem direta e treinamento das duas camadas.
+- `Index.html` — rótulo e explicação do parâmetro de neurônios.
+- `PROJECT_STATUS.md` — registro desta evolução.
+
+### Validação automatizada
+- GitHub Actions: 139 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45526835335.
+- O teste de sintaxe da interface também foi executado no mesmo workflow.
+
+### Reavaliação com a exportação real
+Com os parâmetros padrão e a exportação analisada anteriormente (324 dias até 19/11/2026), a rede de duas camadas apresentou:
+- MAE de um passo: 0,8212 para a rede e 0,6997 para a média histórica.
+- MAE no backtest recursivo de 10 dias: 0,7490 para a rede e 0,6877 para a média histórica, em 55 origens.
+- Nesta configuração e nesta série, a rede profunda não superou a referência de média histórica nas duas métricas. Portanto, a implementação comprova a mudança arquitetural, mas não comprova vantagem preditiva. Os valores precisam ser reavaliados com dados atualizados e eventual ajuste de hiperparâmetros, sem escolher parâmetros apenas para favorecer o resultado.
+
+### Arquivos mantidos e exclusões
+- Os modelos K-NN, Árvore de Decisão e Regressão Logística permanecem intocados.
+- Repository, Service e Validator do dashboard foram mantidos.
+- Nenhum arquivo foi excluído.
+- `PROJECT_GUIDE.md` não foi alterado.
+- A exportação Excel foi somente lida; nenhuma célula ou aba foi modificada.
+
+### Como testar
+1. Executar `npm test` e confirmar 139 testes aprovados.
+2. Abrir o dashboard no projeto Apps Script de teste.
+3. Treinar com os parâmetros padrão e conferir o histórico de erro, métricas e previsões.
+4. Alterar a quantidade de neurônios e confirmar que ambas as camadas usam a nova dimensão.
+5. Conferir o funcionamento com as ativações tanh e ReLU.
+6. Verificar o dashboard em desktop e celular e medir o tempo de execução no Apps Script.
+7. Confirmar que nenhuma aba ou coluna da planilha foi alterada.
+
+### Situação e próximo passo
+- Alterações enviadas à branch `feat/dashboard-deep-learning`, na PR #9.
+- PR continua aberta; não integrada à `main`.
+- Nenhuma publicação no Google Apps Script foi realizada.
+- Próximo passo: executar a validação integrada em cópia controlada da planilha e revisão visual; só depois decidir integração e publicação.
