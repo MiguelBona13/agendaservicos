@@ -1125,7 +1125,8 @@
       contexto.lineWidth = 2;
       contexto.beginPath();
       valores.forEach((valor, indice) => {
-        const posicao = (serie.inicio || 0) + indice;\n        const x = margens.esquerda + (quantidade <= 1 ? 0 : areaLargura * posicao / (quantidade - 1));
+        const posicao = (serie.inicio || 0) + indice;
+        const x = margens.esquerda + (quantidade <= 1 ? 0 : areaLargura * posicao / (quantidade - 1));
         const y = margens.topo + areaAltura * (maximo - Number(valor)) / amplitude;
         if (indice === 0) contexto.moveTo(x, y); else contexto.lineTo(x, y);
       });
@@ -1160,7 +1161,8 @@
     resultadoDeepLearning = resultado;
     const r = resultado.resultado;
     el("deepMaeRede").textContent = formatarDeepNumero(r.maeRede, 3);
-    el("deepMaeMedia").textContent = formatarDeepNumero(r.maeMedia, 3);\n    el("deepMaeHorizonte").textContent = formatarDeepNumero(r.maeRedeHorizonte, 3);
+    el("deepMaeMedia").textContent = formatarDeepNumero(r.maeMedia, 3);
+    el("deepMaeHorizonte").textContent = formatarDeepNumero(r.maeRedeHorizonte, 3);
     el("deepDivisao").textContent = r.diasTreinamento + " / " + r.diasValidacao;
     el("deepTreinadoEm").textContent = new Date(resultado.treinadoEm).toLocaleString("pt-BR");
     el("deepResumoPrevisao").textContent =
@@ -1182,7 +1184,10 @@
       : (r.maeRede < r.maeMedia ? "A rede neural apresentou menor MAE nesta validação."
         : r.maeRede > r.maeMedia ? "A média histórica apresentou menor MAE nesta validação."
         : "Os dois métodos apresentaram o mesmo MAE nesta validação.");
-    const avaliacaoHorizonte = r.maeRedeHorizonte === null\n      ? "Ainda não há origens suficientes para avaliar todo o horizonte de " + resultado.parametros.horizontePrevisao + " dias."\n      : "MAE no backtest recursivo de " + resultado.parametros.horizontePrevisao + " dias: rede " + formatarDeepNumero(r.maeRedeHorizonte, 3) + " e média " + formatarDeepNumero(r.maeMediaHorizonte, 3) + " (" + r.origensAvaliadas + " origens).";\n    definirStatusDeepLearning(comparacao + " " + avaliacaoHorizonte + " Isso não garante desempenho futuro.");
+    const avaliacaoHorizonte = r.maeRedeHorizonte === null
+      ? "Ainda não há origens suficientes para avaliar todo o horizonte de " + resultado.parametros.horizontePrevisao + " dias."
+      : "MAE no backtest recursivo de " + resultado.parametros.horizontePrevisao + " dias: rede " + formatarDeepNumero(r.maeRedeHorizonte, 3) + " e média " + formatarDeepNumero(r.maeMediaHorizonte, 3) + " (" + r.origensAvaliadas + " origens).";
+    definirStatusDeepLearning(comparacao + " " + avaliacaoHorizonte + " Isso não garante desempenho futuro.");
     renderizarGraficosDeepLearning();
   }
 
