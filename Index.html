@@ -1071,6 +1071,7 @@
 
   /** Formata números sem esconder a precisão do resultado do modelo. */
   function formatarDeepNumero(valor, casas) {
+    if (valor === null || valor === undefined || valor === "") return "—";
     return Number.isFinite(Number(valor))
       ? Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: casas || 0, maximumFractionDigits: casas === undefined ? 2 : casas })
       : "—";
