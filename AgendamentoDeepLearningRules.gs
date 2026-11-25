@@ -247,6 +247,14 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
   const maeRedeHorizonte = agendamentoDeepLearningRulesCalcularMae(reaisHorizonte, previstosHorizonte);
   const maeMediaHorizonte = agendamentoDeepLearningRulesCalcularMae(reaisHorizonte, mediasHorizonte);
 
+  // Após medir o desempenho em dados não vistos, ajusta-se um modelo final
+  // com todo o histórico disponível. Assim, a previsão futura aproveita também
+  // os dias que ficaram reservados para validação e não descarta dados recentes.
+  const modeloFinal = agendamentoDeepLearningRulesTreinarRede(
+    amostras.map(item => ({ entrada: item.entrada, alvo: item.alvo })),
+    parametros
+  );
+
   const historico = serie.map(item => ({ data: item.data, quantidade: item.quantidade }));
   const previsoesFuturas = [];
   for (let passo = 1; passo <= parametros.horizontePrevisao; passo++) {
@@ -255,7 +263,7 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
     proximaDataObj.setUTCDate(proximaDataObj.getUTCDate() + 1);
     const proximaData = proximaDataObj.toISOString().slice(0, 10);
     const entrada = agendamentoDeepLearningRulesExtrairAtributos(historico, proximaData, janela);
-    const previsao = agendamentoDeepLearningRulesPreverAmostra(entrada, modelo);
+    const previsao = agendamentoDeepLearningRulesPreverAmostra(entrada, modeloFinal);
     const mediaReferencia = entrada[2];
     const registro = {
       data: proximaData,
@@ -275,6 +283,7 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
     diasAnalisados: serie.length,
     diasTreinamento: treino.length,
     diasValidacao: validacao.length,
+    diasTreinamentoFinal: amostras.length,
     maeRede,
     maeMedia,
     maeRedeHorizonte,
@@ -282,7 +291,7 @@ function agendamentoDeepLearningRulesExecutarExperimento(serie, parametros) {
     origensAvaliadas: Math.floor(reaisHorizonte.length / parametros.horizontePrevisao),
     melhoriaPercentual: maeMedia > 0 ? ((maeMedia - maeRede) / maeMedia) * 100 : null,
     mediaHistoricaTreino: mediaTreino,
-    historicoErro: modelo.historicoErro,
+    historicoErro: modeloFinal.historicoErro,
     validacao: validacao.map((item, indice) => ({ data: serie[item.indice].data, real: reais[indice], previsto: previstos[indice], media: mediaTreino })),
     previsoes: previsoesFuturas,
     totalPrevisto: previsoesFuturas.reduce((soma, item) => soma + item.previsao, 0),
