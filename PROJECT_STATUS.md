@@ -1372,3 +1372,57 @@ Implementar as camadas `PeriodoValidator.gs`, `PeriodoRules.gs` e `PeriodoServic
 ### Próxima etapa
 - Implementar `PeriodoValidator.gs`, `PeriodoRules.gs` e `PeriodoService.gs` para completar o CRUD de períodos.
 - Mapear a estrutura e as regras dos parâmetros existentes na aba Configurações antes de implementar edição de configurações.
+
+
+## Correção — CRUD de Períodos e carregamento de Configurações
+
+### Alterações realizadas
+- Implementadas as camadas Validator, Rules e Service para a entidade Período.
+- A tela Períodos agora possui formulário para cadastrar e editar descrição, hora inicial, hora final e situação (ativo/inativo).
+- O código do período é gerado automaticamente e permanece imutável na edição.
+- A exclusão verifica vínculos na coluna de código do período da aba AGENDA:
+  - sem agendamentos vinculados: exclusão física;
+  - com agendamentos vinculados: inativação, preservando o histórico.
+- Períodos com histórico não podem ter descrição ou horários alterados; podem ser inativados.
+- A consulta de Configurações aceita as abas `CONFIGURACOES` e `Configurações`. Quando nenhuma existir, a interface apresenta uma orientação de criação da aba em vez de falhar ao carregar.
+- Corrigido o nome lógico da aba CONFIGURACOES e removida a chave PERIODOS duplicada em Config.js.
+
+### Arquivos criados
+- `PeriodoValidator.gs` — valida código, descrição, horários e situação.
+- `PeriodoRules.gs` — valida intervalo e preservação de dados históricos.
+- `PeriodoService.gs` — coordena as operações do CRUD.
+- `tests/PeriodoValidatorRules.test.cjs` — testes de validação e regras.
+- `tests/PeriodoService.test.cjs` — testes de criação, edição, inativação e exclusão.
+- `tests/IndexPeriodosInterface.test.cjs` — valida sintaxe do JavaScript da interface e integração do formulário.
+
+### Arquivos alterados
+- `Index.html` — formulário, edição, exclusão/inativação e tratamento visual de aba de configurações ausente.
+- `Config.js` — padronização do nome lógico CONFIGURACOES.
+- `ConfiguracaoRepository.gs` — consulta com compatibilidade de nomes e tratamento de ausência.
+- `tests/ConfiguracaoRepository.test.cjs` — cobertura dos nomes alternativos e aba ausente.
+- `PROJECT_STATUS.md` — registro desta correção.
+
+### Arquivos mantidos
+- `PeriodoRepository.gs` — operações de persistência existentes reutilizadas.
+- `AgendamentoRepository.gs` e fluxo de agendamentos — mantidos.
+- `PROJECT_GUIDE.md` — mantido sem alterações.
+
+### Arquivos que podem ser excluídos
+- Nenhum.
+
+### Validação automatizada
+- GitHub Actions: 162 testes aprovados e 0 falhas.
+- Execução: https://github.com/MiguelBona13/agendaservicos/actions/runs/45909375090
+- A validação é automatizada e simulada; o teste integrado na implantação Apps Script/Sheets ainda deve ser conferido após a publicação.
+
+### Como testar na aplicação
+1. Abrir **Períodos** e cadastrar um período com horário válido.
+2. Editar o período e confirmar que o código permanece igual.
+3. Excluir um período sem agendamentos e confirmar a remoção.
+4. Tentar excluir um período usado na aba AGENDA e confirmar que ele é inativado, sem apagar o registro.
+5. Tentar alterar descrição/horários de período com vínculo e confirmar que o sistema bloqueia a alteração.
+6. Abrir **Configurações**. Se a aba ainda não existir, a tela deve apresentar orientação em vez de erro. Se existir com nome CONFIGURACOES ou Configurações, deve exibir sua tabela.
+
+### Ressalva e próximo passo
+- Não foi definido ainda o conjunto de parâmetros de negócio que deverá compor a aba Configurações. Nesta correção, o objetivo é impedir a falha de carregamento e consultar uma aba existente sem presumir sua estrutura.
+- Após validar esta publicação, definir e implementar os parâmetros editáveis de Configurações, se necessário.
