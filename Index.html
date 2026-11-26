@@ -231,6 +231,41 @@
           <div class="acoes"><button class="botao" id="botaoSalvarBairro" type="submit">Cadastrar bairro</button><button class="botao botao-secundario" id="botaoCancelarBairro" type="button" style="display:none">Cancelar edição</button></div>
         </form>
       </section>
+      <section class="card" id="areaCadastroPeriodo" style="display:none">
+        <h3 id="tituloFormularioPeriodo">Cadastrar período</h3>
+        <p class="descricao">Informe a descrição e o intervalo de atendimento. O código é gerado automaticamente.</p>
+        <form id="formPeriodo">
+          <div class="grade-formulario">
+            <div class="campo">
+              <label for="codigoPeriodoCadastro">Código do período</label>
+              <input id="codigoPeriodoCadastro" type="text" readonly required>
+            </div>
+            <div class="campo">
+              <label for="descricaoPeriodoCadastro">Descrição *</label>
+              <input id="descricaoPeriodoCadastro" type="text" maxlength="80" placeholder="Ex.: Manhã" required>
+            </div>
+            <div class="campo">
+              <label for="horaInicialPeriodoCadastro">Hora inicial *</label>
+              <input id="horaInicialPeriodoCadastro" type="time" required>
+            </div>
+            <div class="campo">
+              <label for="horaFinalPeriodoCadastro">Hora final *</label>
+              <input id="horaFinalPeriodoCadastro" type="time" required>
+            </div>
+            <div class="campo">
+              <label for="ativoPeriodoCadastro">Situação *</label>
+              <select id="ativoPeriodoCadastro" required>
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
+              </select>
+            </div>
+          </div>
+          <div class="acoes">
+            <button class="botao" id="botaoSalvarPeriodo" type="submit" disabled>Carregando código...</button>
+            <button class="botao botao-secundario" id="botaoCancelarPeriodo" type="button" style="display:none">Cancelar edição</button>
+          </div>
+        </form>
+      </section>
       <section class="card" id="areaCadastroAgendamento" style="display:none">
         <h3>Novo agendamento</h3>
         <p class="descricao">Escolha a data, o período e os dados do atendimento. O valor será obtido do serviço selecionado.</p>
@@ -396,6 +431,7 @@
   const areaCadastroBairro = el("areaCadastroBairro");
   const areaCadastroCliente = el("areaCadastroCliente");
   const areaCadastroAgendamento = el("areaCadastroAgendamento");
+  const areaCadastroPeriodo = el("areaCadastroPeriodo");
   const conteudoLista = el("conteudoLista");
   const contadorRegistros = el("contadorRegistros");
   const tituloLista = el("tituloLista");
@@ -436,6 +472,8 @@
   const formServico = el("formServico"), codigoServicoCadastro = el("codigoServicoCadastro"), nomeServicoCadastro = el("nomeServicoCadastro"), valorServicoCadastro = el("valorServicoCadastro");
   const formCidade = el("formCidade"), codigoCidadeCadastro = el("codigoCidadeCadastro"), nomeCidadeCadastro = el("nomeCidadeCadastro"), estadoCidadeCadastro = el("estadoCidadeCadastro");
   const formBairro = el("formBairro"), codigoBairroCadastro = el("codigoBairroCadastro"), nomeBairroCadastro = el("nomeBairroCadastro"), cidadeBairroCadastro = el("cidadeBairroCadastro");
+  const formPeriodo = el("formPeriodo"), codigoPeriodoCadastro = el("codigoPeriodoCadastro"), descricaoPeriodoCadastro = el("descricaoPeriodoCadastro"), horaInicialPeriodoCadastro = el("horaInicialPeriodoCadastro"), horaFinalPeriodoCadastro = el("horaFinalPeriodoCadastro"), ativoPeriodoCadastro = el("ativoPeriodoCadastro");
+  let codigoPeriodoEmEdicao = "";
 
   const formAgendamento = el("formAgendamento");
   const codigoAgendamento = el("codigoAgendamento");
@@ -870,6 +908,12 @@
   function exibirLista(resultado) {
     conteudoLista.innerHTML = "";
 
+    if (resultado && resultado.mensagem && (!resultado.colunas || !resultado.colunas.length)) {
+      conteudoLista.textContent = resultado.mensagem;
+      contadorRegistros.textContent = "";
+      return;
+    }
+
     if (!resultado || !resultado.colunas || !resultado.colunas.length) {
       conteudoLista.innerHTML =
         '<p class="vazio">Esta planilha ainda não possui colunas.</p>';
@@ -897,7 +941,7 @@
       trCabecalho.appendChild(th);
     });
 
-    if (["AGENDA", "FUNCIONARIOS", "SERVICOS", "CLIENTES", "CIDADES", "BAIRROS"].includes(abaAtual)) {
+    if (["AGENDA", "FUNCIONARIOS", "SERVICOS", "CLIENTES", "CIDADES", "BAIRROS", "PERIODOS"].includes(abaAtual)) {
       const thAcoes = document.createElement("th");
       thAcoes.textContent = "Ações";
       trCabecalho.appendChild(thAcoes);
@@ -982,6 +1026,52 @@
             .withFailureHandler(e=>{excluir.disabled=false;falha(e,"Não foi possível excluir: ");})[metodo](codigo);
         });
         tdAcoes.appendChild(excluir);tr.appendChild(tdAcoes);
+      }
+
+      if (abaAtual === "PERIODOS") {
+        const tdAcoes = document.createElement("td");
+        const codigo = String(registro[0] || "").trim();
+        const editar = document.createElement("button");
+        editar.type = "button";
+        editar.className = "botao botao-secundario";
+        editar.textContent = "Editar";
+        editar.addEventListener("click", () => {
+          codigoPeriodoEmEdicao = codigo;
+          codigoPeriodoCadastro.value = codigo;
+          descricaoPeriodoCadastro.value = registro[1] || "";
+          horaInicialPeriodoCadastro.value = String(registro[2] || "").slice(0, 5);
+          horaFinalPeriodoCadastro.value = String(registro[3] || "").slice(0, 5);
+          ativoPeriodoCadastro.value = ["SIM", "TRUE", "ATIVO", "1"].includes(String(registro[4] || "").trim().toUpperCase()) ? "true" : "false";
+          el("tituloFormularioPeriodo").textContent = "Editar período";
+          el("botaoSalvarPeriodo").textContent = "Salvar alterações";
+          el("botaoCancelarPeriodo").style.display = "inline-block";
+          areaCadastroPeriodo.scrollIntoView({ behavior: "smooth", block: "start" });
+          mostrarMensagem("Editando período " + codigo + ".", "sucesso");
+        });
+        tdAcoes.appendChild(editar);
+
+        const excluir = document.createElement("button");
+        excluir.type = "button";
+        excluir.className = "botao botao-secundario";
+        excluir.textContent = "Excluir / Inativar";
+        excluir.addEventListener("click", () => {
+          if (!confirm("Deseja excluir o período " + codigo + "? Se houver agendamentos vinculados, ele será apenas inativado para preservar o histórico.")) return;
+          excluir.disabled = true;
+          google.script.run
+            .withSuccessHandler(resultado => {
+              mostrarMensagem(resultado && resultado.mensagem || "Operação concluída.", "sucesso");
+              carregarLista();
+              carregarDadosAgendamento();
+              if (codigoPeriodoEmEdicao === codigo) cancelarEdicaoPeriodo();
+            })
+            .withFailureHandler(erro => {
+              excluir.disabled = false;
+              falha(erro, "Não foi possível excluir ou inativar o período: ");
+            })
+            .periodoServiceExcluir(codigo);
+        });
+        tdAcoes.appendChild(excluir);
+        tr.appendChild(tdAcoes);
       }
 
       if (abaAtual === "AGENDA") {
@@ -1294,6 +1384,7 @@
     areaCadastroCliente.style.display = nomeAba === "CLIENTES" ? "block" : "none";
     areaCadastroCidade.style.display = nomeAba === "CIDADES" ? "block" : "none";
     areaCadastroBairro.style.display = nomeAba === "BAIRROS" ? "block" : "none";
+    areaCadastroPeriodo.style.display = nomeAba === "PERIODOS" ? "block" : "none";
     areaCadastroAgendamento.style.display = nomeAba === "AGENDA" ? "block" : "none";
     areaDashboardDeepLearning.style.display = nomeAba === "DEEP_LEARNING" ? "block" : "none";
     areaLista.style.display = nomeAba === "DEEP_LEARNING" ? "none" : "block";
@@ -1312,6 +1403,7 @@
     }
     if (nomeAba === "SERVICOS" && !codigoServicoEmEdicao) carregarCodigoServico();
     if (nomeAba === "CIDADES" && !codigoCidadeEmEdicao) carregarCodigoCidade();
+    if (nomeAba === "PERIODOS" && !codigoPeriodoEmEdicao) carregarCodigoPeriodo();
     if (nomeAba === "BAIRROS") {
       if (!codigoBairroEmEdicao) carregarCodigoBairro();
       carregarCidadesBairro();
@@ -1616,6 +1708,64 @@
       );
     }
   });
+
+  function carregarCodigoPeriodo() {
+    const botao = el("botaoSalvarPeriodo");
+    botao.disabled = true;
+    botao.textContent = "Carregando código...";
+    google.script.run
+      .withSuccessHandler(codigo => {
+        codigoPeriodoCadastro.value = codigo;
+        botao.disabled = false;
+        botao.textContent = "Cadastrar período";
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Erro ao gerar código do período: ");
+        botao.disabled = false;
+        botao.textContent = "Tentar novamente";
+      })
+      .periodoServiceGerarCodigo();
+  }
+
+  function cancelarEdicaoPeriodo() {
+    codigoPeriodoEmEdicao = "";
+    formPeriodo.reset();
+    ativoPeriodoCadastro.value = "true";
+    el("tituloFormularioPeriodo").textContent = "Cadastrar período";
+    el("botaoSalvarPeriodo").textContent = "Cadastrar período";
+    el("botaoCancelarPeriodo").style.display = "none";
+    carregarCodigoPeriodo();
+  }
+
+  formPeriodo.addEventListener("submit", evento => {
+    evento.preventDefault();
+    if (!formPeriodo.reportValidity()) return;
+    const metodo = codigoPeriodoEmEdicao ? "periodoServiceAtualizar" : "periodoServiceCriar";
+    const argumentos = [
+      codigoPeriodoCadastro.value,
+      descricaoPeriodoCadastro.value,
+      horaInicialPeriodoCadastro.value,
+      horaFinalPeriodoCadastro.value,
+      ativoPeriodoCadastro.value === "true"
+    ];
+    const botao = el("botaoSalvarPeriodo");
+    botao.disabled = true;
+    botao.textContent = "Salvando...";
+    google.script.run
+      .withSuccessHandler(resultado => {
+        mostrarMensagem(resultado && resultado.mensagem || "Período salvo com sucesso.", "sucesso");
+        cancelarEdicaoPeriodo();
+        carregarLista();
+        carregarDadosAgendamento();
+      })
+      .withFailureHandler(erro => {
+        falha(erro, "Não foi possível salvar o período: ");
+        botao.disabled = false;
+        botao.textContent = codigoPeriodoEmEdicao ? "Salvar alterações" : "Cadastrar período";
+      })[metodo](...argumentos);
+  });
+
+  el("botaoCancelarPeriodo").addEventListener("click", cancelarEdicaoPeriodo);
 
   function carregarCodigoServico(){el("botaoSalvarServico").disabled=true;google.script.run.withSuccessHandler(c=>{codigoServicoCadastro.value=c;el("botaoSalvarServico").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código do serviço: ")).gerarCodigoServico();}
   function carregarCodigoCidade(){el("botaoSalvarCidade").disabled=true;google.script.run.withSuccessHandler(c=>{codigoCidadeCadastro.value=c;el("botaoSalvarCidade").disabled=false;}).withFailureHandler(e=>falha(e,"Erro ao gerar código da cidade: ")).gerarCodigoCidade();}
