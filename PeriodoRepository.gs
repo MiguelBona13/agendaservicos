@@ -38,18 +38,15 @@ function periodoRepositoryListar() {
   if (ultimaLinha < 2) return [];
 
   return aba.getRange(2, 1, ultimaLinha - 1, 5).getDisplayValues()
-    .filter(linha =>
-      String(linha[0] || "").trim() !== "" &&
-      String(linha[1] || "").trim() !== ""
-    )
     .map((linha, indice) => ({
-      codigo: String(linha[0]).trim(),
-      descricao: String(linha[1]).trim(),
+      codigo: String(linha[0] || "").trim(),
+      descricao: String(linha[1] || "").trim(),
       horaInicial: String(linha[2] || "").trim(),
       horaFinal: String(linha[3] || "").trim(),
       ativo: periodoRepositoryInterpretarAtivo(linha[4]),
       linha: indice + 2
-    }));
+    }))
+    .filter(periodo => periodo.codigo !== "" && periodo.descricao !== "");
 }
 
 /**
