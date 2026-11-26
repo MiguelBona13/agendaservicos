@@ -31,7 +31,7 @@ function periodoValidatorHorario(horario, campo) {
 
 /** Valida os dados editáveis de um período. */
 function periodoValidatorDados(descricao, horaInicial, horaFinal, ativo) {
-  if (ativo !== true && ativo !== false && !["SIM", "NÃO", "NAO", "true", "false"].includes(String(ativo).trim().toUpperCase())) {
+  if (ativo !== true && ativo !== false && !["SIM", "NÃO", "NAO", "TRUE", "FALSE"].includes(String(ativo).trim().toUpperCase())) {
     throw new Error("A situação do período é inválida.");
   }
   const ativoNormalizado = ativo === true || ["SIM", "TRUE"].includes(String(ativo).trim().toUpperCase());
