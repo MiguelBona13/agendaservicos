@@ -1334,3 +1334,41 @@ Iniciar a implementação do CRUD de períodos sem alterar o contrato utilizado 
 
 ### Próximo passo
 Implementar as camadas `PeriodoValidator.gs`, `PeriodoRules.gs` e `PeriodoService.gs`, incluindo as regras de validação, geração de código e bloqueio de exclusão quando houver agendamentos vinculados. Depois, integrar a aba PERIODOS à interface.
+
+
+## Atualização — inclusão de Períodos e Configurações no menu
+
+### Alteração realizada
+- Incluídas as opções **Períodos** e **Configurações** no menu principal da interface.
+- A opção Períodos consulta a aba `PERIODOS` por meio de `PeriodoRepository.gs`, que já existia.
+- A opção Configurações consulta a aba `Configurações` por meio de um novo Repository, sem presumir nomes ou quantidade fixa de colunas.
+- As duas opções reutilizam a tabela de consulta já existente na interface.
+- Nesta etapa, as telas permitem consultar os dados; o CRUD (cadastro, edição e exclusão) de períodos ainda não foi implementado. A tela de configurações também permanece somente para consulta, até que os parâmetros da planilha sejam definidos e suas regras sejam mapeadas.
+
+### Arquivos criados
+- `ConfiguracaoRepository.gs` — leitura tabular da aba Configurações.
+- `tests/ConfiguracaoRepository.test.cjs` — teste automatizado da consulta.
+
+### Arquivos alterados
+- `Index.html` — inclusão das duas opções e respectivos títulos e descrições.
+- `Config.js` — registro dos nomes lógicos das abas PERIODOS e Configurações.
+- `Consultas.js` — encaminhamento das consultas para os respectivos Repositories.
+- `PROJECT_STATUS.md` — registro desta etapa.
+
+### Arquivos mantidos
+- `PeriodoRepository.gs` — reutilizado sem alteração.
+- Demais telas e funcionalidades existentes — preservadas.
+- `PROJECT_GUIDE.md` — mantido sem alterações.
+
+### Arquivos que podem ser excluídos
+- Nenhum.
+
+### Como testar
+1. Executar `npm test`.
+2. Abrir a aplicação e selecionar **Períodos**; confirmar a exibição dos registros da aba PERIODOS.
+3. Selecionar **Configurações**; confirmar a exibição dos registros da aba Configurações.
+4. Navegar pelas demais opções do menu e confirmar que os formulários e consultas existentes continuam funcionando.
+
+### Próxima etapa
+- Implementar `PeriodoValidator.gs`, `PeriodoRules.gs` e `PeriodoService.gs` para completar o CRUD de períodos.
+- Mapear a estrutura e as regras dos parâmetros existentes na aba Configurações antes de implementar edição de configurações.
