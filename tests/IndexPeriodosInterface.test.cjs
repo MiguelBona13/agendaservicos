@@ -5,7 +5,7 @@ const vm = require("node:vm");
 
 test("o JavaScript incorporado em Index.html possui sintaxe válida", () => {
   const html = fs.readFileSync("Index.html", "utf8");
-  const correspondencia = html.match(/<script>([\\s\\S]*?)<\\/script>/i);
+  const correspondencia = html.match(/<script>([\s\S]*?)<\/script>/i);
   assert.ok(correspondencia, "O script principal da interface deve existir.");
   assert.doesNotThrow(() => new vm.Script(correspondencia[1]));
 });
@@ -21,6 +21,6 @@ test("a interface possui formulário e ações de CRUD para períodos", () => {
 
 test("a interface apresenta orientação quando a aba Configurações não existe", () => {
   const html = fs.readFileSync("Index.html", "utf8");
-  assert.match(html, /resultado\\.mensagem/);
-  assert.match(html, /consultarLista\\(abaAtual\\)/);
+  assert.match(html, /resultado\.mensagem/);
+  assert.match(html, /consultarLista\(abaAtual\)/);
 });
