@@ -14,7 +14,7 @@ function periodoValidatorCodigo(codigo) {
 
 /** Valida e normaliza a descrição do período. */
 function periodoValidatorDescricao(descricao) {
-  const valor = String(descricao == null ? "" : descricao).trim().replace(/\\s+/g, " ");
+  const valor = String(descricao == null ? "" : descricao).trim().replace(/\s+/g, " ");
   if (!valor) throw new Error("A descrição do período é obrigatória.");
   if (valor.length > 80) throw new Error("A descrição deve ter até 80 caracteres.");
   return valor;
@@ -23,7 +23,7 @@ function periodoValidatorDescricao(descricao) {
 /** Valida horário no formato HH:mm. */
 function periodoValidatorHorario(horario, campo) {
   const valor = String(horario == null ? "" : horario).trim();
-  if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(valor)) {
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(valor)) {
     throw new Error("Informe um horário válido para " + campo + " no formato HH:mm.");
   }
   return valor;
