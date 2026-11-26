@@ -28,6 +28,10 @@ function criarAmbiente(abas) {
     })
   };
   vm.createContext(contexto);
+  vm.runInContext(
+    fs.readFileSync(path.join(__dirname, '../PeriodoRepository.gs'), 'utf8'),
+    contexto
+  );
   vm.runInContext(codigo, contexto);
   return contexto;
 }
