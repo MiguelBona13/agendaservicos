@@ -3,31 +3,51 @@
  * Camada: Repository — Repositório
  *
  * Responsabilidade:
- * Centralizar a leitura tabular da aba "Configurações", permitindo que a
- * interface consulte os parâmetros existentes sem acessar o Google Sheets.
+ * Centralizar a leitura da aba de configurações e tratar sua ausência sem
+ * interromper o carregamento das demais telas.
  *
  * Dependências principais:
- * - Config.js — nome lógico da aba de configurações;
- * - Utils.js — função getSheet() para acesso ao Google Sheets.
+ * - Config.js — nome lógico da aba;
+ * - SpreadsheetApp — acesso ao arquivo ativo, somente nesta camada.
  */
 
 /**
- * Consulta os dados da aba de configurações sem presumir uma estrutura fixa
- * para suas colunas. A primeira linha é tratada como cabeçalho.
+ * Consulta os parâmetros cadastrados.
+ * Aceita os nomes CONFIGURACOES e Configurações para compatibilidade com
+ * planilhas já criadas. Quando nenhuma das abas existir, devolve uma lista
+ * vazia com orientação em vez de lançar erro no carregamento da interface.
  *
- * @return {{colunas:Array<string>,registros:Array<Array<string>>}} Dados tabulares.
+ * @return {{colunas:Array<string>,registros:Array<Array<string>>,mensagem?:string}} Dados tabulares.
  */
 function configuracaoRepositoryConsultarTabela() {
-  const aba = getSheet(CONFIG.ABAS.CONFIGURACOES);
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  const nomesPossiveis = [CONFIG.ABAS.CONFIGURACOES, "Configurações"];
+  let aba = null;
+
+  for (const nome of nomesPossiveis) {
+    aba = planilha.getSheetByName(nome);
+    if (aba) break;
+  }
+
+  if (!aba) {
+    return {
+      colunas: [],
+      registros: [],
+      mensagem: "A aba CONFIGURACOES ainda não existe na planilha. Crie uma aba com esse nome para cadastrar os parâmetros do sistema."
+    };
+  }
+
   const ultimaLinha = aba.getLastRow();
   const ultimaColuna = aba.getLastColumn();
-
   if (ultimaLinha < 1 || ultimaColuna < 1) {
-    return { colunas: [], registros: [] };
+    return {
+      colunas: [],
+      registros: [],
+      mensagem: "A aba de configurações está vazia. Inclua os cabeçalhos e os parâmetros que deseja consultar."
+    };
   }
 
   const valores = aba.getRange(1, 1, ultimaLinha, ultimaColuna).getDisplayValues();
-
   return {
     colunas: valores[0].map(valor => String(valor || "").trim()),
     registros: valores.slice(1).filter(linha =>
