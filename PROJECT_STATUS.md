@@ -1291,3 +1291,46 @@ Com os parâmetros padrão e a exportação analisada anteriormente (324 dias at
 - PR continua aberta; não integrada à `main`.
 - Nenhuma publicação no Google Apps Script foi realizada.
 - Próximo passo: executar a validação integrada em cópia controlada da planilha e revisão visual; só depois decidir integração e publicação.
+
+
+---
+
+## Atualização — CRUD da entidade Período (Etapa 1: Repository)
+
+### Objetivo
+Iniciar a implementação do CRUD de períodos sem alterar o contrato utilizado pelos agendamentos existentes.
+
+### Concluído
+- Criado `PeriodoRepository.gs` para centralizar leitura e persistência na aba `PERIODOS`.
+- Implementadas operações de listagem, busca por código, obtenção do maior código, inclusão, atualização, localização de linha, verificação de vínculos com a agenda, exclusão e consulta tabular.
+- A verificação de vínculos considera qualquer registro da aba `AGENDA`, inclusive histórico e agendamentos cancelados.
+- A função pública `consultarPeriodos()` foi preservada em `Consultas.js`, mas agora delega a leitura ao novo Repository.
+- `AgendamentoRepository.gs` passou a reutilizar `periodoRepositoryListar()` no carregamento de cadastros para importação por e-mail, removendo a leitura duplicada da aba `PERIODOS`.
+- Criado teste automatizado para as operações do novo Repository.
+- Adaptado o teste de integração do repositório de agendamentos para carregar o Repository de períodos.
+
+### Arquivos criados
+- `PeriodoRepository.gs`
+- `tests/PeriodoRepository.test.cjs`
+
+### Arquivos alterados
+- `Consultas.js`
+- `AgendamentoRepository.gs`
+- `tests/AgendamentoRepositoryEmail.test.cjs`
+
+### Arquivos mantidos
+- `AgendamentoService.gs` — permanece utilizando a função pública `consultarPeriodos()`.
+- `Index.html` — interface ainda não foi alterada.
+- `Config.js` — já possui a constante `CONFIG.ABAS.PERIODOS`.
+- `PROJECT_GUIDE.md` — mantido sem alterações.
+
+### Arquivos removidos
+- Nenhum.
+
+### Validação
+- Os testes automatizados foram adicionados, mas ainda precisam ser executados no ambiente local do projeto.
+- A revisão do código confirmou que `Consultas.js` e `AgendamentoRepository.gs` não fazem mais leitura direta da aba `PERIODOS`.
+- A interface e os fluxos existentes ainda precisam ser testados após a implementação das próximas camadas.
+
+### Próximo passo
+Implementar as camadas `PeriodoValidator.gs`, `PeriodoRules.gs` e `PeriodoService.gs`, incluindo as regras de validação, geração de código e bloqueio de exclusão quando houver agendamentos vinculados. Depois, integrar a aba PERIODOS à interface.
