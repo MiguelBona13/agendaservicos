@@ -28,40 +28,14 @@ function consultarBairros(codigoCidade) {
   return bairroServiceListar(String(codigoCidade || "").trim());
 }
 
+/**
+ * Mantém o contrato público utilizado pelos fluxos existentes e delega
+ * a consulta ao Repository da entidade Período.
+ *
+ * @return {Array<Object>} Períodos cadastrados.
+ */
 function consultarPeriodos() {
-  const aba = getSheet(CONFIG.ABAS.PERIODOS);
-  const ultimaLinha = aba.getLastRow();
-
-  if (ultimaLinha < 2) {
-    return [];
-  }
-
-  return aba
-    .getRange(2, 1, ultimaLinha - 1, 5)
-    .getDisplayValues()
-    .filter(linha =>
-      linha[0].trim() !== "" &&
-      linha[1].trim() !== ""
-    )
-    .map(linha => {
-      const ativoTexto = linha[4].trim().toLowerCase();
-
-      const ativo = [
-        "sim",
-        "true",
-        "verdadeiro",
-        "ativo",
-        "1"
-      ].includes(ativoTexto);
-
-      return {
-        codigo: linha[0].trim(),
-        descricao: linha[1].trim(),
-        horaInicial: linha[2].trim(),
-        horaFinal: linha[3].trim(),
-        ativo: ativo
-      };
-    });
+  return periodoRepositoryListar();
 }
 
 /**
