@@ -6,6 +6,8 @@ const CONFIG = {
     CIDADES: "CIDADES",
     BAIRROS: "BAIRROS",
     PERIODOS: "PERIODOS",
+    CONFIGURACOES: "Configurações",
+    PERIODOS: "PERIODOS",
     AGENDA: "AGENDA"
   }
 };

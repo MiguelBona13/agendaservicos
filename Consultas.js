@@ -11,7 +11,9 @@ function consultarLista(nomeAba) {
     [CONFIG.ABAS.SERVICOS]: servicoRepositoryConsultarTabela,
     [CONFIG.ABAS.CLIENTES]: clienteRepositoryConsultarTabela,
     [CONFIG.ABAS.CIDADES]: cidadeRepositoryConsultarTabela,
-    [CONFIG.ABAS.BAIRROS]: bairroRepositoryConsultarTabela
+    [CONFIG.ABAS.BAIRROS]: bairroRepositoryConsultarTabela,
+    [CONFIG.ABAS.PERIODOS]: periodoRepositoryConsultarTabela,
+    [CONFIG.ABAS.CONFIGURACOES]: configuracaoRepositoryConsultarTabela
   };
   const consultar = consultas[nomeAba];
   if (!consultar) throw new Error("Esta lista não está disponível para consulta.");
