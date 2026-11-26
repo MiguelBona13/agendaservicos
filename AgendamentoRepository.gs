@@ -389,27 +389,8 @@ function agendamentoRepositoryListarCadastrosEmail() {
   const clientes = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.CLIENTES);
   const servicos = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.SERVICOS);
   const funcionarios = agendamentoRepositoryLerCodigoNome(CONFIG.ABAS.FUNCIONARIOS);
-  const abaPeriodos = getSheet(CONFIG.ABAS.PERIODOS);
-  const ultimaLinhaPeriodos = abaPeriodos.getLastRow();
-
-  const periodos = ultimaLinhaPeriodos < 2
-    ? []
-    : abaPeriodos
-      .getRange(2, 1, ultimaLinhaPeriodos - 1, 5)
-      .getDisplayValues()
-      .filter(linha =>
-        String(linha[0] || "").trim() &&
-        String(linha[1] || "").trim()
-      )
-      .map(linha => ({
-        codigo: String(linha[0]).trim(),
-        descricao: String(linha[1]).trim(),
-        horaInicial: String(linha[2]).trim(),
-        horaFinal: String(linha[3]).trim(),
-        ativo: ["sim", "true", "verdadeiro", "ativo", "1"].includes(
-          String(linha[4] || "").trim().toLowerCase()
-        )
-      }));
+  // A leitura dos períodos é delegada ao Repository da própria entidade.
+  const periodos = periodoRepositoryListar();
 
   return {
     clientes: clientes,
